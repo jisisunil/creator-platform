@@ -1,0 +1,119 @@
+// Database schema. Requirement IDs refer to docs/REQUIREMENTS.md.
+// Rules: every table has id/createdAt/updatedAt; index every foreign key and
+// every column used in search filters or sorts (CLAUDE.md §9).
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Platform configuration (International expansion: new country = new rows)
+// ---------------------------------------------------------------------------
+
+enum NumberFormat {
+  INDIAN // 1,00,000 (lakh/crore)
+  INTERNATIONAL // 100,000
+}
+
+enum SocialPlatform {
+  YOUTUBE
+  INSTAGRAM
+}
+
+model CountrySettings {
+  id                   String           @id @default(cuid())
+  code                 String           @unique // ISO 3166-1 alpha-2
+  currencyCode         String // ISO 4217
+  numberFormat         NumberFormat
+  defaultLocale        String
+  supportedLocales     String[]
+  defaultTimezone      String // IANA zone
+  enabledPlatforms     SocialPlatform[]
+  dataRegion           String
+  privacyNoticeVersion String
+  isEnabled            Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  categories Category[]
+  plans      Plan[]
+}
+
+model Language {
+  id         String   @id @default(cuid())
+  code       String   @unique // ISO 639-1 / 639-3
+  nativeName String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+/// Content categories, per country. Display names come from i18n (categories.<slug>).
+model Category {
+  id          String          @id @default(cuid())
+  countryCode String
+  slug        String
+  sortOrder   Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  country     CountrySettings @relation(fields: [countryCode], references: [code])
+
+  @@unique([countryCode, slug])
+  @@index([countryCode])
+}
+
+enum PlanCode {
+  FREE_BETA
+  TRIAL
+  PAY_AS_YOU_GO
+  STARTER
+  PRO
+  AGENCY
+}
+
+enum BillingPeriod {
+  NONE
+  MONTHLY
+}
+
+/// Brand plans and limits (FR-11.1). Prices per country in minor units.
+model Plan {
+  id                       String          @id @default(cuid())
+  code                     PlanCode
+  countryCode              String
+  priceMinor               Int
+  currencyCode             String
+  billingPeriod            BillingPeriod
+  contactRequestsPerPeriod Int
+  seatLimit                Int
+  shortlistLimit           Int
+  profileViewsPerHour      Int
+  trialDays                Int?
+  canSaveSearch            Boolean
+  canCompare               Boolean
+  canCampaignReports       Boolean
+  canCsvExport             Boolean
+  isActive                 Boolean         @default(true)
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  country                  CountrySettings @relation(fields: [countryCode], references: [code])
+
+  @@unique([code, countryCode])
+  @@index([countryCode])
+}
+
+/// Admin-editable platform switches, e.g. isFreeBetaActive.
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated
+src/generated/
+
+# env and secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# local storage, test output
+storage/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+node_modules

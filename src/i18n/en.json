@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "title": "Creator Platform",
+    "description": "Find, verify and contact the right content creators across India."
+  },
+  "common": {
+    "skipToContent": "Skip to main content",
+    "language": "Language",
+    "languageNames": {
+      "en": "English",
+      "hi": "हिन्दी"
+    }
+  },
+  "home": {
+    "headline": "Find verified creators your audience already trusts",
+    "intro": "Brands search, shortlist and contact regional creators with transparent, verified content scores. Creators join free.",
+    "forCreators": "For creators",
+    "forCreatorsText": "Get a verified profile and a transparent content score, and get found by brands.",
+    "forBrands": "For brands",
+    "forBrandsText": "Search by city, language and category, compare creators and track campaigns."
+  },
+  "errors": {
+    "VALIDATION_FAILED": "Some details need fixing. Check the highlighted fields.",
+    "UNAUTHENTICATED": "Please sign in to continue.",
+    "NOT_ALLOWED": "You don't have permission to do that.",
+    "NOT_FOUND": "We couldn't find that.",
+    "CONFLICT": "That already exists.",
+    "INVALID_STATE": "This can't be done right now.",
+    "RATE_LIMITED": "Too many attempts. Please wait a few minutes and try again.",
+    "PLAN_LIMIT_REACHED": "You've reached your plan's limit.",
+    "REQUEST_EXPIRED": "This request has expired.",
+    "INTERNAL": "Something went wrong on our side. Please try again.",
+    "pageNotFoundTitle": "Page not found",
+    "pageNotFoundText": "The page you're looking for doesn't exist or has moved.",
+    "unexpectedTitle": "Something went wrong",
+    "tryAgain": "Try again",
+    "goHome": "Go to the home page"
+  },
+  "categories": {
+    "food": "Food",
+    "travel": "Travel",
+    "fashion": "Fashion",
+    "beauty": "Beauty",
+    "fitness": "Fitness",
+    "health": "Health",
+    "tech": "Technology",
+    "gaming": "Gaming",
+    "education": "Education",
+    "finance": "Finance",
+    "comedy": "Comedy",
+    "music": "Music",
+    "dance": "Dance",
+    "lifestyle": "Lifestyle",
+    "parenting": "Parenting",
+    "automobile": "Automobile",
+    "agriculture": "Agriculture",
+    "devotional": "Devotional",
+    "home-decor": "Home décor",
+    "sports": "Sports"
+  }
+}

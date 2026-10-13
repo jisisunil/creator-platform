@@ -1,18 +1,25 @@
 import 'dotenv/config';
 import { PgBoss } from 'pg-boss';
 import { getContainer } from '@/adapters/container';
-import { getServerEnv } from '@/config/env';
+import { directDatabaseUrl, getServerEnv } from '@/config/env';
 import { getLogger } from '@/lib/logger';
 import { ALL_JOBS } from './jobs';
 import { runJob } from './run-job';
 
 const logger = getLogger('worker');
 
+// pg-boss's own connections, on top of the app pool (ADR-005).
+const WORKER_QUEUE_POOL_MAX = 4;
+
 /** Background worker entry point: registers every job's queue, schedule and handler. */
 async function main(): Promise<void> {
   const env = getServerEnv();
   const container = getContainer();
-  const boss = new PgBoss({ connectionString: env.DATABASE_URL, schema: 'pgboss' });
+  const boss = new PgBoss({
+    connectionString: directDatabaseUrl(env),
+    schema: 'pgboss',
+    max: WORKER_QUEUE_POOL_MAX,
+  });
   boss.on('error', (error) => logger.error({ err: error }, 'pg-boss error'));
 
   await boss.start();

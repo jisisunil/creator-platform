@@ -1,4 +1,4 @@
-import { getServerEnv } from '@/config/env';
+import { databasePoolOptions, directDatabaseUrl, getServerEnv } from '@/config/env';
 import type { ServiceContext } from '@/services/context';
 import { type Clock, systemClock } from './clock';
 import { createArgon2PasswordHasher } from './crypto/password-hasher';
@@ -29,7 +29,7 @@ export interface Container extends ServiceContext {
 
 function buildContainer(): Container {
   const env = getServerEnv();
-  const db = createDatabaseClient(env.DATABASE_URL);
+  const db = createDatabaseClient(env.DATABASE_URL, databasePoolOptions(env));
   const repos = createRepositories(db);
   return {
     db,
@@ -47,7 +47,7 @@ function buildContainer(): Container {
       : disabledCaptchaVerifier,
     tokenCipher: createAesGcmTokenCipher(env.TOKEN_ENCRYPTION_KEY),
     totp: createTotpService(),
-    jobQueue: createPgBossJobQueue(env.DATABASE_URL),
+    jobQueue: createPgBossJobQueue(directDatabaseUrl(env)),
     emailSender: createSmtpEmailSender(env.SMTP_URL, env.EMAIL_FROM),
     appUrl: env.APP_URL,
   };

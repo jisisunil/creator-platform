@@ -28,6 +28,8 @@ export function createPgBossJobQueue(connectionString: string): JobQueue {
         schedule: false,
         migrate: false,
         registerInstance: false,
+        // The web app only sends jobs: two connections are plenty (ADR-005).
+        max: 2,
       });
       boss.on('error', (error) => logger.error({ err: error }, 'pg-boss error'));
       await boss.start();

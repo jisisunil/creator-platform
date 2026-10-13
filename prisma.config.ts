@@ -8,6 +8,7 @@ export default defineConfig({
     seed: 'tsx prisma/seed/index.ts',
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    // Migrations need a direct connection (not PgBouncer) for their advisory lock.
+    url: process.env.DATABASE_DIRECT_URL || env('DATABASE_URL'),
   },
 });

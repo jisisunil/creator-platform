@@ -16,6 +16,11 @@ const serverEnvSchema = z
     APP_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
     APP_URL: z.url(),
     DATABASE_URL: z.url(),
+    /** Direct (non-pooled) connection for migrations and the job queue; defaults to DATABASE_URL. */
+    DATABASE_DIRECT_URL: z.url().optional(),
+    DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+    DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(15_000),
+    DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().min(500).max(60_000).default(5_000),
     LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
     SENTRY_DSN: z.url().optional(),
 
@@ -79,6 +84,20 @@ let cachedEnv: ServerEnv | undefined;
 export function getServerEnv(): ServerEnv {
   cachedEnv ??= parseServerEnv(process.env);
   return cachedEnv;
+}
+
+/** Pool settings for this process (ADR-005). */
+export function databasePoolOptions(env: ServerEnv) {
+  return {
+    maxConnections: env.DATABASE_POOL_MAX,
+    statementTimeoutMs: env.DATABASE_STATEMENT_TIMEOUT_MS,
+    connectionTimeoutMs: env.DATABASE_CONNECT_TIMEOUT_MS,
+  };
+}
+
+/** The connection for session-level work (migrations, pg-boss locks), bypassing PgBouncer. */
+export function directDatabaseUrl(env: ServerEnv): string {
+  return env.DATABASE_DIRECT_URL ?? env.DATABASE_URL;
 }
 
 /** True when Google sign-in is configured. */

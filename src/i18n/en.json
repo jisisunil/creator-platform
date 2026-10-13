@@ -9,7 +9,12 @@
     "languageNames": {
       "en": "English",
       "hi": "हिन्दी"
-    }
+    },
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "or": "or",
+    "back": "Back",
+    "draftNotice": "Draft pending legal review"
   },
   "home": {
     "headline": "Find verified creators your audience already trusts",
@@ -17,7 +22,9 @@
     "forCreators": "For creators",
     "forCreatorsText": "Get a verified profile and a transparent content score, and get found by brands.",
     "forBrands": "For brands",
-    "forBrandsText": "Search by city, language and category, compare creators and track campaigns."
+    "forBrandsText": "Search by city, language and category, compare creators and track campaigns.",
+    "ctaCreator": "Join as a creator",
+    "ctaBrand": "Join as a brand"
   },
   "errors": {
     "VALIDATION_FAILED": "Some details need fixing. Check the highlighted fields.",
@@ -34,7 +41,12 @@
     "pageNotFoundText": "The page you're looking for doesn't exist or has moved.",
     "unexpectedTitle": "Something went wrong",
     "tryAgain": "Try again",
-    "goHome": "Go to the home page"
+    "goHome": "Go to the home page",
+    "INVALID_CREDENTIALS": "That email and password don't match, or the account is temporarily locked after too many attempts. Try again, or reset your password.",
+    "ACCOUNT_SUSPENDED": "This account is suspended. Contact support if you think this is a mistake.",
+    "EMAIL_NOT_VERIFIED": "Please verify your email first. We can send the link again.",
+    "CAPTCHA_REQUIRED": "Please complete the security check and try again.",
+    "INVALID_LINK": "This link is invalid, has expired or was already used. Request a new one."
   },
   "categories": {
     "food": "Food",
@@ -57,5 +69,323 @@
     "devotional": "Devotional",
     "home-decor": "Home décor",
     "sports": "Sports"
+  },
+  "nav": {
+    "mainLabel": "Main",
+    "home": "Home",
+    "signIn": "Sign in",
+    "signUp": "Join free",
+    "signOut": "Sign out",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "team": "Team",
+    "privacy": "Privacy notice",
+    "terms": "Terms",
+    "grievance": "Grievance contact"
+  },
+  "fieldErrors": {
+    "validation": {
+      "required": "This field is required.",
+      "invalidEmail": "Enter a valid email address.",
+      "tooLong": "This is too long.",
+      "mustAccept": "You need to agree to continue.",
+      "under18": "You must be 18 or older to use the platform. We haven't saved anything.",
+      "invalidChoice": "Choose one of the options.",
+      "codeFormat": "Enter the 6-digit code."
+    },
+    "password": {
+      "tooShort": "Use at least 10 characters.",
+      "tooLong": "Use at most 128 characters.",
+      "containsEmail": "Don't include your email address in your password.",
+      "breached": "This password has appeared in a data breach. Choose a different one.",
+      "incorrect": "Your current password is incorrect."
+    },
+    "email": {
+      "disposable": "Use a permanent email address, not a temporary inbox.",
+      "unavailable": "This email address can't be used. Try another one.",
+      "sameAsCurrent": "This is already your email address."
+    },
+    "team": {
+      "notABrandAccount": "This email belongs to an account that can't join a brand team.",
+      "alreadyInABrand": "This person is already part of a brand team.",
+      "alreadyInvited": "An invite is already waiting for this email.",
+      "signInToAccept": "An account with this email already exists. Sign in, then open the invite link again."
+    },
+    "twoFactor": {
+      "invalidCode": "That code didn't work. Check your authenticator app and try again."
+    }
+  },
+  "industries": {
+    "food-beverage": "Food and beverage",
+    "fashion-apparel": "Fashion and apparel",
+    "beauty-personal-care": "Beauty and personal care",
+    "health-wellness": "Health and wellness",
+    "electronics": "Electronics",
+    "home-living": "Home and living",
+    "education": "Education",
+    "finance": "Finance",
+    "travel-hospitality": "Travel and hospitality",
+    "automotive": "Automotive",
+    "retail": "Retail",
+    "agency": "Marketing agency",
+    "other": "Other"
+  },
+  "auth": {
+    "signUp": {
+      "title": "Join the platform",
+      "intro": "Creators join free. Brands search and contact creators free during the beta.",
+      "roleLegend": "I am joining as",
+      "roleCreator": "A creator",
+      "roleCreatorHint": "YouTube or Instagram creator, 18 or older",
+      "roleBrand": "A brand",
+      "roleBrandHint": "A business or agency looking for creators",
+      "name": "Your name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 10 characters. Avoid passwords you use elsewhere.",
+      "brandName": "Brand name",
+      "industry": "Industry",
+      "industryPlaceholder": "Choose an industry",
+      "ageConfirmation": "I confirm I am 18 or older",
+      "privacyConsent": "I have read and agree to the <link>privacy notice</link>",
+      "marketingConsent": "Send me occasional product news and tips (optional)",
+      "submit": "Create account",
+      "googleButton": "Continue with Google",
+      "googleNote": "Tick the boxes above first; Google sign-up uses the same choices.",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in"
+    },
+    "checkEmail": {
+      "title": "Check your inbox",
+      "body": "If this email can be used, we've sent a link to verify it. The link works for 48 hours.",
+      "resendPrompt": "Didn't get it? Check your spam folder, or send the link again.",
+      "resend": "Send the link again",
+      "resent": "If the account still needs verifying, a new link is on its way."
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "success": "Your email is verified. You can sign in now.",
+      "missingToken": "This link is missing its code. Open the link from your email again.",
+      "continue": "Sign in"
+    },
+    "signIn": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "New here?",
+      "signUpLink": "Join free",
+      "googleButton": "Sign in with Google",
+      "captchaPrompt": "Complete the security check to continue.",
+      "resendVerification": "Send the verification link again",
+      "linkGoogleTitle": "Connect Google to your account",
+      "linkGoogleIntro": "An account already uses {email}. Enter its password to connect Google sign-in to it.",
+      "linkGoogleSubmit": "Connect and sign in",
+      "googleNeedsSignUp": "We couldn't find an account for that Google login. Join first, then use Google to sign in.",
+      "googleRejected": "Google sign-in isn't available for this account. Use your email and password, or contact support."
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "intro": "Enter your email. If it has an account, we'll send a reset link that works for one hour.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "sent": "If that email has an account, a reset link is on its way."
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "submit": "Save new password",
+      "success": "Your password has been changed and you've been signed out everywhere. Sign in with the new password.",
+      "signIn": "Sign in"
+    },
+    "changeEmailConfirm": {
+      "title": "Confirm new email",
+      "success": "Your email address has been updated.",
+      "continue": "Go to settings"
+    },
+    "twoFactor": {
+      "setupTitle": "Set up two-factor sign-in",
+      "setupIntro": "Admin accounts need an authenticator app. Scan the code with Google Authenticator, Microsoft Authenticator or similar, then enter the 6-digit code it shows.",
+      "qrAlt": "QR code for your authenticator app",
+      "secretLabel": "Can't scan? Enter this key manually:",
+      "verifyTitle": "Two-factor check",
+      "verifyIntro": "Enter the 6-digit code from your authenticator app.",
+      "code": "6-digit code",
+      "submit": "Verify"
+    },
+    "consent": {
+      "title": "We've updated our privacy notice",
+      "intro": "We changed how we use personal data. Please read the updated notice and agree to continue using the platform. If you don't agree, you can delete your account from settings.",
+      "readNotice": "Read the privacy notice",
+      "accept": "I agree"
+    },
+    "invite": {
+      "title": "Join {brandName}",
+      "intro": "You've been invited to join {brandName}'s team on the platform as {email}.",
+      "invalid": "This invite is invalid, has expired or was already used. Ask the brand owner for a new one.",
+      "accept": "Join the team",
+      "createAccount": "Create your account to join",
+      "name": "Your name",
+      "password": "Password",
+      "submit": "Create account and join",
+      "signedInAs": "You're signed in as {email}.",
+      "wrongAccount": "This invite is for a different email address. Sign out and open the link again.",
+      "joined": "You've joined the team."
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "creatorIntro": "Your creator profile, connected accounts and content score arrive here next.",
+    "brandIntro": "Search, shortlists and collaboration requests for {brandName} arrive here next.",
+    "brandNoTeam": "You're not part of a brand team. Ask a brand owner to invite you.",
+    "adminIntro": "The admin console arrives here in a later phase."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "changeEmail": {
+      "title": "Change email",
+      "newEmail": "New email",
+      "currentPassword": "Current password",
+      "submit": "Send confirmation link",
+      "sent": "We've sent a confirmation link to the new address. Your email changes once you open it."
+    },
+    "changePassword": {
+      "title": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "submit": "Change password",
+      "success": "Password changed. Your other devices have been signed out."
+    },
+    "sessions": {
+      "title": "Devices",
+      "intro": "Signed in somewhere you don't recognise? Sign out of every device, including this one.",
+      "signOutEverywhere": "Sign out of all devices"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "marketingLabel": "Product news and tips by email",
+      "marketingOn": "You're receiving product news.",
+      "marketingOff": "You're not receiving product news.",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off",
+      "historyTitle": "Your consent history",
+      "kind": {
+        "AGE_CONFIRMATION": "18 or older",
+        "PRIVACY_NOTICE": "Privacy notice",
+        "MARKETING": "Product news"
+      },
+      "granted": "Agreed",
+      "withdrawn": "Withdrawn",
+      "version": "Notice version {version}",
+      "noticeLink": "Read the privacy notice"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "seats": "{used} of {limit} seats used",
+    "members": "Members",
+    "owner": "Owner",
+    "member": "Member",
+    "remove": "Remove",
+    "removeConfirm": "Remove {name}? They'll lose access immediately.",
+    "pending": "Pending invites",
+    "expires": "Expires {date}",
+    "revoke": "Cancel invite",
+    "inviteTitle": "Invite a team member",
+    "inviteEmail": "Email",
+    "inviteSubmit": "Send invite",
+    "invited": "Invite sent.",
+    "seatsFull": "All seats are in use. Remove a member or cancel an invite to invite someone new.",
+    "ownerOnly": "Only the brand owner can invite or remove members.",
+    "noPending": "No pending invites."
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy notice",
+      "version": "Version {version}",
+      "sections": {
+        "who": {
+          "title": "Who we are",
+          "body": "This platform helps brands find and contact content creators in India. We are the data fiduciary for the personal data described here under India's Digital Personal Data Protection Act, 2023."
+        },
+        "what": {
+          "title": "What we collect and why",
+          "body": "Account details (name, email, password hash) to run your account. Your 18+ confirmation and consent records, to prove valid consent. For creators: location, languages, categories, profile details, connected social account IDs and public statistics, to show your profile to brands. For brands: brand name, industry and website. Messages, requests, deals and ratings, to run collaborations. Security logs (IP address, device, sign-in times), to protect accounts."
+        },
+        "notCollected": {
+          "title": "What we don't collect",
+          "body": "Aadhaar, PAN, date of birth, home address, bank or UPI details, social media passwords, device contacts or location."
+        },
+        "sharing": {
+          "title": "Who sees your data",
+          "body": "Brands see only creators' public profile fields and statistics, never their email or phone. We use service providers for hosting, email and error tracking under written contracts, and we store data in India. We don't sell personal data."
+        },
+        "retention": {
+          "title": "How long we keep it",
+          "body": "Until you delete your account. Unverified sign-ups are deleted after 7 days, inactive accounts after 3 years (with 30 days' warning), and security logs after one year."
+        },
+        "rights": {
+          "title": "Your rights and choices",
+          "body": "You can download your data, correct it, withdraw marketing consent and delete your account from settings. Withdrawing consent is as easy as giving it. Requests that need our help are answered within 30 days."
+        },
+        "complaints": {
+          "title": "Complaints",
+          "body": "Contact our grievance officer first (see the grievance page). If you're not satisfied, you can complain to the Data Protection Board of India."
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms of use",
+      "body": "Users must be 18 or older. Brands and creators deal with each other directly; the platform does not handle payments between them. Sponsored posts must be labelled (#ad, #collab). Don't share fake statistics, harass other users or misuse their data. We may suspend accounts that break these rules."
+    },
+    "grievance": {
+      "title": "Grievance officer",
+      "body": "For privacy questions, complaints or data requests, contact our grievance officer. We acknowledge complaints promptly and answer within the time the law requires.",
+      "contactLabel": "Email",
+      "contactValue": "grievance@example.invalid"
+    }
+  },
+  "emails": {
+    "footer": "You received this email because of activity on your Creator Platform account. If this wasn't you, you can ignore it or contact our grievance officer.",
+    "verifyEmail": {
+      "subject": "Verify your email",
+      "body": "Hi {name},\nConfirm your email address to start using your account. The link works for 48 hours.",
+      "action": "Verify email"
+    },
+    "accountAlreadyExists": {
+      "subject": "You already have an account",
+      "body": "Someone tried to sign up with this email, but it already has an account.\nIf that was you, sign in: {signInLink}\nForgot your password? Reset it: {resetLink}\nIf it wasn't you, you can ignore this email."
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "body": "Hi {name},\nUse the link below to choose a new password. It works once, for one hour. If you didn't ask for this, ignore this email; your password won't change.",
+      "action": "Choose a new password"
+    },
+    "passwordChanged": {
+      "subject": "Your password was changed",
+      "body": "Hi {name},\nYour password was just changed and other devices were signed out. If this wasn't you, reset your password immediately and contact us."
+    },
+    "confirmEmailChange": {
+      "subject": "Confirm your new email",
+      "body": "Hi {name},\nConfirm this as the new email address for your account. The link works for 24 hours.",
+      "action": "Confirm new email"
+    },
+    "emailChangeRequested": {
+      "subject": "Email change requested",
+      "body": "Hi {name},\nSomeone asked to change your account email to {newEmail}. Nothing changes until the new address is confirmed. If this wasn't you, change your password now."
+    },
+    "newDeviceSignIn": {
+      "subject": "New sign-in to your account",
+      "body": "Hi {name},\nYour account was just signed in to from a new device ({device}) at {time} UTC. If this wasn't you, change your password and sign out of all devices from settings."
+    },
+    "teamInvite": {
+      "subject": "Join {brandName} on Creator Platform",
+      "body": "{inviterName} invited you to join {brandName}'s team. The invite works for 7 days.",
+      "action": "Accept invite"
+    }
   }
 }

@@ -3,6 +3,8 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { SiteFooter } from '@/components/layout/SiteFooter';
+import { SiteHeader } from '@/components/layout/SiteHeader';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -50,7 +52,11 @@ export default async function LocaleLayout({
         >
           {t('skipToContent')}
         </a>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

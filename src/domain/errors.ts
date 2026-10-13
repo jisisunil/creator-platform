@@ -11,7 +11,12 @@ export type DomainErrorCode =
   | 'INVALID_STATE'
   | 'RATE_LIMITED'
   | 'PLAN_LIMIT_REACHED'
-  | 'REQUEST_EXPIRED';
+  | 'REQUEST_EXPIRED'
+  | 'INVALID_CREDENTIALS'
+  | 'ACCOUNT_SUSPENDED'
+  | 'EMAIL_NOT_VERIFIED'
+  | 'CAPTCHA_REQUIRED'
+  | 'INVALID_LINK';
 
 /** Field-level problems, safe to show to the user. Keys are field names, values i18n keys. */
 export type FieldErrors = Readonly<Record<string, string>>;
@@ -59,3 +64,21 @@ export const planLimitReached = (): DomainError => new DomainError('PLAN_LIMIT_R
 
 /** The collaboration request is past its expiry date (FR-7.2). */
 export const requestExpired = (): DomainError => new DomainError('REQUEST_EXPIRED');
+
+/**
+ * Sign-in failed. Deliberately the same for an unknown email, a wrong password and a
+ * locked account, so attackers can't tell which (SR-3, UC-A2).
+ */
+export const invalidCredentials = (): DomainError => new DomainError('INVALID_CREDENTIALS');
+
+/** The account is suspended. Only revealed after a correct password. */
+export const accountSuspended = (): DomainError => new DomainError('ACCOUNT_SUSPENDED');
+
+/** The email address hasn't been verified yet (FR-1.1). */
+export const emailNotVerified = (): DomainError => new DomainError('EMAIL_NOT_VERIFIED');
+
+/** A CAPTCHA must be solved before trying again (SR-3). */
+export const captchaRequired = (): DomainError => new DomainError('CAPTCHA_REQUIRED');
+
+/** An emailed link is unknown, expired or already used (UC-A3). */
+export const invalidLink = (): DomainError => new DomainError('INVALID_LINK');

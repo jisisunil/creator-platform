@@ -4,6 +4,10 @@ import { parseServerEnv } from '@/config/env';
 const VALID = {
   APP_URL: 'http://localhost:3000',
   DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+  AUTH_SECRET: 'x'.repeat(32),
+  TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
+  SMTP_URL: 'smtp://localhost:1025',
+  EMAIL_FROM: 'Test <no-reply@example.test>',
 };
 
 describe('parseServerEnv (SR-10)', () => {
@@ -12,6 +16,8 @@ describe('parseServerEnv (SR-10)', () => {
 
     expect(env.APP_ENV).toBe('development');
     expect(env.LOG_LEVEL).toBe('info');
+    expect(env.BREACHED_PASSWORD_CHECK).toBe('hibp');
+    expect(env.TRUSTED_PROXY_HOPS).toBe(0);
     expect(env.SENTRY_DSN).toBeUndefined();
   });
 
@@ -22,10 +28,36 @@ describe('parseServerEnv (SR-10)', () => {
   });
 
   it('lists every invalid variable without echoing secret values', () => {
-    const run = () => parseServerEnv({ APP_URL: 'not a url', DATABASE_URL: 'secret-value' });
+    const run = () =>
+      parseServerEnv({ ...VALID, APP_URL: 'not a url', AUTH_SECRET: 'tiny-secret' });
 
     expect(run).toThrow(/APP_URL/);
-    expect(run).toThrow(/DATABASE_URL/);
-    expect(run).not.toThrow(/secret-value/);
+    expect(run).toThrow(/AUTH_SECRET/);
+    expect(run).not.toThrow(/tiny-secret/);
+  });
+
+  it('SR-6 requires a 32-byte encryption key', () => {
+    const run = () =>
+      parseServerEnv({ ...VALID, TOKEN_ENCRYPTION_KEY: Buffer.alloc(16).toString('base64') });
+
+    expect(run).toThrow(/TOKEN_ENCRYPTION_KEY/);
+  });
+
+  it('SR-3 requires CAPTCHA keys in production', () => {
+    expect(() => parseServerEnv({ ...VALID, APP_ENV: 'production' })).toThrow(
+      /TURNSTILE_SECRET_KEY/,
+    );
+    expect(() =>
+      parseServerEnv({
+        ...VALID,
+        APP_ENV: 'production',
+        TURNSTILE_SECRET_KEY: 'secret',
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site',
+      }),
+    ).not.toThrow();
+  });
+
+  it('needs both Google sign-in values or neither', () => {
+    expect(() => parseServerEnv({ ...VALID, AUTH_GOOGLE_ID: 'id' })).toThrow(/AUTH_GOOGLE_ID/);
   });
 });

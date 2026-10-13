@@ -1,4 +1,4 @@
-import type { DatabaseClient } from './client';
+import type { DbClient } from './db-client';
 
 export interface HealthRepository {
   /** True when a trivial query succeeds. */
@@ -6,7 +6,7 @@ export interface HealthRepository {
 }
 
 /** Database health checks used by /api/health and uptime monitoring (NFR-10). */
-export function createHealthRepository(db: DatabaseClient): HealthRepository {
+export function createHealthRepository(db: DbClient): HealthRepository {
   return {
     async isDatabaseReachable() {
       try {

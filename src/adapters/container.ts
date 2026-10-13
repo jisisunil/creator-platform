@@ -1,22 +1,55 @@
 import { getServerEnv } from '@/config/env';
+import type { ServiceContext } from '@/services/context';
 import { type Clock, systemClock } from './clock';
+import { createArgon2PasswordHasher } from './crypto/password-hasher';
+import { createAesGcmTokenCipher } from './crypto/token-cipher';
+import { createTotpService } from './crypto/totp';
 import { createDatabaseClient, type DatabaseClient } from './db/client';
-import { createHealthRepository, type HealthRepository } from './db/health-repository';
+import type { HealthRepository } from './db/health-repository';
+import { createRepositories } from './db/repositories';
+import { createTransactionRunner } from './db/transaction';
+import { createSmtpEmailSender, type EmailSender } from './email/email-sender';
+import { createPgBossJobQueue } from './jobs/job-queue';
+import {
+  createHibpBreachedPasswordChecker,
+  createOfflineBreachedPasswordChecker,
+} from './security/breached-password-checker';
+import {
+  createTurnstileCaptchaVerifier,
+  disabledCaptchaVerifier,
+} from './security/captcha-verifier';
 
 /** Every concrete adapter, wired in one place (CLAUDE.md §4). */
-export interface Container {
+export interface Container extends ServiceContext {
   readonly db: DatabaseClient;
   readonly clock: Clock;
   readonly healthRepository: HealthRepository;
+  readonly emailSender: EmailSender;
 }
 
 function buildContainer(): Container {
   const env = getServerEnv();
   const db = createDatabaseClient(env.DATABASE_URL);
+  const repos = createRepositories(db);
   return {
     db,
+    repos,
+    transaction: createTransactionRunner(db),
     clock: systemClock,
-    healthRepository: createHealthRepository(db),
+    healthRepository: repos.health,
+    passwordHasher: createArgon2PasswordHasher(),
+    breachedPasswords:
+      env.BREACHED_PASSWORD_CHECK === 'hibp'
+        ? createHibpBreachedPasswordChecker()
+        : createOfflineBreachedPasswordChecker(),
+    captcha: env.TURNSTILE_SECRET_KEY
+      ? createTurnstileCaptchaVerifier(env.TURNSTILE_SECRET_KEY)
+      : disabledCaptchaVerifier,
+    tokenCipher: createAesGcmTokenCipher(env.TOKEN_ENCRYPTION_KEY),
+    totp: createTotpService(),
+    jobQueue: createPgBossJobQueue(env.DATABASE_URL),
+    emailSender: createSmtpEmailSender(env.SMTP_URL, env.EMAIL_FROM),
+    appUrl: env.APP_URL,
   };
 }
 

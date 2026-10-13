@@ -2,6 +2,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    restart: unless-stopped
     environment:
       POSTGRES_USER: creator
       POSTGRES_PASSWORD: creator_dev_password
@@ -16,6 +17,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # web UI and API
 
 volumes:
   postgres-data:

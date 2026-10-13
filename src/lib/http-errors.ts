@@ -1,6 +1,9 @@
 import * as Sentry from '@sentry/nextjs';
 import { type DomainErrorCode, type FieldErrors, isDomainError } from '@/domain/errors';
+import type { ErrorCode } from './http-errors-codes';
 import { getLogger } from './logger';
+
+export type { ErrorCode };
 
 const STATUS_BY_CODE: Readonly<Record<DomainErrorCode, number>> = {
   VALIDATION_FAILED: 400,
@@ -12,9 +15,12 @@ const STATUS_BY_CODE: Readonly<Record<DomainErrorCode, number>> = {
   RATE_LIMITED: 429,
   PLAN_LIMIT_REACHED: 402,
   REQUEST_EXPIRED: 410,
+  INVALID_CREDENTIALS: 401,
+  ACCOUNT_SUSPENDED: 403,
+  EMAIL_NOT_VERIFIED: 403,
+  CAPTCHA_REQUIRED: 400,
+  INVALID_LINK: 410,
 };
-
-export type ErrorCode = DomainErrorCode | 'INTERNAL';
 
 export interface ErrorBody {
   readonly error: { readonly code: ErrorCode; readonly fieldErrors?: FieldErrors };

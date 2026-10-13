@@ -1,3 +1,5 @@
+const CAPTCHA_ORIGIN = 'https://challenges.cloudflare.com';
+
 export interface CspOptions {
   readonly nonce: string;
   readonly isDevelopment: boolean;
@@ -5,6 +7,8 @@ export interface CspOptions {
   readonly isHttps: boolean;
   /** Origin errors are reported to, e.g. "https://o123.ingest.sentry.io". */
   readonly errorReportingOrigin?: string;
+  /** True when the CAPTCHA widget is configured; it runs in a Cloudflare iframe. */
+  readonly isCaptchaEnabled?: boolean;
 }
 
 /**
@@ -31,6 +35,7 @@ export function buildContentSecurityPolicy(options: CspOptions): string {
     "img-src 'self' blob: data:",
     "font-src 'self'",
     `connect-src ${connectSources.join(' ')}`,
+    `frame-src ${options.isCaptchaEnabled ? CAPTCHA_ORIGIN : "'none'"}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

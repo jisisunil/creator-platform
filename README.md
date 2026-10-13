@@ -9,7 +9,8 @@ search, shortlist, chat and track campaigns.
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/)
 
-> **Status:** Phase a (skeleton). Accounts, profiles, search and the rest arrive in phases b–h.
+> **Status:** Phases a (skeleton) and b (accounts, consent, security basics) are built. Creator
+> profiles, search, collaboration, plans, admin and infrastructure arrive in phases c–i.
 
 ## Set up (local)
 
@@ -17,11 +18,13 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 
 1. `npm install`
 2. `cp .env.example .env` (the defaults work with Docker Compose)
-3. `docker compose up -d` starts PostgreSQL 16 with pgvector, plus a separate test database
+3. `docker compose up -d` starts PostgreSQL 16 with pgvector (plus a test database) and Mailpit
 4. `npm run db:migrate` applies migrations
-5. `npm run db:seed` loads reference data (country, languages, categories, plans)
+5. `npm run db:seed` loads reference data and fake demo accounts (logins printed; password
+   `Demo-Password-2026`; the admin sets up two-factor on first sign-in)
 6. `npm run dev`, then open http://localhost:3000
-7. `npm run worker` (in a second terminal) runs background jobs
+7. `npm run worker` (in a second terminal) runs background jobs, including sending email
+8. Read emails sent in development at http://localhost:8025 (Mailpit)
 
 ## Commands
 
@@ -32,24 +35,31 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 | `npm run check`                                  | Lint, format check, typecheck, unit and integration tests. Run before every commit |
 | `npm run test:unit` / `npm run test:integration` | One test project only (integration needs Docker)                                   |
 | `npm run test:coverage`                          | Tests with the 80% line-coverage floor on `domain/` and `services/`                |
-| `npm run test:e2e`                               | Build, start, and run Playwright end-to-end tests (desktop and 360px phone)        |
+| `npm run test:e2e`                               | Build, then run Playwright tests against the app and worker (desktop and 360px)    |
 | `npm run db:migrate`                             | Create/apply migrations in development                                             |
 | `npm run db:seed`                                | Load reference and demo data (refuses to run when `APP_ENV=production`)            |
-| `docker compose up -d`                           | Local PostgreSQL (pgvector)                                                        |
+| `docker compose up -d`                           | Local PostgreSQL (pgvector) and Mailpit                                            |
 
 ## Environment variables
 
 All variables are documented in [.env.example](.env.example) and validated at startup by
 [src/config/env.ts](src/config/env.ts); the app refuses to start if any are invalid.
 
-| Variable                               | Required         | Purpose                                              |
-| -------------------------------------- | ---------------- | ---------------------------------------------------- |
-| `APP_ENV`                              | no (development) | development, test, staging or production             |
-| `APP_URL`                              | yes              | Public base URL                                      |
-| `DATABASE_URL`                         | yes              | PostgreSQL connection                                |
-| `DATABASE_URL_TEST`                    | tests only       | Integration-test database (name must end in `_test`) |
-| `LOG_LEVEL`                            | no (info)        | Log verbosity                                        |
-| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | no               | Error reporting; personal data is not collected      |
+| Variable                                                 | Required           | Purpose                                                       |
+| -------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
+| `APP_ENV`                                                | no (development)   | development, test, staging or production                      |
+| `APP_URL`                                                | yes                | Public base URL                                               |
+| `DATABASE_URL`                                           | yes                | PostgreSQL connection                                         |
+| `DATABASE_URL_TEST`                                      | tests only         | Integration-test database (name must end in `_test`)          |
+| `LOG_LEVEL`                                              | no (info)          | Log verbosity                                                 |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                   | no                 | Error reporting; personal data is not collected               |
+| `AUTH_SECRET`                                            | yes                | Signs short-lived Google sign-up state                        |
+| `TOKEN_ENCRYPTION_KEY`                                   | yes                | 32-byte key encrypting TOTP secrets (and social tokens later) |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                   | no                 | Google sign-in; set both or neither                           |
+| `SMTP_URL`, `EMAIL_FROM`                                 | yes                | Outgoing email (Mailpit locally)                              |
+| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | staging/production | CAPTCHA                                                       |
+| `BREACHED_PASSWORD_CHECK`                                | no (hibp)          | `hibp` online check or `offline` list                         |
+| `TRUSTED_PROXY_HOPS`                                     | no (0)             | Reverse proxies to trust for the client IP                    |
 
 ## Architecture
 

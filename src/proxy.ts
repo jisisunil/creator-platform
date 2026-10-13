@@ -1,6 +1,11 @@
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextRequest, type NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
+import {
+  isHttpsApp,
+  sessionCookieName,
+  sessionCookieOptions,
+} from './lib/auth/session-cookie-config';
 import { buildContentSecurityPolicy, originOfDsn } from './lib/csp';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -19,6 +24,7 @@ export default function proxy(request: NextRequest): NextResponse {
     isDevelopment: process.env.NODE_ENV === 'development',
     isHttps: process.env.APP_URL?.startsWith('https://') ?? false,
     errorReportingOrigin: originOfDsn(process.env.NEXT_PUBLIC_SENTRY_DSN),
+    isCaptchaEnabled: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
   });
 
   const headers = new Headers(request.headers);
@@ -27,7 +33,23 @@ export default function proxy(request: NextRequest): NextResponse {
 
   const response = intlMiddleware(new NextRequest(request, { headers }));
   response.headers.set(CSP_HEADER, csp);
+  refreshSessionCookie(request, response);
   return response;
+}
+
+/**
+ * SR-2 sliding expiry, browser side: re-issue the session cookie with a full max-age on
+ * each page load. The server-side expiry slides in resolveSession; an expired or revoked
+ * session is rejected there whatever the cookie says. GET only: server actions (POST) may
+ * be signing out, and must not have the cookie put back.
+ */
+function refreshSessionCookie(request: NextRequest, response: NextResponse): void {
+  const isHttps = isHttpsApp();
+  const name = sessionCookieName(isHttps);
+  const token = request.cookies.get(name)?.value;
+  if (request.method === 'GET' && token && !response.cookies.get(name)) {
+    response.cookies.set(name, token, sessionCookieOptions(isHttps));
+  }
 }
 
 export const config = {

@@ -5,6 +5,8 @@ import { CONTENT_LANGUAGES } from '@/config/languages';
 import { PLAN_DEFINITIONS } from '@/config/plans';
 import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 
+const PRIVACY_NOTICE_PUBLISHED_AT = new Date('2026-10-09T00:00:00Z');
+
 /** Upserts countries, languages, categories, plans and settings. Safe to run repeatedly. */
 export async function seedReferenceData(db: DatabaseClient): Promise<void> {
   for (const country of COUNTRY_SETTINGS) {
@@ -14,6 +16,23 @@ export async function seedReferenceData(db: DatabaseClient): Promise<void> {
       enabledPlatforms: [...country.enabledPlatforms],
     };
     await db.countrySettings.upsert({ where: { code: country.code }, create: data, update: data });
+  }
+
+  // PR-3: the first published notice per country. Later versions are added by migration
+  // or admin tooling, with isMaterialChange set when users must agree again.
+  for (const country of COUNTRY_SETTINGS) {
+    await db.privacyNotice.upsert({
+      where: {
+        countryCode_version: { countryCode: country.code, version: country.privacyNoticeVersion },
+      },
+      create: {
+        countryCode: country.code,
+        version: country.privacyNoticeVersion,
+        publishedAt: PRIVACY_NOTICE_PUBLISHED_AT,
+        isMaterialChange: false,
+      },
+      update: {},
+    });
   }
 
   for (const [index, language] of CONTENT_LANGUAGES.entries()) {

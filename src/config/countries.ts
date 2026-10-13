@@ -31,3 +31,6 @@ export const COUNTRY_SETTINGS: readonly CountrySettingsDefinition[] = [
     isEnabled: true,
   },
 ];
+
+/** Country new accounts belong to while only one market is enabled (India at launch). */
+export const LAUNCH_COUNTRY_CODE = 'IN';

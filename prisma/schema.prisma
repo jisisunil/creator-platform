@@ -41,8 +41,11 @@ model CountrySettings {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
-  categories Category[]
-  plans      Plan[]
+  categories     Category[]
+  plans          Plan[]
+  users          User[]
+  brands         Brand[]
+  privacyNotices PrivacyNotice[]
 }
 
 model Language {
@@ -104,6 +107,7 @@ model Plan {
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
   country                  CountrySettings @relation(fields: [countryCode], references: [code])
+  brands                   Brand[]
 
   @@unique([code, countryCode])
   @@index([countryCode])
@@ -116,4 +120,285 @@ model PlatformSetting {
   value     Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Accounts, sessions and security (FR-1, UC-A, SR-1..5, SR-13)
+// Personal data: User, AuthAccount, Session, OneTimeToken, ConsentRecord,
+// AuditEvent (IP), EmailOutbox, BrandMember, BrandInvite. All are covered by the
+// retention job; export and deletion arrive in phase g.
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  CREATOR
+  BRAND
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION // signed up, email not verified yet (deleted after 7 days)
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                  String     @id @default(cuid())
+  /// Always stored lower-cased and trimmed.
+  email               String     @unique
+  emailVerifiedAt     DateTime?
+  /// Argon2id hash; null for Google-only accounts.
+  passwordHash        String?
+  name                String
+  role                UserRole
+  status              UserStatus @default(PENDING_VERIFICATION)
+  countryCode         String
+  locale              String
+  failedLoginCount    Int        @default(0)
+  lockedUntil         DateTime?
+  /// TOTP secret encrypted with the token cipher (SR-4, admins).
+  totpSecretEncrypted String?
+  totpEnabledAt       DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  country       CountrySettings @relation(fields: [countryCode], references: [code])
+  authAccounts  AuthAccount[]
+  sessions      Session[]
+  oneTimeTokens OneTimeToken[]
+  consents      ConsentRecord[]
+  brandMember   BrandMember?
+  sentInvites   BrandInvite[]
+  emailOutbox   EmailOutbox[]
+
+  @@index([status, createdAt])
+  @@index([role])
+  @@index([countryCode])
+}
+
+/// External sign-in identities (Google). Only ids are stored, no provider tokens.
+model AuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Server-side sessions (SR-2). Only a SHA-256 hash of the cookie token is stored.
+model Session {
+  id                  String    @id @default(cuid())
+  tokenHash           String    @unique
+  userId              String
+  expiresAt           DateTime
+  lastSeenAt          DateTime
+  ipAddress           String?
+  userAgent           String?
+  /// Hash of the user agent, used to spot sign-ins from a new device (SEC-9).
+  deviceHash          String
+  /// Set when an admin has entered a TOTP code in this session (SR-4).
+  twoFactorVerifiedAt DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+enum OneTimeTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  CHANGE_EMAIL
+}
+
+/// Single-use emailed links. Only a hash of the token is stored.
+model OneTimeToken {
+  id        String              @id @default(cuid())
+  purpose   OneTimeTokenPurpose
+  tokenHash String              @unique
+  userId    String
+  /// Address the link was sent to (the new address for CHANGE_EMAIL).
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+/// Published privacy notice versions per country (PR-1, PR-3). Text lives in i18n.
+model PrivacyNotice {
+  id               String          @id @default(cuid())
+  countryCode      String
+  version          String
+  publishedAt      DateTime
+  /// True when purposes changed, so users must agree again (PRV-8).
+  isMaterialChange Boolean
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  country          CountrySettings @relation(fields: [countryCode], references: [code])
+
+  @@unique([countryCode, version])
+}
+
+enum ConsentKind {
+  AGE_CONFIRMATION
+  PRIVACY_NOTICE
+  MARKETING
+}
+
+/// Append-only consent history (PR-2, PR-3, PR-4). Rows are never updated.
+model ConsentRecord {
+  id            String      @id @default(cuid())
+  userId        String
+  kind          ConsentKind
+  isGranted     Boolean
+  noticeVersion String
+  ipAddress     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+}
+
+/// Fixed-window counters for rate limiting (SR-3, SR-11). Keys are hashed.
+model RateLimitCounter {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime
+  count       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([key, windowStart])
+  @@index([windowStart])
+}
+
+enum AuditCategory {
+  SECURITY
+  ADMIN
+  DATA
+}
+
+/// Append-only audit and security log (SR-13). No passwords, tokens or chat content;
+/// emails are masked. Kept for one year.
+model AuditEvent {
+  id            String        @id @default(cuid())
+  category      AuditCategory
+  action        String
+  actorUserId   String?
+  subjectUserId String?
+  ipAddress     String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([category, createdAt])
+  @@index([action, createdAt])
+  @@index([actorUserId])
+  @@index([subjectUserId])
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+/// Transactional outbox: emails are written in the same transaction as the change
+/// that causes them, then sent by the worker.
+model EmailOutbox {
+  id        String      @id @default(cuid())
+  userId    String?
+  toAddress String
+  template  String
+  locale    String
+  /// Template variables; cleared once sent because they may hold one-time links.
+  payload   Json?
+  status    EmailStatus @default(PENDING)
+  attempts  Int         @default(0)
+  lastError String?
+  sentAt    DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Brands and teams (UC-A6)
+// ---------------------------------------------------------------------------
+
+enum BrandMemberRole {
+  OWNER
+  MEMBER
+}
+
+model Brand {
+  id            String          @id @default(cuid())
+  name          String
+  industry      String
+  website       String?
+  countryCode   String
+  /// Company email domain (null for public providers); used for one trial per brand (UC-B1).
+  emailDomain   String?
+  planId        String
+  planStartedAt DateTime
+  trialEndsAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  country       CountrySettings @relation(fields: [countryCode], references: [code])
+  plan          Plan            @relation(fields: [planId], references: [id])
+  members       BrandMember[]
+  invites       BrandInvite[]
+
+  @@index([countryCode])
+  @@index([planId])
+  @@index([emailDomain])
+}
+
+model BrandMember {
+  id        String          @id @default(cuid())
+  brandId   String
+  /// One brand per account.
+  userId    String          @unique
+  role      BrandMemberRole
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+}
+
+model BrandInvite {
+  id              String    @id @default(cuid())
+  brandId         String
+  email           String
+  tokenHash       String    @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  brand           Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  invitedBy       User      @relation(fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([email])
+  @@index([invitedByUserId])
+  @@index([expiresAt])
 }

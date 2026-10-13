@@ -1,3 +1,4 @@
+import { JOB_NAMES } from '@/config/jobs';
 import type { JobDefinition } from '../job-definition';
 
 /**
@@ -5,7 +6,7 @@ import type { JobDefinition } from '../job-definition';
  * no heartbeat has completed recently.
  */
 export const heartbeatJob: JobDefinition = {
-  name: 'system.heartbeat',
+  name: JOB_NAMES.heartbeat,
   schedule: '*/5 * * * *',
   scheduleTimezone: 'UTC',
   handle: async () => ({ beats: 1 }),

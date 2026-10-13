@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['pino', 'pg', 'pg-boss'],
   headers: async () => [{ source: '/:path*', headers: securityHeaders }],
+  // Next defaults to one build worker per CPU; on a busy 16-thread laptop that ran out of
+  // memory. Four keeps builds predictable on developer machines and CI runners.
+  experimental: { cpus: 4 },
 };
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');

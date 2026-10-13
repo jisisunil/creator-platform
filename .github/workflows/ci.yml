@@ -19,6 +19,13 @@ env:
   DATABASE_URL_TEST: postgresql://creator:ci_password@localhost:5432/creator_platform_test
   LOG_LEVEL: warn
   NEXT_TELEMETRY_DISABLED: '1'
+  # Throwaway CI-only secrets; real ones come from the secrets manager (SR-10).
+  AUTH_SECRET: ci-only-auth-secret-not-used-anywhere-else
+  TOKEN_ENCRYPTION_KEY: Y2ktb25seS0zMi1ieXRlLWtleS1mb3ItdGVzdHMhISE=
+  SMTP_URL: smtp://localhost:1025
+  EMAIL_FROM: CI <no-reply@example.invalid>
+  # Tests never call outside services.
+  BREACHED_PASSWORD_CHECK: offline
 
 jobs:
   check:
@@ -36,6 +43,9 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U creator"
           --health-interval 5s --health-timeout 5s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ['1025:1025', '8025:8025']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -52,10 +62,12 @@ jobs:
         run: npm run test:coverage
       - name: Dependency audit (production dependencies, high and above)
         run: npm audit --omit=dev --audit-level=high
+      - name: Seed reference data and demo accounts for E2E
+        run: npx prisma db seed
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: End-to-end tests
-        run: npm run test:e2e
+        run: npx playwright test
         env:
           CI: 'true'
       - uses: actions/upload-artifact@v4

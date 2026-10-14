@@ -6,10 +6,11 @@ vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
 describe('mapErrorToResponse', () => {
   it('maps a domain error to its status and stable code', () => {
-    const mapped = mapErrorToResponse(planLimitReached());
+    const mapped = mapErrorToResponse(planLimitReached('requestsUsed'));
 
     expect(mapped.status).toBe(402);
     expect(mapped.body.error.code).toBe('PLAN_LIMIT_REACHED');
+    expect(mapped.body.error.fieldErrors).toEqual({ plan: 'plan.requestsUsed' });
   });
 
   it('includes field errors for validation failures', () => {

@@ -3,6 +3,7 @@ import { Fragment } from 'react';
 import { LAUNCH_COUNTRY_CODE } from '@/config/countries';
 import { getContainer } from '@/adapters/container';
 import { PageShell } from '@/components/layout/PageShell';
+import { PlanLimitAlert } from '@/components/plans/PlanLimitAlert';
 import { Alert } from '@/components/ui/alert';
 import { isDomainError } from '@/domain/errors';
 import { Link } from '@/i18n/navigation';
@@ -35,7 +36,11 @@ export default async function ComparePage({
     if (!isDomainError(error)) throw error;
     return (
       <PageShell title={t('title')}>
-        <Alert>{error.code === 'PLAN_LIMIT_REACHED' ? t('upgrade') : t('needTwo')}</Alert>
+        {error.code === 'PLAN_LIMIT_REACHED' ? (
+          <PlanLimitAlert reasonKey={error.fieldErrors?.plan} />
+        ) : (
+          <Alert>{t('needTwo')}</Alert>
+        )}
       </PageShell>
     );
   }

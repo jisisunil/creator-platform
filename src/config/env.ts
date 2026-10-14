@@ -31,6 +31,8 @@ const serverEnvSchema = z
 
     SMTP_URL: z.url(),
     EMAIL_FROM: z.string().min(3),
+    /** Where brands ask to change plan or buy credit packs (no online payments yet). */
+    SALES_EMAIL: z.email().default('sales@example.invalid'),
 
     TURNSTILE_SECRET_KEY: z.string().optional(),
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
@@ -61,6 +63,13 @@ const serverEnvSchema = z
         code: 'custom',
         path: ['SOCIAL_PROVIDER_MODE'],
         message: 'mock social providers are for development only',
+      });
+    }
+    if (isLive && env.SALES_EMAIL.endsWith('.invalid')) {
+      context.addIssue({
+        code: 'custom',
+        path: ['SALES_EMAIL'],
+        message: 'set a real sales address outside development',
       });
     }
     if (isLive && env.MALWARE_SCANNER === 'disabled') {

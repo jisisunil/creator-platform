@@ -125,7 +125,7 @@ export async function saveSearch(
   input: { userId: string; name: string; filters: SearchFilters },
 ): Promise<string> {
   const membership = await requireBrandMembership(ctx.repos, input.userId);
-  if (!membership.plan.canSaveSearch) throw planLimitReached();
+  if (!membership.plan.canSaveSearch) throw planLimitReached('featureNotIncluded');
   const existing = await ctx.repos.discovery.countSavedSearches(membership.brandId);
   if (existing >= MAX_SAVED_SEARCHES_PER_BRAND) throw validationFailed({ name: 'search.tooMany' });
   const { countryCode: _country, ...filters } = input.filters;
@@ -202,7 +202,7 @@ export async function compareCreators(
   input: { userId: string; creatorIds: readonly string[] },
 ): Promise<CreatorComparison[]> {
   const membership = await requireBrandMembership(ctx.repos, input.userId);
-  if (!membership.plan.canCompare) throw planLimitReached();
+  if (!membership.plan.canCompare) throw planLimitReached('featureNotIncluded');
   const ids = [...new Set(input.creatorIds)];
   if (ids.length < COMPARE_MIN || ids.length > COMPARE_MAX) {
     throw validationFailed({ creatorIds: 'search.compareCount' });

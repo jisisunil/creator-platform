@@ -14,6 +14,7 @@ export interface PlanAllowance {
   readonly canCampaignReports: boolean;
   readonly billingPeriod: 'NONE' | 'MONTHLY';
   readonly contactRequestsPerPeriod: number;
+  readonly usesCreditPacks: boolean;
 }
 
 export interface BrandMembership {
@@ -23,6 +24,7 @@ export interface BrandMembership {
   readonly role: BrandMemberRole;
   readonly seatLimit: number;
   readonly planStartedAt: Date;
+  readonly trialEndsAt: Date | null;
   readonly plan: PlanAllowance;
 }
 
@@ -60,6 +62,7 @@ export function createBrandRepository(db: DbClient) {
       planId: string;
       planStartedAt: Date;
       trialEndsAt: Date | null;
+      hasHadTrial: boolean;
       ownerUserId: string;
     }): Promise<string> {
       const { ownerUserId, ...brand } = data;
@@ -81,6 +84,7 @@ export function createBrandRepository(db: DbClient) {
               name: true,
               countryCode: true,
               planStartedAt: true,
+              trialEndsAt: true,
               plan: {
                 select: {
                   code: true,
@@ -93,6 +97,7 @@ export function createBrandRepository(db: DbClient) {
                   canCampaignReports: true,
                   billingPeriod: true,
                   contactRequestsPerPeriod: true,
+                  usesCreditPacks: true,
                 },
               },
             },
@@ -107,6 +112,7 @@ export function createBrandRepository(db: DbClient) {
         role: row.role,
         seatLimit: row.brand.plan.seatLimit,
         planStartedAt: row.brand.planStartedAt,
+        trialEndsAt: row.brand.trialEndsAt,
         plan: row.brand.plan,
       };
     },

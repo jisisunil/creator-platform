@@ -77,13 +77,7 @@ export function CreateShortlistForm() {
   );
   return (
     <form action={formAction} onSubmit={onSubmit} noValidate className="grid gap-3">
-      {state.status === 'error' && state.code === 'PLAN_LIMIT_REACHED' ? (
-        <p role="alert" className="text-destructive text-sm">
-          {t('limitReached')}
-        </p>
-      ) : (
-        <FormStatus state={state} />
-      )}
+      <FormStatus state={state} />
       <FormField name="name" label={t('name')} error={fieldErrors.name} />
       <SubmitButton>{t('create')}</SubmitButton>
     </form>
@@ -99,13 +93,7 @@ export function SaveSearchForm({ query }: { query: string }) {
   );
   return (
     <form action={formAction} onSubmit={onSubmit} noValidate className="grid gap-3">
-      {state.status === 'error' && state.code === 'PLAN_LIMIT_REACHED' ? (
-        <p role="alert" className="text-sm">
-          {t('upgradeToSave')}
-        </p>
-      ) : (
-        <FormStatus state={state} successMessage={t('saved')} />
-      )}
+      <FormStatus state={state} successMessage={t('saved')} />
       <input type="hidden" name="query" value={query} />
       <FormField name="name" label={t('saveName')} error={fieldErrors.name} />
       <SubmitButton variant="outline">{t('save')}</SubmitButton>

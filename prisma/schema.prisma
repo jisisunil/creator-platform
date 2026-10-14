@@ -107,6 +107,8 @@ model Plan {
   canCompare               Boolean
   canCampaignReports       Boolean
   canCsvExport             Boolean
+  /// Pay-as-you-go: contact requests come from bought credit packs, not a monthly allowance.
+  usesCreditPacks          Boolean         @default(false)
   isActive                 Boolean         @default(true)
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
@@ -149,6 +151,9 @@ model User {
   id                  String     @id @default(cuid())
   /// Always stored lower-cased and trimmed.
   email               String     @unique
+  /// The mailbox behind the email (Gmail dots and "+tags" removed), to spot repeated
+  /// sign-ups for trials (UC-B1). Derived from the email; never shown.
+  canonicalEmail      String?
   emailVerifiedAt     DateTime?
   /// Argon2id hash; null for Google-only accounts.
   passwordHash        String?
@@ -188,6 +193,7 @@ model User {
   @@index([status, createdAt])
   @@index([role])
   @@index([countryCode])
+  @@index([canonicalEmail])
 }
 
 /// External sign-in identities (Google). Only ids are stored, no provider tokens.
@@ -361,34 +367,41 @@ enum BrandMemberRole {
 }
 
 model Brand {
-  id            String          @id @default(cuid())
-  name          String
-  industry      String
-  website       String?
-  countryCode   String
+  id                      String          @id @default(cuid())
+  name                    String
+  industry                String
+  website                 String?
+  countryCode             String
   /// Company email domain (null for public providers); used for one trial per brand (UC-B1).
-  emailDomain   String?
-  planId        String
-  planStartedAt DateTime
-  trialEndsAt   DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  country       CountrySettings @relation(fields: [countryCode], references: [code])
-  plan          Plan            @relation(fields: [planId], references: [id])
-  members       BrandMember[]
-  invites       BrandInvite[]
-  shortlists    Shortlist[]
-  savedSearches SavedSearch[]
-  profileViews  ProfileView[]
-  campaigns     Campaign[]
-  requests      CollabRequest[]
-  blocks        Block[]
-  chatThreads   ChatThread[]
-  deals         Deal[]
+  emailDomain             String?
+  planId                  String
+  planStartedAt           DateTime
+  trialEndsAt             DateTime?
+  /// UC-B1: set when this brand's free trial started; one trial per company.
+  hasHadTrial             Boolean         @default(false)
+  /// Trial reminder emails already sent (FR-12.1).
+  trialEndingNoticeSentAt DateTime?
+  trialEndedNoticeSentAt  DateTime?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  country                 CountrySettings @relation(fields: [countryCode], references: [code])
+  plan                    Plan            @relation(fields: [planId], references: [id])
+  members                 BrandMember[]
+  invites                 BrandInvite[]
+  shortlists              Shortlist[]
+  savedSearches           SavedSearch[]
+  profileViews            ProfileView[]
+  creditPacks             CreditPack[]
+  campaigns               Campaign[]
+  requests                CollabRequest[]
+  blocks                  Block[]
+  chatThreads             ChatThread[]
+  deals                   Deal[]
 
   @@index([countryCode])
   @@index([planId])
-  @@index([emailDomain])
+  @@index([emailDomain, hasHadTrial])
+  @@index([trialEndsAt])
 }
 
 model BrandMember {
@@ -868,6 +881,8 @@ model CollabRequest {
   campaignId    String
   /// The team member who sent it; kept as null if they leave or delete their account.
   sentByUserId  String?
+  /// The pay-as-you-go pack this request used a credit from, if any.
+  creditPackId  String?
   brief         String
   /// [{ deliverable, quantity }], validated by lib/validation/request-schemas.ts.
   deliverables  Json
@@ -890,6 +905,7 @@ model CollabRequest {
   creator       CreatorProfile      @relation(fields: [creatorId], references: [id])
   campaign      Campaign            @relation(fields: [campaignId], references: [id])
   sentBy        User?               @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
+  creditPack    CreditPack?         @relation(fields: [creditPackId], references: [id], onDelete: SetNull)
   chatThread    ChatThread?
   deal          Deal?
 
@@ -899,6 +915,7 @@ model CollabRequest {
   @@index([status, expiresAt])
   @@index([campaignId])
   @@index([sentByUserId])
+  @@index([creditPackId])
 }
 
 enum BlockSide {
@@ -1168,4 +1185,27 @@ model Rating {
   @@unique([dealId, raterSide])
   @@index([raterUserId])
   @@index([raterSide, visibleFrom])
+}
+
+// ---------------------------------------------------------------------------
+// Pay-as-you-go credit packs (phase f)
+// ---------------------------------------------------------------------------
+
+/// Contact-request credits bought as a pack, valid for 90 days (spec: Monetisation and plans).
+/// Added by an admin after payment until online payments exist (FR-11.4, later).
+model CreditPack {
+  id            String          @id @default(cuid())
+  brandId       String
+  credits       Int
+  creditsUsed   Int             @default(0)
+  priceMinor    Int
+  currencyCode  String
+  expiresAt     DateTime
+  addedByUserId String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  brand         Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  requests      CollabRequest[]
+
+  @@index([brandId, expiresAt])
 }

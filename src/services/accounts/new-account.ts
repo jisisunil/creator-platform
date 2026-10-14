@@ -1,12 +1,10 @@
 import type { Repositories } from '@/adapters/db/repositories';
 import type { UserRecord } from '@/adapters/db/user-repository';
 import { LAUNCH_COUNTRY_CODE } from '@/config/countries';
-import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 import type { SelfServiceRole } from '@/domain/accounts';
 import { companyDomainOf } from '@/domain/email-address';
 import { invalidState } from '@/domain/errors';
-
-const DAY_MS = 86_400_000;
+import { startingPlanFor } from '../plans';
 
 export interface NewAccountDetails {
   readonly role: SelfServiceRole;
@@ -70,36 +68,23 @@ export async function createAccount(
   return user;
 }
 
-/**
- * Starting plan (UC-B1): Free beta while it runs, otherwise a trial. One-trial-per-company
- * detection is added with plans in phase f.
- */
+/** A new brand with its owner, on its starting plan (UC-B1: free beta, trial, one per company). */
 async function createBrandForOwner(
   repos: Repositories,
   now: Date,
   owner: UserRecord,
   brand: { readonly name: string; readonly industry: string },
 ): Promise<void> {
-  const isFreeBetaActive = await repos.reference.getBooleanSetting(
-    'isFreeBetaActive',
-    PLATFORM_SETTING_DEFAULTS.isFreeBetaActive,
-  );
-  const plan = await repos.reference.findPlan(
-    isFreeBetaActive ? 'FREE_BETA' : 'TRIAL',
-    owner.countryCode,
-  );
-  if (!plan) throw invalidState();
-  const trialEndsAt =
-    plan.trialDays === null ? null : new Date(now.getTime() + plan.trialDays * DAY_MS);
-
+  const startingPlan = await startingPlanFor(repos, owner, now);
   await repos.brands.createWithOwner({
     name: brand.name,
     industry: brand.industry,
     countryCode: owner.countryCode,
     emailDomain: companyDomainOf(owner.email),
-    planId: plan.id,
+    planId: startingPlan.planId,
     planStartedAt: now,
-    trialEndsAt,
+    trialEndsAt: startingPlan.trialEndsAt,
+    hasHadTrial: startingPlan.hasHadTrial,
     ownerUserId: owner.id,
   });
 }

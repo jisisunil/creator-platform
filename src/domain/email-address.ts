@@ -16,6 +16,21 @@ export function isDisposableEmail(email: string): boolean {
   return DISPOSABLE_EMAIL_DOMAINS.has(emailDomainOf(email));
 }
 
+const GMAIL_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
+
+/**
+ * UC-B1: the mailbox an email delivers to, to spot repeated sign-ups: "+tags" are dropped
+ * everywhere, and Gmail also ignores dots ("r.avi+2@gmail.com" → "ravi@gmail.com").
+ */
+export function canonicalMailbox(email: string): string {
+  const domain = emailDomainOf(email);
+  const normalised = normaliseEmail(email);
+  const local = normalised.slice(0, normalised.lastIndexOf('@')).split('+')[0] ?? '';
+  return GMAIL_DOMAINS.has(domain)
+    ? `${local.replaceAll('.', '')}@gmail.com`
+    : `${local}@${domain}`;
+}
+
 /** The company domain behind an email, or null for free providers like Gmail (UC-B1). */
 export function companyDomainOf(email: string): string | null {
   const domain = emailDomainOf(email);

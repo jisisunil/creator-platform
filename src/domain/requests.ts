@@ -82,3 +82,17 @@ export function contactPeriodStart(
     ? addMonthsClamped(planStartedAt, months - 1)
     : candidate;
 }
+
+/** FR-11.1: when a monthly allowance renews; null for plans without a period. */
+export function nextContactPeriodStart(
+  billingPeriod: BillingPeriod,
+  planStartedAt: Date,
+  now: Date,
+): Date | null {
+  if (billingPeriod === 'NONE') return null;
+  const currentStart = contactPeriodStart(billingPeriod, planStartedAt, now);
+  const monthsFromPlanStart =
+    (currentStart.getUTCFullYear() - planStartedAt.getUTCFullYear()) * 12 +
+    (currentStart.getUTCMonth() - planStartedAt.getUTCMonth());
+  return addMonthsClamped(planStartedAt, monthsFromPlanStart + 1);
+}

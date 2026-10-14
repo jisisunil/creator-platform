@@ -9,6 +9,7 @@ export const JOB_NAMES = {
   expireRequests: 'requests.expire',
   sendDealReminders: 'deals.send-reminders',
   refreshDealPosts: 'deals.refresh-posts',
+  sendTrialReminders: 'plans.trial-reminders',
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];

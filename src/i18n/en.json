@@ -100,7 +100,8 @@
     "unreadMessages": "{count, plural, one {# unread message} other {# unread messages}}",
     "openRequests": "{count, plural, one {# request waiting} other {# requests waiting}}",
     "deals": "Deals",
-    "campaigns": "Campaigns"
+    "campaigns": "Campaigns",
+    "plan": "Plan and usage"
   },
   "fieldErrors": {
     "validation": {
@@ -181,6 +182,15 @@
     },
     "rating": {
       "allCriteria": "Give 1 to 5 stars for each question."
+    },
+    "plan": {
+      "trialEnded": "Your free trial has ended. You can still search and use shortlists; choose a plan to contact creators.",
+      "requestsUsed": "You've used all the contact requests in your plan for this period.",
+      "noCredits": "You have no contact-request credits left. Buy a credit pack to contact more creators.",
+      "seatsFull": "Your plan's team seats are full. Remove a member or move to a plan with more seats.",
+      "shortlistsFull": "You've reached your plan's number of shortlists.",
+      "featureNotIncluded": "This feature isn't included in your plan.",
+      "invalidExtension": "Extend by 1 to 90 days."
     }
   },
   "industries": {
@@ -499,6 +509,16 @@
       "subject": "How did it go with {otherPartyName}?",
       "body": "Hi {name},\nYour deal for \"{campaignName}\" is complete. Rate {otherPartyName} to help others choose who to work with. Ratings show once you have both rated, or after 14 days.",
       "action": "Rate now"
+    },
+    "trialEnding": {
+      "subject": "Your free trial ends in 3 days",
+      "body": "Hi {name},\nThe free trial for {brandName} ends in 3 days. After that you can still search and use shortlists, but contacting creators needs a plan.",
+      "action": "See plans"
+    },
+    "trialEnded": {
+      "subject": "Your free trial has ended",
+      "body": "Hi {name},\nThe free trial for {brandName} has ended. Your searches and shortlists are still here. Choose a plan to keep contacting creators.",
+      "action": "See plans"
     }
   },
   "platforms": {
@@ -776,7 +796,6 @@
       "saveName": "Name",
       "save": "Save search",
       "saved": "Search saved.",
-      "upgradeToSave": "Saving searches is available on Starter and higher plans.",
       "viewLimit": "You've reached your plan's limit of profile views for this hour. Try again later or upgrade your plan."
     },
     "card": {
@@ -818,13 +837,11 @@
       "noteSaved": "Note saved.",
       "unavailable": "This creator is no longer available.",
       "emptyList": "No creators on this list yet.",
-      "compare": "Compare selected",
-      "limitReached": "You've reached your plan's number of shortlists."
+      "compare": "Compare selected"
     },
     "compare": {
       "title": "Compare creators",
       "needTwo": "Choose 2 to 4 creators to compare, from search or a shortlist.",
-      "upgrade": "Comparing creators is available on Starter and higher plans.",
       "metric": "Metric",
       "location": "Location",
       "tier": "Size",
@@ -895,7 +912,6 @@
       "budgetHint": "Your total budget for this creator. You can agree the final amount later.",
       "deadline": "Content deadline",
       "usageRights": "Content usage rights",
-      "limitReached": "You've used all the contact requests in your plan for this period.",
       "duplicate": "You already have an open request with this creator. Edit it instead of sending another.",
       "send": "Send request",
       "updated": "Request updated. The creator will see the new version.",
@@ -921,8 +937,6 @@
       "noCreator": "We couldn't find that creator. Open their profile from search and try again.",
       "backToSearch": "Back to search",
       "notOpen": "This creator isn't open to collaborations right now.",
-      "allowance": "{remaining} of {limit} contact requests left in this plan period.",
-      "limitReached": "You've used all the contact requests in your plan for this period.",
       "cardTitle": "Work with this creator",
       "start": "Send a collaboration request"
     },
@@ -1159,6 +1173,67 @@
       "reason": "Is this rating unfair? Tell us why",
       "sent": "Thanks. Our team will review this rating.",
       "submit": "Report rating"
+    }
+  },
+  "plans": {
+    "title": "Plan and usage",
+    "intro": "What your plan includes, what you've used, and your options.",
+    "seeUpgradeOptions": "See plans and upgrade options",
+    "current": "Your plan: {name}",
+    "trialEnds": "Trial ends on {date}.",
+    "included": "Included",
+    "notIncluded": "Not included",
+    "names": {
+      "FREE_BETA": "Free beta",
+      "TRIAL": "Trial",
+      "PAY_AS_YOU_GO": "Pay-as-you-go",
+      "STARTER": "Starter",
+      "PRO": "Pro",
+      "AGENCY": "Agency"
+    },
+    "price": {
+      "free": "Free",
+      "perMonth": "{amount} a month",
+      "perPack": "Pay per credit pack"
+    },
+    "features": {
+      "canSaveSearch": "Saved searches",
+      "canCompare": "Compare creators",
+      "canCampaignReports": "Campaign reports",
+      "canCsvExport": "CSV export"
+    },
+    "limits": {
+      "requestsPerMonth": "{count} contact requests a month",
+      "requestsTotal": "{count} contact requests in total",
+      "creditRequests": "Contact requests from credit packs",
+      "seats": "{count, plural, one {# team seat} other {# team seats}}",
+      "shortlists": "Up to {count} shortlists"
+    },
+    "usage": {
+      "requests": "Contact requests",
+      "seats": "Team seats (including pending invites)",
+      "shortlists": "Shortlists",
+      "ofLimit": "{used} of {limit}"
+    },
+    "allowance": {
+      "trialEnded": "Your trial ended on {date}. Contacting creators needs a plan.",
+      "credits": "{remaining, plural, =0 {No credits left.} one {# credit left.} other {# credits left.}}",
+      "period": "{remaining} of {limit} contact requests left.",
+      "renews": "Renews on {date}.",
+      "noRenewal": "These don't renew."
+    },
+    "packs": {
+      "title": "Your credit packs",
+      "line": "{left} of {credits} credits left, valid until {date}",
+      "buyTitle": "Credit packs (pay-as-you-go)",
+      "option": "{credits} contact requests for {price}, valid {days} days",
+      "buy": "Ask for a credit pack",
+      "buySubject": "Credit pack"
+    },
+    "options": {
+      "title": "Upgrade options",
+      "howToChange": "Online payment is coming later. To change plan or buy credits, email",
+      "changeSubject": "Plan change"
     }
   }
 }

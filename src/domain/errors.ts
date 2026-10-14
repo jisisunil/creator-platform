@@ -1,3 +1,5 @@
+import type { PlanLimitReason } from './plans';
+
 /**
  * Expected business failures. Each has a stable `code`; the user-facing text lives in
  * i18n under `errors.<code>`. HTTP mapping happens in one place: src/lib/http-errors.ts.
@@ -60,8 +62,12 @@ export const invalidState = (): DomainError => new DomainError('INVALID_STATE');
 /** Too many attempts in the current window. */
 export const rateLimited = (): DomainError => new DomainError('RATE_LIMITED');
 
-/** The brand's plan does not allow more of this action (FR-11.2). */
-export const planLimitReached = (): DomainError => new DomainError('PLAN_LIMIT_REACHED');
+/**
+ * The brand's plan does not allow this (FR-11.2). The reason travels as the `plan` field
+ * error, an i18n key under `fieldErrors.plan`, so the page can explain it and offer upgrades.
+ */
+export const planLimitReached = (reason: PlanLimitReason): DomainError =>
+  new DomainError('PLAN_LIMIT_REACHED', { plan: `plan.${reason}` });
 
 /** The collaboration request is past its expiry date (FR-7.2). */
 export const requestExpired = (): DomainError => new DomainError('REQUEST_EXPIRED');

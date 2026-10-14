@@ -54,6 +54,8 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },
+  trialEnding: { name: 'Ravi', brandName: 'Spice Co', link: 'https://app.test/en/brand/plan' },
+  trialEnded: { name: 'Ravi', brandName: 'Spice Co', link: 'https://app.test/en/brand/plan' },
   ratingRequested: {
     name: 'Asha',
     otherPartyName: 'Spice Co',

@@ -2,6 +2,7 @@ import type { JobDefinition } from '../job-definition';
 import { refreshDealPostsJob, sendDealRemindersJob } from './deals';
 import { dispatchEmailsJob } from './dispatch-emails';
 import { heartbeatJob } from './heartbeat';
+import { sendTrialRemindersJob } from './plans';
 import { expireRequestsJob } from './requests';
 import { purgeExpiredSecurityDataJob, purgeUnverifiedAccountsJob } from './retention';
 import { queueDueRefreshesJob, refreshSocialAccountJob } from './social-refresh';
@@ -17,4 +18,5 @@ export const ALL_JOBS: readonly JobDefinition[] = [
   expireRequestsJob,
   sendDealRemindersJob,
   refreshDealPostsJob,
+  sendTrialRemindersJob,
 ];

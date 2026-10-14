@@ -55,6 +55,7 @@ describe('parseServerEnv (SR-10)', () => {
     INSTAGRAM_APP_ID: 'ig-id',
     INSTAGRAM_APP_SECRET: 'ig-secret',
     MALWARE_SCANNER: 'clamav',
+    SALES_EMAIL: 'sales@creators.example.in',
   };
 
   it('accepts a complete production configuration', () => {
@@ -79,6 +80,12 @@ describe('parseServerEnv (SR-10)', () => {
   it('SR-9 requires malware scanning in production', () => {
     expect(() => parseServerEnv({ ...PRODUCTION, MALWARE_SCANNER: 'disabled' })).toThrow(
       /MALWARE_SCANNER/,
+    );
+  });
+
+  it('FR-11.2 needs a real sales address in production', () => {
+    expect(() => parseServerEnv({ ...PRODUCTION, SALES_EMAIL: 'sales@example.invalid' })).toThrow(
+      /SALES_EMAIL/,
     );
   });
 

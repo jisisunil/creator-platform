@@ -1,6 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getContainer } from '@/adapters/container';
 import { PageShell } from '@/components/layout/PageShell';
+import { AllowanceSummary, contactBlockedReason } from '@/components/plans/AllowanceSummary';
+import { PlanLimitAlert } from '@/components/plans/PlanLimitAlert';
 import { SendRequestForm } from '@/components/requests/RequestForms';
 import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
@@ -46,16 +48,14 @@ export default async function NewRequestPage({
   }
 
   const context = await getRequestFormContext(container, session.user.id);
+  const blockedReason = contactBlockedReason(context.allowance);
   return (
     <PageShell
       title={t('titleFor', { name: target.displayName })}
-      intro={t('allowance', {
-        remaining: context.allowance.remaining,
-        limit: context.allowance.limit,
-      })}
+      intro={<AllowanceSummary allowance={context.allowance} />}
     >
-      {context.allowance.remaining === 0 ? (
-        <Alert variant="destructive">{t('limitReached')}</Alert>
+      {blockedReason ? (
+        <PlanLimitAlert reasonKey={blockedReason} />
       ) : (
         <Card>
           <SendRequestForm

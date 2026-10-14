@@ -110,7 +110,7 @@ export async function inviteTeamMember(
       pendingInviteCount: await repos.brands.countPendingInvites(membership.brandId, now),
       seatLimit: membership.seatLimit,
     };
-    if (!hasFreeSeat(seats)) throw planLimitReached();
+    if (!hasFreeSeat(seats)) throw planLimitReached('seatsFull');
 
     const token = generateSecureToken();
     await repos.brands.createInvite({

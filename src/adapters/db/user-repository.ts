@@ -1,4 +1,5 @@
 import type { UserRole, UserStatus } from '@/domain/accounts';
+import { canonicalMailbox } from '@/domain/email-address';
 import type { DbClient } from './db-client';
 
 export interface UserRecord {
@@ -55,7 +56,19 @@ export function createUserRepository(db: DbClient) {
     findByEmail: (email: string): Promise<UserRecord | null> =>
       db.user.findUnique({ where: { email }, select: USER_SELECT }),
 
-    create: (data: NewUser): Promise<UserRecord> => db.user.create({ data, select: USER_SELECT }),
+    create: (data: NewUser): Promise<UserRecord> =>
+      db.user.create({
+        data: { ...data, canonicalEmail: canonicalMailbox(data.email) },
+        select: USER_SELECT,
+      }),
+
+    /** UC-B1: another brand owner uses the same mailbox (e.g. a "+tag" or Gmail dots). */
+    async hasOtherBrandOwnerWithMailbox(canonicalEmail: string, exceptUserId: string) {
+      const count = await db.user.count({
+        where: { canonicalEmail, id: { not: exceptUserId }, brandMember: { role: 'OWNER' } },
+      });
+      return count > 0;
+    },
 
     async updateLoginState(
       id: string,
@@ -81,7 +94,10 @@ export function createUserRepository(db: DbClient) {
     },
 
     async updateEmail(id: string, email: string, verifiedAt: Date): Promise<void> {
-      await db.user.update({ where: { id }, data: { email, emailVerifiedAt: verifiedAt } });
+      await db.user.update({
+        where: { id },
+        data: { email, canonicalEmail: canonicalMailbox(email), emailVerifiedAt: verifiedAt },
+      });
     },
 
     async setTotpSecret(id: string, totpSecretEncrypted: string): Promise<void> {

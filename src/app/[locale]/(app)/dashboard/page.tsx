@@ -43,6 +43,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               <Link href="/brand/campaigns">{tNav('campaigns')}</Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/brand/plan">{tNav('plan')}</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="/brand/saved-searches">{tNav('savedSearches')}</Link>
             </Button>
           </div>

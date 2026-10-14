@@ -153,9 +153,6 @@ function RequestFormStatus({
   successMessage?: string;
 }) {
   const t = useTranslations('requests.form');
-  if (state.status === 'error' && state.code === 'PLAN_LIMIT_REACHED') {
-    return <Alert variant="destructive">{t('limitReached')}</Alert>;
-  }
   if (state.status === 'error' && state.code === 'CONFLICT') {
     return <Alert variant="destructive">{t('duplicate')}</Alert>;
   }

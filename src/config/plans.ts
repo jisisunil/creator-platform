@@ -16,6 +16,8 @@ export interface PlanDefinition {
   readonly canCompare: boolean;
   readonly canCampaignReports: boolean;
   readonly canCsvExport: boolean;
+  /** Pay-as-you-go: contact requests come from credit packs instead of a monthly allowance. */
+  readonly usesCreditPacks: boolean;
 }
 
 const INDIA = { countryCode: 'IN', currencyCode: 'INR' } as const;
@@ -40,6 +42,7 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: true,
     canCampaignReports: true,
     canCsvExport: true,
+    usesCreditPacks: false,
   },
   {
     ...INDIA,
@@ -55,6 +58,7 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: false,
     canCampaignReports: false,
     canCsvExport: false,
+    usesCreditPacks: false,
   },
   {
     ...INDIA,
@@ -70,6 +74,7 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: false,
     canCampaignReports: false,
     canCsvExport: false,
+    usesCreditPacks: true,
   },
   {
     ...INDIA,
@@ -85,6 +90,7 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: true,
     canCampaignReports: false,
     canCsvExport: false,
+    usesCreditPacks: false,
   },
   {
     ...INDIA,
@@ -100,6 +106,7 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: true,
     canCampaignReports: true,
     canCsvExport: true,
+    usesCreditPacks: false,
   },
   {
     ...INDIA,
@@ -115,5 +122,17 @@ export const PLAN_DEFINITIONS: readonly PlanDefinition[] = [
     canCompare: true,
     canCampaignReports: true,
     canCsvExport: true,
+    usesCreditPacks: false,
   },
 ];
+
+/** Pay-as-you-go credit packs (spec: ₹499 per 10, ₹1,999 per 50, valid 90 days). */
+export const CREDIT_PACKS = [
+  { code: 'PACK_10', credits: 10, priceMinor: 49_900, currencyCode: 'INR', validDays: 90 },
+  { code: 'PACK_50', credits: 50, priceMinor: 199_900, currencyCode: 'INR', validDays: 90 },
+] as const;
+
+export type CreditPackCode = (typeof CREDIT_PACKS)[number]['code'];
+
+/** Trial reminder: this many days before the trial ends. */
+export const TRIAL_ENDING_NOTICE_DAYS = 3;

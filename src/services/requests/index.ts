@@ -19,13 +19,11 @@ import {
   notAllowed,
   notAvailable,
   notFound,
-  planLimitReached,
   requestExpired,
   validationFailed,
 } from '@/domain/errors';
 import {
   type CollabRequestStatus,
-  contactPeriodStart,
   type DeliverableLine,
   effectiveRequestStatus,
   openPairKey,
@@ -39,6 +37,7 @@ import { createDealFromRequest } from '../deals';
 import { requireBrandMembership } from '../discovery';
 import { requestEmailDispatch } from '../email';
 import { brandContactIds, notifyUsers } from '../notifications';
+import { type ContactAllowance, contactAllowance, useContactRequest } from '../plans';
 import { consumeRateLimit, recordSecurityEvent } from '../security';
 
 export type { RequestSummary } from '@/adapters/db/request-repository';
@@ -108,25 +107,8 @@ async function currencyOf(repos: Repositories, countryCode: string): Promise<str
   return country.currencyCode;
 }
 
-export interface RequestAllowance {
-  readonly used: number;
-  readonly limit: number;
-  readonly remaining: number;
-}
-
-async function allowanceFor(
-  repos: Repositories,
-  membership: BrandMembership,
-  now: Date,
-): Promise<RequestAllowance> {
-  const since = contactPeriodStart(membership.plan.billingPeriod, membership.planStartedAt, now);
-  const used = await repos.requests.countSentSince(membership.brandId, since);
-  const limit = membership.plan.contactRequestsPerPeriod;
-  return { used, limit, remaining: Math.max(0, limit - used) };
-}
-
 export interface RequestFormContext {
-  readonly allowance: RequestAllowance;
+  readonly allowance: ContactAllowance;
   /** Campaign names the brand used before, offered as suggestions. */
   readonly campaignNames: readonly string[];
   /** Earliest deadline the form accepts, "YYYY-MM-DD" (tomorrow, UTC). */
@@ -142,7 +124,7 @@ export async function getRequestFormContext(
   const now = ctx.clock.now();
   const tomorrow = new Date((Math.floor(now.getTime() / DAY_MS) + 1) * DAY_MS);
   return {
-    allowance: await allowanceFor(ctx.repos, membership, now),
+    allowance: await contactAllowance(ctx.repos, membership, now),
     campaignNames: await ctx.repos.requests.listCampaignNames(membership.brandId),
     minDeadline: tomorrow.toISOString().slice(0, 10),
   };
@@ -181,8 +163,6 @@ export async function sendRequest(
 
   const requestId = await ctx.transaction(async (repos) => {
     await repos.brands.lockForUpdate(membership.brandId);
-    const allowance = await allowanceFor(repos, membership, now);
-    if (allowance.remaining === 0) throw planLimitReached();
 
     const creator = await repos.creators.findById(input.creatorId);
     if (!creator || !creator.isSearchable || creator.countryCode !== membership.countryCode) {
@@ -199,9 +179,12 @@ export async function sendRequest(
     const pairKey = openPairKey(membership.brandId, creator.id);
     if (await repos.requests.hasOpenRequest(pairKey)) throw conflict();
 
+    // UC-B2: counted (or a credit taken) in the same transaction as the request itself.
+    const { creditPackId } = await useContactRequest(repos, membership, now);
     const { campaignName, ...rest } = fields;
     const id = await repos.requests.create({
       ...rest,
+      creditPackId,
       campaignId: await repos.requests.campaignIdFor(membership.brandId, campaignName),
       brandId: membership.brandId,
       creatorId: creator.id,

@@ -171,6 +171,7 @@ export function createRequestRepository(db: DbClient) {
         brandId: string;
         creatorId: string;
         sentByUserId: string;
+        creditPackId: string | null;
         currencyCode: string;
         openPairKey: string;
         expiresAt: Date;

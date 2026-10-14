@@ -49,7 +49,7 @@ export async function createShortlist(
 ): Promise<string> {
   const membership = await requireBrandMembership(ctx.repos, input.userId);
   const count = await ctx.repos.shortlists.countForBrand(membership.brandId);
-  if (count >= membership.plan.shortlistLimit) throw planLimitReached();
+  if (count >= membership.plan.shortlistLimit) throw planLimitReached('shortlistsFull');
   return ctx.repos.shortlists.create({
     brandId: membership.brandId,
     createdByUserId: input.userId,
@@ -174,7 +174,7 @@ export async function exportShortlistCsv(
   input: { userId: string; shortlistId: string; labels: CsvLabels },
 ): Promise<{ filename: string; csv: string }> {
   const membership = await requireBrandMembership(ctx.repos, input.userId);
-  if (!membership.plan.canCsvExport) throw planLimitReached();
+  if (!membership.plan.canCsvExport) throw planLimitReached('featureNotIncluded');
   const detail = await getShortlist(ctx, input);
   const rows = detail.entries
     .filter((entry) => entry.creator !== null)

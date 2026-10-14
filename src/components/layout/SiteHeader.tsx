@@ -28,6 +28,9 @@ export async function SiteHeader() {
                   <Link href="/creator/profile" className="underline-offset-4 hover:underline">
                     {t('profile')}
                   </Link>
+                  <Link href="/creator/requests" className="underline-offset-4 hover:underline">
+                    {t('requests')}
+                  </Link>
                   <Link href="/creator/accounts" className="underline-offset-4 hover:underline">
                     {t('accounts')}
                   </Link>
@@ -44,8 +47,8 @@ export async function SiteHeader() {
                   <Link href="/brand/shortlists" className="underline-offset-4 hover:underline">
                     {t('shortlists')}
                   </Link>
-                  <Link href="/brand/saved-searches" className="underline-offset-4 hover:underline">
-                    {t('savedSearches')}
+                  <Link href="/brand/requests" className="underline-offset-4 hover:underline">
+                    {t('requests')}
                   </Link>
                   <Link href="/brand/team" className="underline-offset-4 hover:underline">
                     {t('team')}

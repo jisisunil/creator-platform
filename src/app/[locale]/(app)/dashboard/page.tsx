@@ -34,6 +34,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               <Link href="/brand/shortlists">{tNav('shortlists')}</Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/brand/requests">{tNav('requests')}</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="/brand/saved-searches">{tNav('savedSearches')}</Link>
             </Button>
           </div>
@@ -84,6 +87,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
       <div className="flex flex-wrap gap-3">
         <Button asChild>
           <Link href="/creator/profile">{tCreator('editProfile')}</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/creator/requests">{tCreator('viewRequests')}</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/creator/accounts">{tCreator('manageAccounts')}</Link>

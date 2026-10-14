@@ -179,6 +179,7 @@ model User {
   savedSearches            SavedSearch[]
   sentInvites              BrandInvite[]
   emailOutbox              EmailOutbox[]
+  sentRequests             CollabRequest[]
 
   @@index([status, createdAt])
   @@index([role])
@@ -375,6 +376,9 @@ model Brand {
   shortlists    Shortlist[]
   savedSearches SavedSearch[]
   profileViews  ProfileView[]
+  campaigns     Campaign[]
+  requests      CollabRequest[]
+  blocks        Block[]
 
   @@index([countryCode])
   @@index([planId])
@@ -471,6 +475,8 @@ model CreatorProfile {
   embeddings        CreatorEmbedding[]
   shortlistItems    ShortlistItem[]
   profileViews      ProfileView[]
+  requests          CollabRequest[]
+  blocks            Block[]
 
   @@index([countryCode, stateCode, city])
   @@index([isSearchable, currentScore])
@@ -810,4 +816,95 @@ model ProfileView {
 
   @@index([viewerBrandId, viewedAt])
   @@index([creatorId, viewedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Collaboration (phase e): requests, campaigns, blocks
+// ---------------------------------------------------------------------------
+
+/// What the brand may do with the content (FR-7.1).
+enum UsageRights {
+  CREATOR_CHANNELS_ONLY // posted on the creator's channels only
+  BRAND_ORGANIC // the brand may also repost it on its own channels
+  BRAND_PAID_ADS // the brand may also use it in paid ads
+}
+
+enum CollabRequestStatus {
+  OPEN
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  WITHDRAWN
+}
+
+/// Groups a brand's requests and deals (FR-9.3); created from the campaign name on a request.
+model Campaign {
+  id        String          @id @default(cuid())
+  brandId   String
+  name      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  requests  CollabRequest[]
+
+  @@unique([brandId, name])
+}
+
+/// A brand's collaboration request to a creator (FR-7, UC-R1, UC-R2).
+model CollabRequest {
+  id            String              @id @default(cuid())
+  brandId       String
+  creatorId     String
+  campaignId    String
+  /// The team member who sent it; kept as null if they leave or delete their account.
+  sentByUserId  String?
+  brief         String
+  /// [{ deliverable, quantity }], validated by lib/validation/request-schemas.ts.
+  deliverables  Json
+  /// Optional budget in minor units (paise).
+  budgetMinor   Int?
+  currencyCode  String
+  deadline      DateTime            @db.Date
+  usageRights   UsageRights
+  status        CollabRequestStatus @default(OPEN)
+  /// "brandId:creatorId" while OPEN and null afterwards: one open request per pair (FR-7.3).
+  openPairKey   String?             @unique
+  /// Bumped on every brand edit; the creator accepts the version they saw (UC-R2).
+  version       Int                 @default(1)
+  declineReason String?
+  expiresAt     DateTime
+  respondedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  brand         Brand               @relation(fields: [brandId], references: [id])
+  creator       CreatorProfile      @relation(fields: [creatorId], references: [id])
+  campaign      Campaign            @relation(fields: [campaignId], references: [id])
+  sentBy        User?               @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
+
+  @@index([brandId, createdAt])
+  @@index([brandId, status])
+  @@index([creatorId, status, createdAt])
+  @@index([status, expiresAt])
+  @@index([campaignId])
+  @@index([sentByUserId])
+}
+
+enum BlockSide {
+  CREATOR
+  BRAND
+}
+
+/// A creator blocking a brand, or a brand blocking a creator (FR-8.3, UC-R1).
+model Block {
+  id        String         @id @default(cuid())
+  creatorId String
+  brandId   String
+  blockedBy BlockSide
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  brand     Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, brandId, blockedBy])
+  @@index([brandId])
 }

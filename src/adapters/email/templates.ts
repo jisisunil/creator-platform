@@ -14,6 +14,9 @@ export interface EmailTemplates {
   newDeviceSignIn: { name: string; device: string; time: string };
   teamInvite: { brandName: string; inviterName: string; link: string };
   socialRefreshFailed: { name: string; platform: string; link: string };
+  requestReceived: { name: string; brandName: string; campaignName: string; link: string };
+  requestAccepted: { name: string; creatorName: string; campaignName: string; link: string };
+  requestDeclined: { name: string; creatorName: string; campaignName: string; link: string };
 }
 
 export type EmailTemplateName = keyof EmailTemplates;
@@ -31,6 +34,9 @@ const ACTION_KEYS = {
   confirmEmailChange: 'confirmEmailChange.action',
   teamInvite: 'teamInvite.action',
   socialRefreshFailed: 'socialRefreshFailed.action',
+  requestReceived: 'requestReceived.action',
+  requestAccepted: 'requestAccepted.action',
+  requestDeclined: 'requestDeclined.action',
 } as const satisfies Partial<Record<EmailTemplateName, string>>;
 
 const MESSAGES = { en, hi } as const satisfies Record<SupportedLocale, unknown>;

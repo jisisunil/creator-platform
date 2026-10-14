@@ -49,4 +49,6 @@ export const RATE_LIMITS = {
   /** SR-11 / SEC-3: brand searches per user, and public profile views per IP (scraping). */
   searchPerUser: { limit: 300, windowMs: HOUR_MS },
   publicProfilePerIp: { limit: 120, windowMs: HOUR_MS },
+  /** SR-11 / SEC-6: collaboration requests per user (the plan limit applies as well). */
+  requestsPerUser: { limit: 50, windowMs: DAY_MS },
 } as const satisfies Record<string, RateLimitRule>;

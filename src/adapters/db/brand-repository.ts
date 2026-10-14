@@ -11,6 +11,9 @@ export interface PlanAllowance {
   readonly canSaveSearch: boolean;
   readonly canCompare: boolean;
   readonly canCsvExport: boolean;
+  readonly canCampaignReports: boolean;
+  readonly billingPeriod: 'NONE' | 'MONTHLY';
+  readonly contactRequestsPerPeriod: number;
 }
 
 export interface BrandMembership {
@@ -19,6 +22,7 @@ export interface BrandMembership {
   readonly countryCode: string;
   readonly role: BrandMemberRole;
   readonly seatLimit: number;
+  readonly planStartedAt: Date;
   readonly plan: PlanAllowance;
 }
 
@@ -76,6 +80,7 @@ export function createBrandRepository(db: DbClient) {
               id: true,
               name: true,
               countryCode: true,
+              planStartedAt: true,
               plan: {
                 select: {
                   code: true,
@@ -85,6 +90,9 @@ export function createBrandRepository(db: DbClient) {
                   canSaveSearch: true,
                   canCompare: true,
                   canCsvExport: true,
+                  canCampaignReports: true,
+                  billingPeriod: true,
+                  contactRequestsPerPeriod: true,
                 },
               },
             },
@@ -98,8 +106,37 @@ export function createBrandRepository(db: DbClient) {
         countryCode: row.brand.countryCode,
         role: row.role,
         seatLimit: row.brand.plan.seatLimit,
+        planStartedAt: row.brand.planStartedAt,
         plan: row.brand.plan,
       };
+    },
+
+    /**
+     * Locks the brand row until the transaction ends, so concurrent requests from one brand
+     * check and use the plan allowance one at a time (UC-B2).
+     */
+    async lockForUpdate(brandId: string): Promise<void> {
+      await db.$queryRaw`SELECT id FROM "Brand" WHERE id = ${brandId} FOR UPDATE`;
+    },
+
+    /** Name and public details shown to creators (never members' emails, SR-12). */
+    findPublicDetails: (
+      brandId: string,
+    ): Promise<{ id: string; name: string; industry: string; website: string | null } | null> =>
+      db.brand.findUnique({
+        where: { id: brandId },
+        select: { id: true, name: true, industry: true, website: true },
+      }),
+
+    /** Members who can still be reached: active accounts, owner first. */
+    async activeMemberIds(brandId: string): Promise<string[]> {
+      const rows = await db.brandMember.findMany({
+        where: { brandId, user: { status: 'ACTIVE' } },
+        // Enum order is OWNER, MEMBER.
+        orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+        select: { userId: true },
+      });
+      return rows.map((row) => row.userId);
     },
 
     countMembers: (brandId: string): Promise<number> =>

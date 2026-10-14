@@ -4,8 +4,10 @@ import { AddToShortlistForm } from '@/components/brand/DiscoveryForms';
 import { CreatorProfileView } from '@/components/creators/CreatorProfileView';
 import { PageShell } from '@/components/layout/PageShell';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
+import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { viewCreatorProfile } from '@/services/discovery';
 import { listShortlists } from '@/services/shortlists';
@@ -49,6 +51,7 @@ export default async function BrandCreatorProfilePage({
   }
 
   const tShortlists = await getTranslations('brand.shortlists');
+  const tRequests = await getTranslations('requests.new');
   const shortlists = (await listShortlists(container, session.user.id)).map(({ id, name }) => ({
     id,
     name,
@@ -58,12 +61,26 @@ export default async function BrandCreatorProfilePage({
       profile={profile}
       locale={locale}
       actions={
-        <Card>
-          <CardTitle>{tShortlists('addTo')}</CardTitle>
-          <div className="mt-3">
-            <AddToShortlistForm creatorId={profile.id} shortlists={shortlists} />
-          </div>
-        </Card>
+        <>
+          <Card className="grid gap-3">
+            <CardTitle>{tRequests('cardTitle')}</CardTitle>
+            {profile.isOpenToCollaborations ? (
+              <Button asChild className="w-fit">
+                <Link href={`/brand/requests/new?creator=${profile.slug}`}>
+                  {tRequests('start')}
+                </Link>
+              </Button>
+            ) : (
+              <p className="text-muted-foreground text-sm">{tRequests('notOpen')}</p>
+            )}
+          </Card>
+          <Card>
+            <CardTitle>{tShortlists('addTo')}</CardTitle>
+            <div className="mt-3">
+              <AddToShortlistForm creatorId={profile.id} shortlists={shortlists} />
+            </div>
+          </Card>
+        </>
       }
     />
   );

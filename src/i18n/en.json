@@ -14,7 +14,13 @@
     "saving": "Saving…",
     "or": "or",
     "back": "Back",
-    "draftNotice": "Draft pending legal review"
+    "draftNotice": "Draft pending legal review",
+    "pagination": {
+      "label": "Pages",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {pageCount}"
+    }
   },
   "home": {
     "headline": "Find verified creators your audience already trusts",
@@ -36,6 +42,7 @@
     "RATE_LIMITED": "Too many attempts. Please wait a few minutes and try again.",
     "PLAN_LIMIT_REACHED": "You've reached your plan's limit.",
     "REQUEST_EXPIRED": "This request has expired.",
+    "NOT_AVAILABLE": "This person isn't available for collaborations right now.",
     "INTERNAL": "Something went wrong on our side. Please try again.",
     "pageNotFoundTitle": "Page not found",
     "pageNotFoundText": "The page you're looking for doesn't exist or has moved.",
@@ -87,7 +94,8 @@
     "analytics": "Analytics",
     "search": "Search",
     "shortlists": "Shortlists",
-    "savedSearches": "Saved searches"
+    "savedSearches": "Saved searches",
+    "requests": "Requests"
   },
   "fieldErrors": {
     "validation": {
@@ -141,6 +149,13 @@
     "search": {
       "tooMany": "You've saved the maximum number of searches. Delete one first.",
       "compareCount": "Choose 2 to 4 creators to compare."
+    },
+    "request": {
+      "invalidQuantity": "Enter a whole number from 0 to 20.",
+      "briefTooShort": "Describe the campaign in at least 20 characters.",
+      "invalidBudget": "Enter a whole rupee amount, or leave it blank.",
+      "invalidDeadline": "Choose a date between tomorrow and one year from now.",
+      "noDeliverables": "Ask for at least one reel, story, video or post."
     }
   },
   "industries": {
@@ -419,6 +434,21 @@
       "subject": "Your {platform} account needs attention",
       "body": "Hi {name},\nWe couldn't update your {platform} stats: access was removed, or the account is private or deleted. Reconnect it so brands see current numbers.",
       "action": "Check connected accounts"
+    },
+    "requestReceived": {
+      "subject": "New collaboration request from {brandName}",
+      "body": "Hi {name},\n{brandName} sent you a collaboration request for \"{campaignName}\". Read the brief and accept or decline it within 14 days.",
+      "action": "View request"
+    },
+    "requestAccepted": {
+      "subject": "{creatorName} accepted your request",
+      "body": "Hi {name},\n{creatorName} accepted your request for \"{campaignName}\". You can now chat and agree the details.",
+      "action": "Open the deal"
+    },
+    "requestDeclined": {
+      "subject": "{creatorName} declined your request",
+      "body": "Hi {name},\n{creatorName} declined your request for \"{campaignName}\". You can find other creators in search.",
+      "action": "View request"
     }
   },
   "platforms": {
@@ -460,7 +490,8 @@
       "viewAnalytics": "Analytics",
       "viewPublic": "View public profile",
       "searchVisible": "Brands can find you in search.",
-      "searchHidden": "You're not in search yet: connect an account first."
+      "searchHidden": "You're not in search yet: connect an account first.",
+      "viewRequests": "Collaboration requests"
     },
     "profile": {
       "title": "Your profile",
@@ -779,6 +810,93 @@
       },
       "yes": "Yes",
       "no": "No"
+    }
+  },
+  "requests": {
+    "brandTitle": "Collaboration requests",
+    "brandIntro": "Requests your team has sent. Creators have 14 days to answer.",
+    "brandEmpty": "You haven't sent any requests yet. Find a creator and send one from their profile.",
+    "findCreators": "Find creators",
+    "creatorTitle": "Collaboration requests",
+    "creatorIntro": "Brands that want to work with you. Accept to start chatting, or decline.",
+    "creatorEmpty": "No requests yet. A complete profile and connected accounts help brands find you.",
+    "status": {
+      "OPEN": "Waiting for answer",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "usageRights": {
+      "CREATOR_CHANNELS_ONLY": "Posted on the creator's channels only",
+      "BRAND_ORGANIC": "The brand may also repost it on its own channels",
+      "BRAND_PAID_ADS": "The brand may also use it in paid ads"
+    },
+    "form": {
+      "campaignName": "Campaign name",
+      "campaignNameHint": "Requests with the same campaign name are grouped together.",
+      "brief": "Brief",
+      "briefHint": "What you'd like, key messages, dos and don'ts. Don't ask for phone numbers or payment details here.",
+      "deliverables": "Deliverables",
+      "deliverablesHint": "How many of each? Leave blank for none.",
+      "budget": "Budget in ₹ (optional)",
+      "budgetHint": "Your total budget for this creator. You can agree the final amount later.",
+      "deadline": "Content deadline",
+      "usageRights": "Content usage rights",
+      "limitReached": "You've used all the contact requests in your plan for this period.",
+      "duplicate": "You already have an open request with this creator. Edit it instead of sending another.",
+      "send": "Send request",
+      "updated": "Request updated. The creator will see the new version.",
+      "saveChanges": "Save changes"
+    },
+    "terms": {
+      "brief": "Brief",
+      "deliverables": "Deliverables",
+      "deliverableLine": "{quantity} × {deliverable}",
+      "budget": "Budget",
+      "noBudget": "Not stated",
+      "deadline": "Deadline",
+      "usageRights": "Usage rights"
+    },
+    "list": {
+      "toCreator": "To {name} · sent {date}",
+      "fromBrand": "From {name} · received {date}",
+      "expires": "Expires {date}"
+    },
+    "new": {
+      "title": "New collaboration request",
+      "titleFor": "Request to {name}",
+      "noCreator": "We couldn't find that creator. Open their profile from search and try again.",
+      "backToSearch": "Back to search",
+      "notOpen": "This creator isn't open to collaborations right now.",
+      "allowance": "{remaining} of {limit} contact requests left in this plan period.",
+      "limitReached": "You've used all the contact requests in your plan for this period.",
+      "cardTitle": "Work with this creator",
+      "start": "Send a collaboration request"
+    },
+    "detail": {
+      "sentTo": "Sent to {name}",
+      "viewProfile": "View profile",
+      "expires": "Expires on {date} if not answered.",
+      "declinedBecause": "Reason given: {reason}",
+      "editTitle": "Edit request",
+      "withdraw": "Withdraw request",
+      "withdrawConfirm": "Withdraw this request? It still counts towards your plan.",
+      "from": "From {name}",
+      "updatedByBrand": "The brand changed this request after sending it. You're seeing the latest version.",
+      "respondTitle": "Your answer",
+      "acceptHint": "Accepting opens a chat with the brand so you can agree the details.",
+      "accept": "Accept",
+      "declineReason": "Reason (optional, shared with the brand)",
+      "decline": "Decline",
+      "changedMeanwhile": "The brand changed this request just now. Reload the page, check the new version and answer again."
+    },
+    "block": {
+      "confirm": "Block {name}? You won't get requests or messages from each other.",
+      "hint": "Blocking stops all requests and messages between you.",
+      "blockedNote": "You have blocked them. They can't send you requests or messages.",
+      "block": "Block {name}",
+      "unblock": "Unblock {name}"
     }
   }
 }

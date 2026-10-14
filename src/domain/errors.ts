@@ -12,6 +12,7 @@ export type DomainErrorCode =
   | 'RATE_LIMITED'
   | 'PLAN_LIMIT_REACHED'
   | 'REQUEST_EXPIRED'
+  | 'NOT_AVAILABLE'
   | 'INVALID_CREDENTIALS'
   | 'ACCOUNT_SUSPENDED'
   | 'EMAIL_NOT_VERIFIED'
@@ -64,6 +65,12 @@ export const planLimitReached = (): DomainError => new DomainError('PLAN_LIMIT_R
 
 /** The collaboration request is past its expiry date (FR-7.2). */
 export const requestExpired = (): DomainError => new DomainError('REQUEST_EXPIRED');
+
+/**
+ * The other side can't be contacted right now. Deliberately the same for "not open to
+ * collaborations", "blocked" and "account gone", so a block is never revealed (UC-R1).
+ */
+export const notAvailable = (): DomainError => new DomainError('NOT_AVAILABLE');
 
 /**
  * Sign-in failed. Deliberately the same for an unknown email, a wrong password and a

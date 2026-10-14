@@ -10,6 +10,7 @@ import { createHealthRepository } from './health-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
 import { createReferenceRepository } from './reference-repository';
+import { createRequestRepository } from './request-repository';
 import { createScoreRepository } from './score-repository';
 import { createSearchRepository } from './search-repository';
 import { createSessionRepository } from './session-repository';
@@ -36,6 +37,7 @@ export function createRepositories(db: DbClient) {
     scores: createScoreRepository(db),
     search: createSearchRepository(db),
     shortlists: createShortlistRepository(db),
+    requests: createRequestRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

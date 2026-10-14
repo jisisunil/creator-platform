@@ -19,6 +19,24 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     platform: 'YouTube',
     link: 'https://app.test/en/creator/accounts',
   },
+  requestReceived: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/creator/requests/r1',
+  },
+  requestAccepted: {
+    name: 'Ravi',
+    creatorName: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/brand/requests/r1',
+  },
+  requestDeclined: {
+    name: 'Ravi',
+    creatorName: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/brand/requests/r1',
+  },
 };
 
 describe('email templates (NFR-7)', () => {

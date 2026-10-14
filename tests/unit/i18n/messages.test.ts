@@ -39,6 +39,7 @@ describe('translation files (NFR-7)', () => {
       'RATE_LIMITED',
       'PLAN_LIMIT_REACHED',
       'REQUEST_EXPIRED',
+      'NOT_AVAILABLE',
       'INTERNAL',
     ];
     expect(Object.keys(en.errors)).toEqual(expect.arrayContaining(codes));

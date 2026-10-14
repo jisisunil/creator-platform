@@ -4,6 +4,7 @@ import type { DbClient } from './db-client';
 export interface CountryRecord {
   readonly code: string;
   readonly defaultLocale: string;
+  readonly currencyCode: string;
   readonly privacyNoticeVersion: string;
   readonly isEnabled: boolean;
 }
@@ -23,7 +24,13 @@ export function createReferenceRepository(db: DbClient) {
     findCountry: (code: string): Promise<CountryRecord | null> =>
       db.countrySettings.findUnique({
         where: { code },
-        select: { code: true, defaultLocale: true, privacyNoticeVersion: true, isEnabled: true },
+        select: {
+          code: true,
+          defaultLocale: true,
+          currencyCode: true,
+          privacyNoticeVersion: true,
+          isEnabled: true,
+        },
       }),
 
     listPrivacyNotices: (countryCode: string): Promise<NoticeVersion[]> =>

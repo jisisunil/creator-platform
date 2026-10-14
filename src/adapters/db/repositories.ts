@@ -1,3 +1,4 @@
+import { createAdminRepository } from './admin-repository';
 import { createAuditRepository } from './audit-repository';
 import { createAuthAccountRepository } from './auth-account-repository';
 import { createBrandRepository } from './brand-repository';
@@ -50,6 +51,7 @@ export function createRepositories(db: DbClient) {
     ratings: createRatingRepository(db),
     plans: createPlanRepository(db),
     notifications: createNotificationRepository(db),
+    admin: createAdminRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

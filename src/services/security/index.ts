@@ -2,7 +2,7 @@ import { hashToken } from '@/adapters/crypto/random-token';
 import type { AuditEventInput } from '@/adapters/db/audit-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import { RATE_LIMITS, type RateLimitRule } from '@/config/auth';
-import { rateLimited } from '@/domain/errors';
+import { notAllowed, rateLimited } from '@/domain/errors';
 import { getLogger } from '@/lib/logger';
 
 export type RateLimitName = keyof typeof RATE_LIMITS;
@@ -76,4 +76,13 @@ export async function recordSecurityEvent(
   event: Omit<AuditEventInput, 'category'>,
 ): Promise<void> {
   await repos.audit.record({ ...event, category: 'SECURITY' });
+}
+
+/**
+ * Admins only (SR-5, SEC-11): an active admin account. The session's two-factor check
+ * happens in the page and action guards.
+ */
+export async function requireAdmin(repos: Repositories, userId: string): Promise<void> {
+  const user = await repos.users.findById(userId);
+  if (user?.role !== 'ADMIN' || user.status !== 'ACTIVE') throw notAllowed();
 }

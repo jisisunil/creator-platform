@@ -103,7 +103,8 @@
     "campaigns": "Campaigns",
     "plan": "Plan and usage",
     "notifications": "Notifications",
-    "unreadNotifications": "{count, plural, one {# new notification} other {# new notifications}}"
+    "unreadNotifications": "{count, plural, one {# new notification} other {# new notifications}}",
+    "admin": "Admin console"
   },
   "fieldErrors": {
     "validation": {
@@ -193,6 +194,9 @@
       "shortlistsFull": "You've reached your plan's number of shortlists.",
       "featureNotIncluded": "This feature isn't included in your plan.",
       "invalidExtension": "Extend by 1 to 90 days."
+    },
+    "admin": {
+      "reasonRequired": "Give a reason (at least 5 characters). It is kept in the audit log."
     }
   },
   "industries": {
@@ -319,7 +323,8 @@
     "creatorIntro": "Your creator profile, connected accounts and content score arrive here next.",
     "brandIntro": "Search, shortlists and collaboration requests for {brandName} arrive here next.",
     "brandNoTeam": "You're not part of a brand team. Ask a brand owner to invite you.",
-    "adminIntro": "The admin console arrives here in a later phase."
+    "adminIntro": "The admin console arrives here in a later phase.",
+    "openAdmin": "Open the admin console"
   },
   "settings": {
     "title": "Settings",
@@ -1306,6 +1311,92 @@
       "socialRefreshFailed": "Your {platform} account needs attention: we couldn't update its stats.",
       "trialEnding": "The free trial for {brandName} ends in 3 days.",
       "trialEnded": "The free trial for {brandName} has ended."
+    }
+  },
+  "admin": {
+    "nav": {
+      "label": "Admin sections",
+      "overview": "Overview",
+      "users": "Users",
+      "reports": "Reports",
+      "flags": "Authenticity flags",
+      "disputes": "Ownership disputes",
+      "dataRequests": "Data requests",
+      "audit": "Audit log"
+    },
+    "overview": {
+      "title": "Admin console",
+      "metricsTitle": "Last {days} days",
+      "metrics": {
+        "signUps": "Sign-ups",
+        "activeUsers": "Active users",
+        "requestsSent": "Requests sent",
+        "dealsCompleted": "Deals completed",
+        "creators": "Active creators (total)",
+        "brands": "Brands (total)",
+        "openReports": "Open reports",
+        "openFlags": "Open authenticity flags",
+        "openDisputes": "Open ownership disputes"
+      },
+      "betaTitle": "Free beta",
+      "betaOn": "On: new brands start on the free beta.",
+      "betaOff": "Off: new brands start on a 14-day trial (one per company).",
+      "endBeta": "End the free beta for new brands",
+      "startBeta": "Turn the free beta back on",
+      "endBetaConfirm": "New brands will start on a 14-day trial instead of the free beta. Brands already on the free beta keep it. Continue?"
+    },
+    "users": {
+      "title": "Users",
+      "search": "Name or email",
+      "role": "Role",
+      "status": "Status",
+      "any": "Any",
+      "find": "Find",
+      "none": "No users match.",
+      "name": "Name",
+      "email": "Email",
+      "joined": "Joined",
+      "never": "Never",
+      "roles": {
+        "CREATOR": "Creator",
+        "BRAND": "Brand",
+        "ADMIN": "Admin"
+      },
+      "statuses": {
+        "ACTIVE": "Active",
+        "PENDING_VERIFICATION": "Email not verified",
+        "SUSPENDED": "Suspended"
+      },
+      "account": "Account",
+      "emailVerified": "Email verified",
+      "lastSignIn": "Last sign-in",
+      "actions": "Actions",
+      "suspendReason": "Reason for suspending (kept in the audit log)",
+      "suspend": "Suspend",
+      "reinstate": "Reinstate",
+      "reinstated": "User reinstated.",
+      "verifyEmail": "Mark email as verified",
+      "verifyEmailConfirm": "Only do this after confirming the person owns this email address. Continue?",
+      "adminNotManaged": "Admin accounts are managed by the operations team, not from the console.",
+      "creatorProfile": "Creator profile",
+      "inSearch": "shown in search",
+      "notInSearch": "not in search",
+      "refreshNow": "Refresh stats now",
+      "refreshQueued": "Refresh queued.",
+      "brand": "Brand: {name} · {plan}",
+      "trialEnds": "Trial ends {date}."
+    },
+    "plans": {
+      "plan": "Plan",
+      "changePlan": "Change plan",
+      "planChanged": "Plan changed. A new period starts today.",
+      "extendDays": "Extend trial by (days)",
+      "extendTrial": "Extend trial",
+      "trialExtended": "Trial extended.",
+      "pack": "Credit pack",
+      "packOption": "{credits} credits, {days} days",
+      "addPack": "Add credit pack",
+      "packAdded": "Credit pack added."
     }
   }
 }

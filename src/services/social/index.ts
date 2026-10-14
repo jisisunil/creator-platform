@@ -411,3 +411,19 @@ export async function findCreatorPost(
   }
   return null;
 }
+
+/** FR-13.2: queues an immediate refresh of every working account of a creator. */
+export async function requestCreatorRefresh(
+  ctx: ServiceContext,
+  creatorId: string,
+): Promise<number> {
+  const platforms = Object.keys(ctx.socialProviders) as SocialPlatform[];
+  let queued = 0;
+  for (const platform of platforms) {
+    for (const accountId of await ctx.repos.socialAccounts.listActiveIds(creatorId, platform)) {
+      await requestRefresh(ctx, accountId);
+      queued += 1;
+    }
+  }
+  return queued;
+}

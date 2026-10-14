@@ -57,6 +57,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     return (
       <PageShell title={title}>
         <p>{t('adminIntro')}</p>
+        <Button asChild className="w-fit">
+          <Link href="/admin">{t('openAdmin')}</Link>
+        </Button>
       </PageShell>
     );
   }

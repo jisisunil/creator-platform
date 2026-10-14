@@ -134,5 +134,8 @@ export const CREDIT_PACKS = [
 
 export type CreditPackCode = (typeof CREDIT_PACKS)[number]['code'];
 
+/** FR-11.3: the longest single trial extension an admin can give. */
+export const MAX_TRIAL_EXTENSION_DAYS = 90;
+
 /** Trial reminder: this many days before the trial ends. */
 export const TRIAL_ENDING_NOTICE_DAYS = 3;

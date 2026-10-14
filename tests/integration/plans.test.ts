@@ -9,6 +9,7 @@ import {
 } from '@/services/plans';
 import { inviteTeamMember } from '@/services/team';
 import { createVerifiedUser } from './accounts/fixtures';
+import { createAdmin } from './admin-fixtures';
 import { sendTestRequest } from './collaboration-fixtures';
 import { createBrandOwner, createSearchableCreator } from './discovery-fixtures';
 import { createTestDatabaseClient } from './test-database';
@@ -40,19 +41,6 @@ async function signUpBrand(email: string) {
     include: { plan: true },
   });
   return { owner, brand };
-}
-
-async function createAdmin() {
-  return ctx.repos.users.create({
-    email: 'admin@platform.in',
-    passwordHash: null,
-    name: 'Admin',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    emailVerifiedAt: ctx.clock.now(),
-    countryCode: 'IN',
-    locale: 'en',
-  });
 }
 
 describe('starting plans and trials (UC-B1, UC-D1)', () => {
@@ -152,7 +140,7 @@ describe('starting plans and trials (UC-B1, UC-D1)', () => {
 
 describe('pay-as-you-go credits (FR-11.1, UC-B2)', () => {
   it('needs a credit pack, and each request uses one credit', async () => {
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in');
     const brandId = (await db.brandMember.findUniqueOrThrow({ where: { userId: owner.id } }))
       .brandId;
@@ -172,7 +160,7 @@ describe('pay-as-you-go credits (FR-11.1, UC-B2)', () => {
   });
 
   it('UC-B2 two requests racing for the last credit: one is sent, nothing half-saved', async () => {
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in');
     const brandId = (await db.brandMember.findUniqueOrThrow({ where: { userId: owner.id } }))
       .brandId;
@@ -193,7 +181,7 @@ describe('pay-as-you-go credits (FR-11.1, UC-B2)', () => {
   });
 
   it('expired credits cannot be used', async () => {
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in');
     const brandId = (await db.brandMember.findUniqueOrThrow({ where: { userId: owner.id } }))
       .brandId;
@@ -210,7 +198,7 @@ describe('pay-as-you-go credits (FR-11.1, UC-B2)', () => {
 
 describe('admin plan changes (FR-11.3, UC-B3)', () => {
   it('FR-11.3 only admins change plans, and every change is audited', async () => {
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in', 'TRIAL');
     const brandId = (await db.brandMember.findUniqueOrThrow({ where: { userId: owner.id } }))
       .brandId;
@@ -230,7 +218,7 @@ describe('admin plan changes (FR-11.3, UC-B3)', () => {
 
   it('FR-11.3 extends an ended trial from today', async () => {
     await setFreeBeta(false);
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const { owner, brand } = await signUpBrand('owner@spiceco.in');
     ctx.clock.advance(20 * DAY_MS);
 
@@ -242,7 +230,7 @@ describe('admin plan changes (FR-11.3, UC-B3)', () => {
   });
 
   it('UC-B3 a downgrade keeps existing members but blocks new invites', async () => {
-    const admin = await createAdmin();
+    const admin = await createAdmin(ctx);
     const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in', 'PRO');
     const brandId = (await db.brandMember.findUniqueOrThrow({ where: { userId: owner.id } }))
       .brandId;

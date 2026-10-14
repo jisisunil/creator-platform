@@ -1,0 +1,188 @@
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  getPlatformMetrics,
+  getUserDetail,
+  refreshCreatorNow,
+  reinstateUser,
+  searchUsers,
+  setFreeBeta,
+  suspendUser,
+  verifyUserEmail,
+} from '@/services/admin';
+import { signUpWithPassword } from '@/services/accounts';
+import { searchCreators } from '@/services/discovery';
+import { createAdmin } from './admin-fixtures';
+import { acceptedRequest } from './collaboration-fixtures';
+import { createBrandOwner, createSearchableCreator } from './discovery-fixtures';
+import { createTestDatabaseClient } from './test-database';
+import {
+  createTestContext,
+  requestFrom,
+  resetDatabase,
+  STRONG_PASSWORD,
+  type TestContext,
+} from './test-context';
+
+const db = createTestDatabaseClient();
+let ctx: TestContext;
+
+beforeEach(async () => {
+  await resetDatabase(db);
+  ctx = createTestContext(db);
+});
+afterAll(() => db.$disconnect());
+
+const request = requestFrom('203.0.113.50');
+
+describe('admin console (FR-13)', () => {
+  it('FR-13.4 counts sign-ups, requests and open queues for the last 30 days', async () => {
+    const admin = await createAdmin(ctx);
+    await acceptedRequest(ctx, db);
+
+    const metrics = await getPlatformMetrics(ctx, admin.id);
+
+    expect(metrics).toMatchObject({
+      windowDays: 30,
+      signUps: 2,
+      creators: 1,
+      brands: 1,
+      requestsSent: 1,
+      dealsCompleted: 0,
+      openReports: 0,
+    });
+  });
+
+  it('FR-13.1 finds users by name or email and filters by role', async () => {
+    const admin = await createAdmin(ctx);
+    await createBrandOwner(ctx, db, 'owner@spiceco.in');
+    await createSearchableCreator(ctx, db, { email: 'asha@example.in' });
+
+    const brands = await searchUsers(ctx, {
+      adminUserId: admin.id,
+      filters: { query: 'SPICECO', role: 'BRAND' },
+      page: 1,
+    });
+    const creators = await searchUsers(ctx, {
+      adminUserId: admin.id,
+      filters: { role: 'CREATOR' },
+      page: 1,
+    });
+
+    expect(brands.items.map((user) => user.email)).toEqual(['owner@spiceco.in']);
+    expect(creators.items.map((user) => user.email)).toEqual(['asha@example.in']);
+  });
+
+  it('SEC-11 viewing a user is audited', async () => {
+    const admin = await createAdmin(ctx);
+    const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in');
+
+    const detail = await getUserDetail(ctx, { adminUserId: admin.id, userId: owner.id, request });
+
+    expect(detail.brand).toMatchObject({ role: 'OWNER', planCode: 'PRO' });
+    expect(
+      await db.auditEvent.findFirstOrThrow({ where: { action: 'user.viewed' } }),
+    ).toMatchObject({ category: 'ADMIN', actorUserId: admin.id, subjectUserId: owner.id });
+  });
+
+  it('UC-M1 suspending signs the user out, hides them from search, and is audited with the reason', async () => {
+    const admin = await createAdmin(ctx);
+    const brand = await createBrandOwner(ctx, db, 'owner@spiceco.in');
+    await createSearchableCreator(ctx, db, { email: 'asha@example.in' });
+    const creator = await db.user.findUniqueOrThrow({ where: { email: 'asha@example.in' } });
+    await db.session.create({
+      data: {
+        userId: creator.id,
+        tokenHash: 'hash',
+        deviceHash: 'device',
+        expiresAt: new Date(Date.now() + 86_400_000),
+        lastSeenAt: new Date(),
+      },
+    });
+
+    await suspendUser(ctx, {
+      adminUserId: admin.id,
+      userId: creator.id,
+      reason: 'Fake followers confirmed',
+      request,
+    });
+
+    expect(await db.session.count({ where: { userId: creator.id } })).toBe(0);
+    const results = await searchCreators(ctx, {
+      userId: brand.id,
+      filters: {},
+      sort: 'score',
+      page: 1,
+    });
+    expect(results.total).toBe(0);
+    const audit = await db.auditEvent.findFirstOrThrow({ where: { action: 'user.suspended' } });
+    expect(audit).toMatchObject({
+      actorUserId: admin.id,
+      subjectUserId: creator.id,
+      ipAddress: '203.0.113.50',
+    });
+    expect(audit.metadata).toEqual({ reason: 'Fake followers confirmed' });
+
+    await reinstateUser(ctx, { adminUserId: admin.id, userId: creator.id, request });
+    expect((await db.user.findUniqueOrThrow({ where: { id: creator.id } })).status).toBe('ACTIVE');
+  });
+
+  it('SEC-11 admins cannot suspend themselves or other admins from the console', async () => {
+    const admin = await createAdmin(ctx);
+    const other = await createAdmin(ctx, 'second-admin@platform.in');
+
+    for (const userId of [admin.id, other.id]) {
+      await expect(
+        suspendUser(ctx, { adminUserId: admin.id, userId, reason: 'Testing limits', request }),
+      ).rejects.toMatchObject({ code: 'NOT_ALLOWED' });
+    }
+  });
+
+  it('FR-13.1 confirms the email of a user stuck in verification', async () => {
+    const admin = await createAdmin(ctx);
+    await signUpWithPassword(
+      ctx,
+      {
+        role: 'CREATOR',
+        name: 'Stuck',
+        email: 'stuck@example.in',
+        password: STRONG_PASSWORD,
+        acceptsMarketing: false,
+        captchaToken: null,
+      },
+      requestFrom('198.51.100.77'),
+    );
+    const stuck = await db.user.findUniqueOrThrow({ where: { email: 'stuck@example.in' } });
+
+    await verifyUserEmail(ctx, { adminUserId: admin.id, userId: stuck.id, request });
+
+    expect(await db.user.findUniqueOrThrow({ where: { id: stuck.id } })).toMatchObject({
+      status: 'ACTIVE',
+      emailVerifiedAt: expect.any(Date),
+    });
+  });
+
+  it('FR-13.2 queues a refresh of a creator’s accounts', async () => {
+    const admin = await createAdmin(ctx);
+    await createSearchableCreator(ctx, db, { email: 'asha@example.in' });
+    const creator = await db.user.findUniqueOrThrow({ where: { email: 'asha@example.in' } });
+
+    expect(
+      await refreshCreatorNow(ctx, { adminUserId: admin.id, userId: creator.id, request }),
+    ).toBe(1);
+    expect(ctx.enqueuedJobs).toContain('social.refresh-account');
+  });
+
+  it('UC-B1 ending the free beta starts new brands on a trial', async () => {
+    const admin = await createAdmin(ctx);
+
+    await setFreeBeta(ctx, { adminUserId: admin.id, isActive: false, request });
+    const owner = await createBrandOwner(ctx, db, 'owner@spiceco.in', 'TRIAL');
+
+    const setting = await db.platformSetting.findUniqueOrThrow({
+      where: { key: 'isFreeBetaActive' },
+    });
+    expect(setting.value).toBe(false);
+    expect(owner.id).toBeTruthy();
+    expect(await db.auditEvent.count({ where: { action: 'setting.free-beta' } })).toBe(1);
+  });
+});

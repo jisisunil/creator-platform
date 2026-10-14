@@ -80,6 +80,11 @@ export async function SiteHeader() {
                   </Link>
                 </>
               ) : null}
+              {role === 'ADMIN' ? (
+                <Link href="/admin" className="underline-offset-4 hover:underline">
+                  {t('admin')}
+                </Link>
+              ) : null}
               {isParticipant ? (
                 <Link href="/messages" className="underline-offset-4 hover:underline">
                   {t('messages')}

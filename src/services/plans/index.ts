@@ -3,16 +3,15 @@ import type { BrandMembership } from '@/adapters/db/brand-repository';
 import type { CreditPackRecord, PlanCode, PlanRecord } from '@/adapters/db/plan-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { UserRecord } from '@/adapters/db/user-repository';
-import { CREDIT_PACKS, type CreditPackCode, TRIAL_ENDING_NOTICE_DAYS } from '@/config/plans';
+import {
+  CREDIT_PACKS,
+  type CreditPackCode,
+  MAX_TRIAL_EXTENSION_DAYS,
+  TRIAL_ENDING_NOTICE_DAYS,
+} from '@/config/plans';
 import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 import { canonicalMailbox, companyDomainOf } from '@/domain/email-address';
-import {
-  invalidState,
-  notAllowed,
-  notFound,
-  planLimitReached,
-  validationFailed,
-} from '@/domain/errors';
+import { invalidState, notFound, planLimitReached, validationFailed } from '@/domain/errors';
 import {
   creditPackExpiry,
   isTrialOver,
@@ -26,12 +25,11 @@ import type { ServiceContext } from '../context';
 import { requireBrandMembership } from '../discovery';
 import { requestEmailDispatch } from '../email';
 import { notifyUsers } from '../notifications';
-import { recordSecurityEvent } from '../security';
+import { recordSecurityEvent, requireAdmin } from '../security';
 
 export type { CreditPackRecord, PlanCode, PlanRecord } from '@/adapters/db/plan-repository';
 
 const DAY_MS = 86_400_000;
-const MAX_TRIAL_EXTENSION_DAYS = 90;
 const TRIAL_NOTICES_PER_RUN = 500;
 const logger = getLogger('plans');
 
@@ -189,12 +187,6 @@ export async function getPlanOverview(ctx: ServiceContext, userId: string): Prom
     ),
     creditPackOptions: CREDIT_PACKS,
   };
-}
-
-/** Admins only (FR-11.3); the session's two-factor check happens in the action layer. */
-async function requireAdmin(repos: Repositories, userId: string): Promise<void> {
-  const user = await repos.users.findById(userId);
-  if (user?.role !== 'ADMIN' || user.status !== 'ACTIVE') throw notAllowed();
 }
 
 async function requireBrand(repos: Repositories, brandId: string) {

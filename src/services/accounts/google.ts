@@ -33,7 +33,10 @@ export type GoogleSignInOutcome =
   | { readonly kind: 'needs-sign-up' }
   /** A password account uses this email: confirm the password before linking (UC-A2). */
   | { readonly kind: 'needs-link'; readonly email: string }
-  | { readonly kind: 'rejected'; readonly reason: 'email-not-verified' | 'suspended' };
+  | {
+      readonly kind: 'rejected';
+      readonly reason: 'email-not-verified' | 'suspended' | 'closed';
+    };
 
 /**
  * Decides what a completed Google sign-in means. Signs in a linked account, creates a new
@@ -56,7 +59,9 @@ export async function resolveGoogleSignIn(
   if (linkedUserId) {
     const user = await ctx.repos.users.findById(linkedUserId);
     if (!user) return { kind: 'needs-sign-up' };
-    if (findSignInBlocker(user) === 'SUSPENDED') return { kind: 'rejected', reason: 'suspended' };
+    const blocker = findSignInBlocker(user);
+    if (blocker === 'CLOSED') return { kind: 'rejected', reason: 'closed' };
+    if (blocker === 'SUSPENDED') return { kind: 'rejected', reason: 'suspended' };
     return { kind: 'signed-in', result: await completeSignIn(ctx, user, request, 'google') };
   }
 

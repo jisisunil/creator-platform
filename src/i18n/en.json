@@ -198,6 +198,10 @@
     },
     "admin": {
       "reasonRequired": "Give a reason (at least 5 characters). It is kept in the audit log."
+    },
+    "privacy": {
+      "detailsTooShort": "Tell us what to correct (at least 10 characters).",
+      "confirmEmail": "Type the email address of this account to confirm."
     }
   },
   "industries": {
@@ -268,7 +272,8 @@
       "linkGoogleIntro": "An account already uses {email}. Enter its password to connect Google sign-in to it.",
       "linkGoogleSubmit": "Connect and sign in",
       "googleNeedsSignUp": "We couldn't find an account for that Google login. Join first, then use Google to sign in.",
-      "googleRejected": "Google sign-in isn't available for this account. Use your email and password, or contact support."
+      "googleRejected": "Google sign-in isn't available for this account. Use your email and password, or contact support.",
+      "accountDeleted": "Your account is closed and will be fully deleted within 30 days. We've emailed you the date."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -389,6 +394,35 @@
       "securityNote": "Security emails (sign-in from a new device, password and email changes) are always sent.",
       "save": "Save notification settings",
       "saved": "Notification settings saved."
+    },
+    "data": {
+      "title": "Your data",
+      "intro": "Download everything we hold about you, or ask us to correct something you can't edit yourself (such as verified stats). We answer within 30 days.",
+      "download": "Download my data (JSON)",
+      "correctionLabel": "What should we correct?",
+      "correctionHint": "Most details can be changed directly in your profile and settings.",
+      "correctionSubmit": "Send correction request",
+      "correctionSent": "Request sent. We'll answer within 30 days.",
+      "types": {
+        "EXPORT": "Data download",
+        "DELETION": "Account deletion",
+        "CORRECTION": "Correction"
+      },
+      "statuses": {
+        "OPEN": "in progress",
+        "COMPLETED": "done",
+        "REJECTED": "declined"
+      }
+    },
+    "delete": {
+      "title": "Delete account",
+      "intro": "You'll be signed out at once and your profile hidden. Your data is deleted within 30 days. People you worked with keep their copy of chats and deals, shown as \"Deleted user\". Security logs are kept for one year.",
+      "impact": "{deals, plural, =0 {} one {# open deal will be cancelled and the other side told. } other {# open deals will be cancelled and the other side told. }}{requests, plural, =0 {} one {# open request will be closed.} other {# open requests will be closed.}}",
+      "transferFirst": "You own a brand with other team members. Make one of them the owner first.",
+      "teamLink": "Go to Team",
+      "confirmLabel": "Type your email address to confirm",
+      "confirm": "Delete your account? You can't undo this.",
+      "submit": "Delete my account"
     }
   },
   "team": {
@@ -408,7 +442,9 @@
     "invited": "Invite sent.",
     "seatsFull": "All seats are in use. Remove a member or cancel an invite to invite someone new.",
     "ownerOnly": "Only the brand owner can invite or remove members.",
-    "noPending": "No pending invites."
+    "noPending": "No pending invites.",
+    "makeOwner": "Make owner",
+    "makeOwnerConfirm": "Make {name} the owner of this brand? You will become a member."
   },
   "legal": {
     "privacy": {
@@ -586,6 +622,10 @@
     "disputeLost": {
       "subject": "Ownership decision for {platform} {handle}",
       "body": "Hi {name},\nAfter reviewing the ownership dispute for {platform} {handle}, our team decided it belongs to another creator. Reply to this email if you have more proof."
+    },
+    "accountDeletionScheduled": {
+      "subject": "Your account is being deleted",
+      "body": "Hi {name},\nYour account is closed and your data will be deleted on {date}. If you didn't ask for this, reply to this email straight away."
     }
   },
   "platforms": {
@@ -1394,7 +1434,9 @@
       "statuses": {
         "ACTIVE": "Active",
         "PENDING_VERIFICATION": "Email not verified",
-        "SUSPENDED": "Suspended"
+        "SUSPENDED": "Suspended",
+        "DELETION_PENDING": "Being deleted",
+        "ANONYMISED": "Deleted"
       },
       "account": "Account",
       "emailVerified": "Email verified",
@@ -1413,7 +1455,13 @@
       "refreshNow": "Refresh stats now",
       "refreshQueued": "Refresh queued.",
       "brand": "Brand: {name} · {plan}",
-      "trialEnds": "Trial ends {date}."
+      "trialEnds": "Trial ends {date}.",
+      "deleteReason": "Why delete this account? (audited)",
+      "delete": "Delete account (in 30 days)",
+      "deletionScheduled": "Account closed; data deleted in 30 days.",
+      "underageReason": "Evidence the user is under 18 (audited)",
+      "deleteUnderage": "Under 18: delete now",
+      "deletedNow": "Account deleted."
     },
     "plans": {
       "plan": "Plan",
@@ -1501,6 +1549,22 @@
       "note": "Reason (kept in the audit log)",
       "transfer": "Give it to the claimant",
       "keep": "Keep with the current owner"
+    },
+    "dataRequests": {
+      "title": "Data requests",
+      "statuses": {
+        "OPEN": "Open",
+        "COMPLETED": "Completed",
+        "REJECTED": "Rejected"
+      },
+      "empty": "Nothing here.",
+      "dates": "Received {created} · due {due}",
+      "overdue": "OVERDUE",
+      "answer": "Answer to the user (what was corrected)",
+      "complete": "Mark done",
+      "rejectReason": "Why it can't be done",
+      "reject": "Decline",
+      "deletionAutomatic": "Finished automatically on the due date."
     }
   }
 }

@@ -86,3 +86,9 @@ export const resolveDisputeSchema = z.object({
   decision: z.enum(['TRANSFER', 'KEEP']),
   note: reasonSchema,
 });
+
+export const closeDataRequestSchema = z.object({
+  requestId: id,
+  outcome: z.enum(['COMPLETED', 'REJECTED']),
+  resolution: reasonSchema,
+});

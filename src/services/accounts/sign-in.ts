@@ -77,6 +77,8 @@ export async function signInWithPassword(
   }
 
   const blocker = findSignInBlocker(user);
+  // PRV-4: a deleted account answers like an unknown one.
+  if (blocker === 'CLOSED') throw invalidCredentials();
   if (blocker === 'SUSPENDED') throw accountSuspended();
   if (blocker === 'EMAIL_NOT_VERIFIED') throw emailNotVerified();
 

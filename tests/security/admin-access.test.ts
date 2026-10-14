@@ -24,6 +24,12 @@ import {
   warnUser,
 } from '@/services/moderation';
 import { addCreditPack, changeBrandPlan, extendTrial } from '@/services/plans';
+import {
+  closeDataRequest,
+  deleteUnderageAccount,
+  listDataRequests,
+  scheduleAccountDeletion,
+} from '@/services/privacy';
 import { createBrandOwner, createSearchableCreator } from '../integration/discovery-fixtures';
 import { createTestDatabaseClient } from '../integration/test-database';
 import {
@@ -103,6 +109,29 @@ describe('admin console access (SR-5, SR-17, SEC-11)', () => {
         () =>
           reviewFlag(ctx, { adminUserId: actor.id, request, flagId: 'any', decision: 'CLEARED' }),
         () => listDisputes(ctx, { adminUserId: actor.id, status: 'OPEN', page: 1 }),
+        () => listDataRequests(ctx, { adminUserId: actor.id, status: 'OPEN', page: 1 }),
+        () =>
+          closeDataRequest(ctx, {
+            adminUserId: actor.id,
+            requestId: 'any',
+            outcome: 'COMPLETED',
+            resolution: 'not allowed',
+            request,
+          }),
+        () =>
+          scheduleAccountDeletion(ctx, {
+            adminUserId: actor.id,
+            userId: creator.id,
+            reason: 'not allowed',
+            request,
+          }),
+        () =>
+          deleteUnderageAccount(ctx, {
+            adminUserId: actor.id,
+            userId: creator.id,
+            reason: 'not allowed',
+            request,
+          }),
         () =>
           resolveDispute(ctx, {
             adminUserId: actor.id,

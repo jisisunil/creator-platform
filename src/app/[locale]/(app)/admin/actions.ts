@@ -9,6 +9,7 @@ import { getRequestInfo } from '@/lib/request-info';
 import {
   addCreditPackSchema,
   changePlanSchema,
+  closeDataRequestSchema,
   extendTrialSchema,
   freeBetaSchema,
   suspendUserSchema,
@@ -23,6 +24,11 @@ import {
   verifyUserEmail,
 } from '@/services/admin';
 import { addCreditPack, changeBrandPlan, extendTrial } from '@/services/plans';
+import {
+  closeDataRequest,
+  deleteUnderageAccount,
+  scheduleAccountDeletion,
+} from '@/services/privacy';
 
 /** Admins with a fresh two-factor check only (SR-4, SEC-11). */
 const adminOnly = () => requireActionSession({ roles: ['ADMIN'] });
@@ -124,6 +130,58 @@ export async function setFreeBetaAction(_: ActionState, formData: FormData): Pro
     const session = await adminOnly();
     const { isActive } = parseForm(freeBetaSchema, formData);
     await setFreeBeta(getContainer(), { adminUserId: session.user.id, isActive, request });
+    revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** FR-13.1: delete a user (finalised after 30 days). */
+export async function scheduleDeletionAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const request = await requestInfo();
+  return runAction(async () => {
+    const session = await adminOnly();
+    const { userId, reason } = parseForm(suspendUserSchema, formData);
+    await scheduleAccountDeletion(getContainer(), {
+      adminUserId: session.user.id,
+      userId,
+      reason,
+      request,
+    });
+    revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** PR-6 / PRV-6: an under-18 account is deleted at once. */
+export async function deleteUnderageAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const request = await requestInfo();
+  return runAction(async () => {
+    const session = await adminOnly();
+    const { userId, reason } = parseForm(suspendUserSchema, formData);
+    await deleteUnderageAccount(getContainer(), {
+      adminUserId: session.user.id,
+      userId,
+      reason,
+      request,
+    });
+    revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** UC-M4: answer a correction request. */
+export async function closeDataRequestAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const request = await requestInfo();
+  return runAction(async () => {
+    const session = await adminOnly();
+    const input = parseForm(closeDataRequestSchema, formData);
+    await closeDataRequest(getContainer(), { adminUserId: session.user.id, request, ...input });
     revalidatePath(ADMIN_PATH, 'layout');
   });
 }

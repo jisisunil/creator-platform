@@ -54,4 +54,6 @@ export const RATE_LIMITS = {
   /** SEC-6: chat messages (including attachments) and reports per user. */
   messagesPerUser: { limit: 60, windowMs: 10 * MINUTE_MS },
   reportsPerUser: { limit: 10, windowMs: DAY_MS },
+  /** PR-5 / SR-14: data exports and correction requests per user. */
+  dataRequestsPerUser: { limit: 5, windowMs: DAY_MS },
 } as const satisfies Record<string, RateLimitRule>;

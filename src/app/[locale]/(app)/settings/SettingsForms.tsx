@@ -5,13 +5,21 @@ import { useActionState } from 'react';
 import { FormField } from '@/components/forms/FormField';
 import { FormStatus } from '@/components/forms/FormStatus';
 import { SubmitButton } from '@/components/forms/SubmitButton';
+import { TextareaField } from '@/components/forms/TextareaField';
 import { useValidatedForm } from '@/components/forms/use-validated-form';
 import { IDLE } from '@/lib/action-state';
-import { changeEmailSchema, changePasswordSchema } from '@/lib/validation/account-schemas';
+import {
+  changeEmailSchema,
+  changePasswordSchema,
+  correctionRequestSchema,
+  deleteAccountSchema,
+} from '@/lib/validation/account-schemas';
 import type { PreferenceSetting } from '@/services/notifications';
 import {
   changeEmailAction,
   changePasswordAction,
+  deleteAccountAction,
+  requestCorrectionAction,
   saveNotificationPreferencesAction,
   setMarketingConsentAction,
 } from './actions';
@@ -158,6 +166,63 @@ export function NotificationPreferencesForm({
       <p className="text-muted-foreground text-xs">{t('securityNote')}</p>
       <SubmitButton variant="outline" className="w-fit">
         {t('save')}
+      </SubmitButton>
+    </form>
+  );
+}
+
+/** PRV-3: ask for a correction to data the user can't edit themselves. */
+export function CorrectionRequestForm() {
+  const t = useTranslations('settings.data');
+  const { state, formAction, onSubmit, fieldErrors } = useValidatedForm(
+    correctionRequestSchema,
+    requestCorrectionAction,
+  );
+  return (
+    <form action={formAction} onSubmit={onSubmit} noValidate className="grid gap-3">
+      <FormStatus state={state} successMessage={t('correctionSent')} />
+      <TextareaField
+        name="details"
+        label={t('correctionLabel')}
+        hint={t('correctionHint')}
+        rows={3}
+        maxLength={2000}
+        error={fieldErrors.details}
+      />
+      <SubmitButton variant="outline" className="w-fit">
+        {t('correctionSubmit')}
+      </SubmitButton>
+    </form>
+  );
+}
+
+/** PRV-4: delete the account after typing the account email to confirm. */
+export function DeleteAccountForm() {
+  const t = useTranslations('settings.delete');
+  const { state, formAction, onSubmit, fieldErrors } = useValidatedForm(
+    deleteAccountSchema,
+    deleteAccountAction,
+  );
+  return (
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        onSubmit(event);
+        if (!event.defaultPrevented && !window.confirm(t('confirm'))) event.preventDefault();
+      }}
+      noValidate
+      className="grid gap-3"
+    >
+      <FormStatus state={state} />
+      <FormField
+        name="confirmEmail"
+        type="email"
+        label={t('confirmLabel')}
+        autoComplete="off"
+        error={fieldErrors.confirmEmail}
+      />
+      <SubmitButton variant="destructive" className="w-fit">
+        {t('submit')}
       </SubmitButton>
     </form>
   );

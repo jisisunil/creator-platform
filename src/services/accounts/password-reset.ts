@@ -1,3 +1,4 @@
+import { isAccountClosed } from '@/domain/accounts';
 import { hashToken } from '@/adapters/crypto/random-token';
 import { PASSWORD_RESET_TTL_MS } from '@/config/auth';
 import { normaliseEmail } from '@/domain/email-address';
@@ -24,7 +25,7 @@ export async function requestPasswordReset(
 
   const hasQueued = await ctx.transaction(async (repos) => {
     const user = await repos.users.findByEmail(email);
-    if (!user || user.status === 'SUSPENDED') return false;
+    if (!user || user.status === 'SUSPENDED' || isAccountClosed(user.status)) return false;
     const link = await createOneTimeLink(repos, {
       purpose: 'RESET_PASSWORD',
       userId: user.id,

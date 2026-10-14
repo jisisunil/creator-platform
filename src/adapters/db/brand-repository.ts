@@ -227,6 +227,20 @@ export function createBrandRepository(db: DbClient) {
       await db.brandMember.create({ data: { brandId, userId, role } });
     },
 
+    /** UC-A5: hands ownership to another member of the same brand. False if not a member. */
+    async transferOwnership(brandId: string, fromUserId: string, toUserId: string) {
+      const promoted = await db.brandMember.updateMany({
+        where: { brandId, userId: toUserId, role: 'MEMBER' },
+        data: { role: 'OWNER' },
+      });
+      if (promoted.count !== 1) return false;
+      await db.brandMember.updateMany({
+        where: { brandId, userId: fromUserId },
+        data: { role: 'MEMBER' },
+      });
+      return true;
+    },
+
     /** Removes a non-owner member of this brand. False if no such member. */
     async removeMember(brandId: string, userId: string): Promise<boolean> {
       const result = await db.brandMember.deleteMany({

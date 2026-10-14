@@ -192,6 +192,33 @@ export async function removeTeamMember(
   });
 }
 
+/**
+ * UC-A5: the owner makes another member the owner (and becomes a member), for example
+ * before deleting their own account. Audited.
+ */
+export async function transferOwnership(
+  ctx: ServiceContext,
+  input: { ownerUserId: string; newOwnerUserId: string },
+  request: RequestInfo,
+): Promise<void> {
+  await ctx.transaction(async (repos) => {
+    const membership = await requireOwnership(repos, input.ownerUserId);
+    const isTransferred = await repos.brands.transferOwnership(
+      membership.brandId,
+      input.ownerUserId,
+      input.newOwnerUserId,
+    );
+    if (!isTransferred) throw notFound();
+    await recordSecurityEvent(repos, {
+      action: 'team.ownership-transferred',
+      actorUserId: input.ownerUserId,
+      subjectUserId: input.newOwnerUserId,
+      ipAddress: request.ipAddress,
+      metadata: { brandId: membership.brandId },
+    });
+  });
+}
+
 /** What the invite page shows, or null for an unknown, used or expired invite. */
 export async function findInvite(
   ctx: ServiceContext,

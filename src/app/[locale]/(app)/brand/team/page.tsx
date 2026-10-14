@@ -5,7 +5,12 @@ import { Alert } from '@/components/ui/alert';
 import { Card, CardTitle } from '@/components/ui/card';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { findBrandMembership, getTeamOverview } from '@/services/team';
-import { InviteMemberForm, RemoveMemberButton, RevokeInviteButton } from './TeamForms';
+import {
+  InviteMemberForm,
+  MakeOwnerButton,
+  RemoveMemberButton,
+  RevokeInviteButton,
+} from './TeamForms';
 
 /** UC-A6: the brand's members, pending invites and seat usage. */
 export default async function TeamPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -47,7 +52,10 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
                 </span>
               </span>
               {isOwner && member.role === 'MEMBER' ? (
-                <RemoveMemberButton userId={member.userId} name={member.name} />
+                <span className="flex gap-2">
+                  <MakeOwnerButton userId={member.userId} name={member.name} />
+                  <RemoveMemberButton userId={member.userId} name={member.name} />
+                </span>
               ) : null}
             </li>
           ))}

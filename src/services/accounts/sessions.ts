@@ -65,7 +65,8 @@ export async function resolveSession(
   if (!found) return null;
   const { session, user } = found;
 
-  if (user.status === 'SUSPENDED') {
+  // Suspended or deleted accounts lose every session at once (SR-2, PRV-4).
+  if (user.status !== 'ACTIVE') {
     await ctx.repos.sessions.deleteByTokenHash(tokenHash);
     return null;
   }

@@ -9,6 +9,7 @@ import {
   UserActionButton,
 } from '@/components/admin/AdminForms';
 import { AdminNav } from '@/components/admin/AdminNav';
+import { ReasonForm } from '@/components/admin/ModerationForms';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
@@ -17,7 +18,9 @@ import { requirePageSession } from '@/lib/auth/current-session';
 import { getRequestInfo } from '@/lib/request-info';
 import { getUserDetail, type UserDetail } from '@/services/admin';
 import {
+  deleteUnderageAction,
   refreshCreatorAction,
+  scheduleDeletionAction,
   reinstateUserAction,
   suspendUserAction,
   verifyUserEmailAction,
@@ -84,6 +87,28 @@ export default async function AdminUserPage({
               label={t('reinstate')}
               successMessage={t('reinstated')}
             />
+          ) : null}
+          {user.status === 'ACTIVE' || user.status === 'SUSPENDED' ? (
+            <div className="grid gap-6 sm:grid-cols-2">
+              <ReasonForm
+                action={scheduleDeletionAction}
+                hidden={{ userId: user.id }}
+                fieldName="reason"
+                label={t('deleteReason')}
+                submitLabel={t('delete')}
+                variant="destructive"
+                successMessage={t('deletionScheduled')}
+              />
+              <ReasonForm
+                action={deleteUnderageAction}
+                hidden={{ userId: user.id }}
+                fieldName="reason"
+                label={t('underageReason')}
+                submitLabel={t('deleteUnderage')}
+                variant="destructive"
+                successMessage={t('deletedNow')}
+              />
+            </div>
           ) : null}
           {user.emailVerifiedAt === null ? (
             <UserActionButton

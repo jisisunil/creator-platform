@@ -28,6 +28,7 @@ export interface EmailTemplates {
   dealPostAdded: { name: string; creatorName: string; campaignName: string; link: string };
   paymentDisputed: { name: string; creatorName: string; campaignName: string; link: string };
   accountWarning: { name: string; reason: string };
+  accountDeletionScheduled: { name: string; date: string };
   disputeWon: { name: string; platform: string; handle: string; link: string };
   disputeLost: { name: string; platform: string; handle: string };
   trialEnding: { name: string; brandName: string; link: string };

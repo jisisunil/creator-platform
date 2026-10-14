@@ -8,7 +8,12 @@ import { requireActionSession } from '@/lib/auth/current-session';
 import { getRequestInfo } from '@/lib/request-info';
 import { inviteMemberSchema, targetIdSchema } from '@/lib/validation/account-schemas';
 import { parseForm } from '@/lib/validation/form-data';
-import { inviteTeamMember, removeTeamMember, revokeTeamInvite } from '@/services/team';
+import {
+  inviteTeamMember,
+  removeTeamMember,
+  revokeTeamInvite,
+  transferOwnership,
+} from '@/services/team';
 
 const TEAM_PATH = '/[locale]/brand/team';
 
@@ -36,6 +41,24 @@ export async function removeMemberAction(_: ActionState, formData: FormData): Pr
     await removeTeamMember(
       getContainer(),
       { ownerUserId: session.user.id, memberUserId: id },
+      await getRequestInfo(locale),
+    );
+    revalidatePath(TEAM_PATH, 'page');
+  });
+}
+
+/** UC-A5: owner hands ownership to a member. */
+export async function transferOwnershipAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const locale = await getLocale();
+  return runAction(async () => {
+    const session = await requireActionSession({ roles: ['BRAND'] });
+    const { id } = parseForm(targetIdSchema, formData);
+    await transferOwnership(
+      getContainer(),
+      { ownerUserId: session.user.id, newOwnerUserId: id },
       await getRequestInfo(locale),
     );
     revalidatePath(TEAM_PATH, 'page');

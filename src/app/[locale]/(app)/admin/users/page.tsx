@@ -15,7 +15,13 @@ import { pageNumberFrom } from '@/lib/validation/page-number';
 import { searchUsers } from '@/services/admin';
 
 const ROLES = ['CREATOR', 'BRAND', 'ADMIN'] as const;
-const STATUSES = ['ACTIVE', 'PENDING_VERIFICATION', 'SUSPENDED'] as const;
+const STATUSES = [
+  'ACTIVE',
+  'PENDING_VERIFICATION',
+  'SUSPENDED',
+  'DELETION_PENDING',
+  'ANONYMISED',
+] as const;
 
 /** Lenient: unknown values are ignored rather than failing the page. */
 const filtersSchema = z.object({

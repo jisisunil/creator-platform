@@ -184,6 +184,17 @@ export function createDealRepository(db: DbClient) {
       return row ? toRecord(row) : null;
     },
 
+    /** UC-A5: deals of a brand or creator that can still be cancelled. */
+    async listCancellable(
+      owner: { brandId: string } | { creatorId: string },
+    ): Promise<DealRecord[]> {
+      const rows = await db.deal.findMany({
+        where: { ...owner, status: { in: ['ACCEPTED', 'CONTENT_SUBMITTED', 'POSTED'] } },
+        select: DEAL_SELECT,
+      });
+      return rows.map(toRecord);
+    },
+
     async findIdForRequest(requestId: string): Promise<string | null> {
       const row = await db.deal.findUnique({ where: { requestId }, select: { id: true } });
       return row?.id ?? null;

@@ -84,6 +84,7 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },
+  accountDeletionScheduled: { name: 'Asha', date: '14 November 2026' },
   accountWarning: { name: 'Ravi', reason: 'Asking creators to pay a fee' },
   disputeWon: {
     name: 'Asha',

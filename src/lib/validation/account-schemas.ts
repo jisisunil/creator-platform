@@ -139,3 +139,13 @@ export const marketingConsentSchema = z.object({
 
 /** UC-A6 team management actions that target one record. */
 export const targetIdSchema = z.object({ id: z.string().min(1).max(64) });
+
+/** PRV-3: what should be corrected (for fields the user can't edit). */
+export const correctionRequestSchema = z.object({
+  details: z.string().trim().min(10, 'privacy.detailsTooShort').max(2000, 'validation.tooLong'),
+});
+
+/** PRV-4: the user types their email address to confirm deleting the account. */
+export const deleteAccountSchema = z.object({
+  confirmEmail: z.string().trim().min(1, 'privacy.confirmEmail').max(320),
+});

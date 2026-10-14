@@ -145,6 +145,8 @@ enum UserStatus {
   PENDING_VERIFICATION // signed up, email not verified yet (deleted after 7 days)
   ACTIVE
   SUSPENDED
+  DELETION_PENDING // PRV-4: signed out and hidden at once; anonymised after 30 days
+  ANONYMISED // PRV-4: personal data removed; the row stays so others' copies say "Deleted user"
 }
 
 model User {
@@ -189,6 +191,7 @@ model User {
   dealEvents               DealEvent[]
   ratingsGiven             Rating[]
   chatAccessGrants         ChatAccessGrant[]
+  dataRequests             DataRequest[]
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
   reports                  Report[]
@@ -1289,4 +1292,42 @@ model ChatAccessGrant {
 
   @@index([adminUserId, createdAt])
   @@index([threadId])
+}
+
+// ---------------------------------------------------------------------------
+// Privacy rights (phase g)
+// ---------------------------------------------------------------------------
+
+enum DataRequestType {
+  EXPORT // PRV-2, completed at once
+  DELETION // PRV-4, finalised 30 days after the request
+  CORRECTION // PRV-3, for locked fields an admin must change
+}
+
+enum DataRequestStatus {
+  OPEN
+  COMPLETED
+  REJECTED
+}
+
+/// PR-5 / UC-M4: a privacy request, tracked against its legal due date.
+model DataRequest {
+  id                 String            @id @default(cuid())
+  userId             String
+  type               DataRequestType
+  status             DataRequestStatus @default(OPEN)
+  /// What the user asked for (corrections); never chat content.
+  details            String?
+  dueAt              DateTime
+  /// UC-M4: identity confirmed (automatic for requests made while signed in).
+  identityVerifiedAt DateTime?
+  handledByUserId    String?
+  resolution         String?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  user               User              @relation(fields: [userId], references: [id])
+
+  @@index([status, dueAt])
+  @@index([userId, type])
 }

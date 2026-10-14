@@ -14,6 +14,7 @@ import { createModerationRepository } from './moderation-repository';
 import { createNotificationRepository } from './notification-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createPlanRepository } from './plan-repository';
+import { createPrivacyRepository } from './privacy-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
 import { createRatingRepository } from './rating-repository';
 import { createReferenceRepository } from './reference-repository';
@@ -54,6 +55,7 @@ export function createRepositories(db: DbClient) {
     notifications: createNotificationRepository(db),
     admin: createAdminRepository(db),
     moderation: createModerationRepository(db),
+    privacy: createPrivacyRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

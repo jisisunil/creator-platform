@@ -8,7 +8,12 @@ import { SubmitButton } from '@/components/forms/SubmitButton';
 import { useValidatedForm } from '@/components/forms/use-validated-form';
 import { type ActionState, IDLE } from '@/lib/action-state';
 import { inviteMemberSchema } from '@/lib/validation/account-schemas';
-import { inviteMemberAction, removeMemberAction, revokeInviteAction } from './actions';
+import {
+  inviteMemberAction,
+  removeMemberAction,
+  revokeInviteAction,
+  transferOwnershipAction,
+} from './actions';
 
 /** UC-A6: invite form for the brand owner. */
 export function InviteMemberForm() {
@@ -70,6 +75,19 @@ export function RemoveMemberButton({ userId, name }: { userId: string; name: str
       label={t('remove')}
       confirmMessage={t('removeConfirm', { name })}
       action={removeMemberAction}
+    />
+  );
+}
+
+/** UC-A5: make a member the brand owner (owner only; the server checks). */
+export function MakeOwnerButton({ userId, name }: { userId: string; name: string }) {
+  const t = useTranslations('team');
+  return (
+    <RowAction
+      id={userId}
+      label={t('makeOwner')}
+      confirmMessage={t('makeOwnerConfirm', { name })}
+      action={transferOwnershipAction}
     />
   );
 }

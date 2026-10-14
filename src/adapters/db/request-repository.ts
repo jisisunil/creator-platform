@@ -228,6 +228,9 @@ export function createRequestRepository(db: DbClient) {
     countOpenForCreator: (creatorId: string, now: Date): Promise<number> =>
       db.collabRequest.count({ where: { creatorId, status: 'OPEN', expiresAt: { gt: now } } }),
 
+    countOpenForBrand: (brandId: string, now: Date): Promise<number> =>
+      db.collabRequest.count({ where: { brandId, status: 'OPEN', expiresAt: { gt: now } } }),
+
     /** UC-R2: edits an open request and bumps its version. False if it is no longer open. */
     async updateOpen(id: string, fields: EditableRequestFields): Promise<boolean> {
       const result = await db.collabRequest.updateMany({

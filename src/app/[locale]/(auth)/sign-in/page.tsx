@@ -19,7 +19,7 @@ export default async function SignInPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ link?: string; google?: string }>;
+  searchParams: Promise<{ link?: string; google?: string; deleted?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -49,6 +49,7 @@ export default async function SignInPage({
 
   return (
     <PageShell narrow title={t('title')}>
+      {query.deleted === '1' ? <Alert variant="success">{t('accountDeleted')}</Alert> : null}
       {query.google === 'rejected' ? (
         <Alert variant="destructive">{t('googleRejected')}</Alert>
       ) : null}

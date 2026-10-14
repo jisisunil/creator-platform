@@ -39,6 +39,8 @@ export type { DealEventRecord, DealPostRecord, DealSummary } from '@/adapters/db
 const PAISE_PER_RUPEE = 100;
 const DAY_MS = 86_400_000;
 const logger = getLogger('deals');
+/** Shown as the cancellation reason when a deal ends because an account was deleted. */
+const ACCOUNT_DELETED_REASON = 'Account deleted';
 
 /** FR-9.1: the deal for an accepted request; call inside the acceptance transaction. */
 export async function createDealFromRequest(
@@ -553,4 +555,51 @@ export async function refreshDealPosts(
     }
   }
   return counts;
+}
+
+/**
+ * UC-A5 / PRV-4: when an account closes, its deals that haven't reached payment are
+ * cancelled ("account deleted") and the other side is told. Deals already marked paid stay
+ * for both sides' records. Call inside the deletion transaction.
+ */
+export async function cancelDealsForClosedAccount(
+  repos: Repositories,
+  input: {
+    readonly owner: { readonly brandId: string } | { readonly creatorId: string };
+    readonly appUrl: string;
+    readonly now: Date;
+  },
+): Promise<number> {
+  const side: CollabSide = 'brandId' in input.owner ? 'BRAND' : 'CREATOR';
+  const deals = await repos.deals.listCancellable(input.owner);
+  for (const deal of deals) {
+    const isCancelled = await repos.deals.transition(deal.id, deal.status, 'CANCELLED', {
+      cancelledAt: input.now,
+      cancelledBySide: side,
+      cancelReason: ACCOUNT_DELETED_REASON,
+    });
+    if (!isCancelled) continue;
+    await repos.deals.addEvent({
+      dealId: deal.id,
+      kind: 'CANCELLED',
+      actorUserId: null,
+      actorSide: side,
+      note: ACCOUNT_DELETED_REASON,
+      createdAt: input.now,
+    });
+    await notifyUsers(repos, input.appUrl, {
+      now: input.now,
+      userIds: await otherSideContacts(repos, deal, side),
+      path: `/deals/${deal.id}`,
+      email: (recipient) => ({
+        template: 'dealCancelled',
+        payload: {
+          ...recipient,
+          otherPartyName: side === 'BRAND' ? deal.brandName : deal.creatorDisplayName,
+          campaignName: deal.campaignName,
+        },
+      }),
+    });
+  }
+  return deals.length;
 }

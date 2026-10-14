@@ -67,10 +67,19 @@ export default async function CreatorRequestPage({
       {request.version > 1 && request.status === 'OPEN' ? (
         <Alert>{t('updatedByBrand')}</Alert>
       ) : null}
-      {request.chatId ? (
-        <Button asChild className="w-fit">
-          <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
-        </Button>
+      {request.dealId || request.chatId ? (
+        <div className="flex flex-wrap gap-3">
+          {request.dealId ? (
+            <Button asChild>
+              <Link href={`/deals/${request.dealId}`}>{t('openDeal')}</Link>
+            </Button>
+          ) : null}
+          {request.chatId ? (
+            <Button asChild variant="outline">
+              <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
+            </Button>
+          ) : null}
+        </div>
       ) : null}
       <RequestTerms request={request} locale={locale} countryCode={session.user.countryCode} />
       {request.canRespond ? (

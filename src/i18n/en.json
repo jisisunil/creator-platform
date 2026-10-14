@@ -98,7 +98,9 @@
     "requests": "Requests",
     "messages": "Messages",
     "unreadMessages": "{count, plural, one {# unread message} other {# unread messages}}",
-    "openRequests": "{count, plural, one {# request waiting} other {# requests waiting}}"
+    "openRequests": "{count, plural, one {# request waiting} other {# requests waiting}}",
+    "deals": "Deals",
+    "campaigns": "Campaigns"
   },
   "fieldErrors": {
     "validation": {
@@ -165,6 +167,17 @@
       "fileType": "Send a JPG, PNG or WebP image, or a PDF.",
       "fileRejected": "This file can't be sent. Try a different one.",
       "reasonTooShort": "Tell us a little more (at least 10 characters)."
+    },
+    "deal": {
+      "invalidAmount": "Enter a whole rupee amount, or leave it blank.",
+      "invalidPercent": "Enter a percentage from 0 to 100, or leave it blank.",
+      "invalidDueDate": "Choose today or a later date.",
+      "unknownLink": "Paste the link of a YouTube video or an Instagram post or reel.",
+      "notYourPost": "This post isn't on one of your connected accounts. Connect the account first, or check the link.",
+      "postPrivate": "This post is private. Make it public so the brand can see it.",
+      "tryLater": "We couldn't check this post just now. Please try again in a little while.",
+      "alreadyAdded": "This post is already on the deal.",
+      "reasonRequired": "Tell the other side why (at least 5 characters)."
     }
   },
   "industries": {
@@ -458,6 +471,26 @@
       "subject": "{creatorName} declined your request",
       "body": "Hi {name},\n{creatorName} declined your request for \"{campaignName}\". You can find other creators in search.",
       "action": "View request"
+    },
+    "dealCancelled": {
+      "subject": "A deal was cancelled",
+      "body": "Hi {name},\n{otherPartyName} cancelled the deal for \"{campaignName}\". You can see their reason on the deal page.",
+      "action": "View deal"
+    },
+    "paymentMarked": {
+      "subject": "{brandName} marked your deal as paid",
+      "body": "Hi {name},\n{brandName} marked the deal for \"{campaignName}\" as paid. Please confirm once the money reaches you, or tell us if it doesn't.",
+      "action": "Confirm payment"
+    },
+    "dealDeadlinePassed": {
+      "subject": "A content deadline has passed",
+      "body": "Hi {name},\nThe content deadline for \"{campaignName}\" has passed and nothing has been posted yet. Please check in with each other in the chat.",
+      "action": "Open the deal"
+    },
+    "paymentOverdue": {
+      "subject": "Payment to {creatorName} is overdue",
+      "body": "Hi {name},\nThe payment for \"{campaignName}\" with {creatorName} is overdue. Please pay as agreed and mark the deal as paid.",
+      "action": "Open the deal"
     }
   },
   "platforms": {
@@ -500,7 +533,8 @@
       "viewPublic": "View public profile",
       "searchVisible": "Brands can find you in search.",
       "searchHidden": "You're not in search yet: connect an account first.",
-      "viewRequests": "Collaboration requests"
+      "viewRequests": "Collaboration requests",
+      "viewDeals": "Deals"
     },
     "profile": {
       "title": "Your profile",
@@ -899,7 +933,8 @@
       "declineReason": "Reason (optional, shared with the brand)",
       "decline": "Decline",
       "changedMeanwhile": "The brand changed this request just now. Reload the page, check the new version and answer again.",
-      "openChat": "Open chat"
+      "openChat": "Open chat",
+      "openDeal": "Open deal"
     },
     "block": {
       "confirm": "Block {name}? You won't get requests or messages from each other.",
@@ -944,6 +979,142 @@
       "hint": "Our team reviews every report. They may read this chat to investigate.",
       "sent": "Thanks. Our team will review this.",
       "submit": "Send report"
+    }
+  },
+  "deals": {
+    "title": "Deals",
+    "intro": "Accepted requests and how they are going.",
+    "empty": "No deals yet. A deal starts when a creator accepts a request.",
+    "campaignsLink": "See campaigns and reports",
+    "deadline": "content due {date}",
+    "with": "With {name}",
+    "openChat": "Open chat",
+    "summaryLink": "Deal summary",
+    "requestLink": "Original request",
+    "cancelledBy": "Cancelled by {side, select, BRAND {the brand} CREATOR {the creator} other {}}. Reason: {reason}",
+    "progressLabel": "Deal progress",
+    "stepDone": "Done:",
+    "stepTodo": "To do:",
+    "nextStep": "Next step",
+    "waitingForCreator": "Waiting for the creator to confirm they received the payment.",
+    "deliverablesTitle": "Deliverables and usage rights",
+    "cancelTitle": "Cancel this deal",
+    "status": {
+      "ACCEPTED": "Accepted",
+      "CONTENT_SUBMITTED": "Content submitted",
+      "POSTED": "Posted",
+      "PAYMENT_MARKED": "Payment marked",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "terms": {
+      "title": "Amount and payment terms",
+      "amount": "Agreed amount",
+      "notAgreed": "Not agreed yet",
+      "split": "Advance and balance",
+      "splitValue": "{percent}% advance ({advance}), balance {balance}",
+      "contentDeadline": "Content deadline",
+      "paymentDue": "Payment due",
+      "dueAfterPosting": "7 days after posting, unless agreed otherwise",
+      "advancePercent": "Advance (%)",
+      "dueOn": "Payment due date",
+      "save": "Save terms",
+      "saved": "Terms saved. The creator can see them."
+    },
+    "actions": {
+      "contentNote": "Note for the brand (optional)",
+      "contentNoteHint": "Share drafts in the chat, then mark the content as submitted here.",
+      "submitContent": "Mark content as submitted",
+      "postAdded": "Post added. Its stats will update every day.",
+      "disclosure": "Reminder: label sponsored posts clearly, for example with #ad or #collab, as advertising rules require.",
+      "postUrl": "Link to the published post",
+      "postUrlHint": "A YouTube video, or an Instagram post or reel, from your connected account.",
+      "addPost": "Add post",
+      "markPaidConfirm": "Mark this deal as paid? The creator will be asked to confirm.",
+      "markPaidHint": "Pay the creator as agreed, then mark it here.",
+      "markPaid": "Mark as paid",
+      "confirmHint": "The brand marked this deal as paid. Has the money reached you?",
+      "confirmReceived": "Yes, I received it",
+      "disputeSent": "Our team will look into it and contact you both.",
+      "notReceivedNote": "Not received? Tell us what happened",
+      "notReceived": "I haven't received it",
+      "cancelReason": "Reason (the other side will see it)",
+      "cancel": "Cancel deal"
+    },
+    "posts": {
+      "title": "Posts",
+      "none": "No posts yet.",
+      "stats": "{views} views · {likes} likes · {comments} comments",
+      "statsNoViews": "{likes} likes · {comments} comments",
+      "status": {
+        "DELETED": "Post deleted, last known stats shown",
+        "PRIVATE": "Post made private, last known stats shown"
+      },
+      "updated": "last updated {date}"
+    },
+    "history": {
+      "title": "History",
+      "events": {
+        "CREATED": "Request accepted, deal started",
+        "TERMS_UPDATED": "The brand updated the amount or payment terms",
+        "CONTENT_SUBMITTED": "The creator submitted the content",
+        "POST_ADDED": "The creator added a post link",
+        "PAYMENT_MARKED": "The brand marked the deal as paid",
+        "PAYMENT_CONFIRMED": "The creator confirmed the payment; deal completed",
+        "PAYMENT_DISPUTED": "The creator reported the payment as not received",
+        "CANCELLED": "Cancelled by {side, select, BRAND {the brand} CREATOR {the creator} other {someone}}",
+        "DEADLINE_REMINDER": "Reminder sent: the content deadline has passed",
+        "PAYMENT_REMINDER": "Reminder sent: the payment is overdue"
+      }
+    },
+    "summary": {
+      "title": "Deal summary",
+      "generated": "Created on {date}",
+      "print": "Print or save as PDF",
+      "brand": "Brand",
+      "creator": "Creator",
+      "campaign": "Campaign",
+      "status": "Status",
+      "deliverables": "Deliverables",
+      "usageRights": "Usage rights",
+      "amount": "Agreed amount",
+      "notAgreed": "Not agreed",
+      "paymentTerms": "Payment terms",
+      "fullOnCompletion": "Full amount after posting",
+      "accepted": "Accepted on",
+      "contentDeadline": "Content deadline",
+      "paymentDue": "Payment due",
+      "posted": "Posted on",
+      "paid": "Marked paid on",
+      "completed": "Completed on",
+      "notYet": "Not yet",
+      "brief": "Brief",
+      "posts": "Posts",
+      "disclosure": "Sponsored posts must be clearly labelled (for example #ad or #collab).",
+      "disclaimer": "An informal record of what both sides agreed on this platform. It is not legal advice and does not replace a written contract."
+    }
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "intro": "Requests and deals grouped by campaign name.",
+    "empty": "No campaigns yet. Name a campaign when you send a request.",
+    "counts": "{requests, plural, one {# request} other {# requests}} · {deals, plural, one {# deal} other {# deals}} · last used {date}",
+    "report": {
+      "intro": "Deals in this campaign and how their posts performed.",
+      "totalsTitle": "Campaign report",
+      "deals": "Deals",
+      "posts": "Posts",
+      "views": "Views",
+      "likes": "Likes",
+      "comments": "Comments",
+      "engagement": "Engagement (per view)",
+      "spend": "Agreed spend",
+      "costPerThousandViews": "Cost per 1,000 views",
+      "costPerEngagement": "Cost per like or comment",
+      "notAvailable": "Not available",
+      "costNote": "Costs use only deals with an agreed amount. Instagram doesn't share views, so views come from YouTube posts. Cancelled deals are left out.",
+      "upgrade": "Campaign reports come with the Pro plan. You can still see each deal and its posts below.",
+      "noDeals": "No accepted deals in this campaign yet."
     }
   }
 }

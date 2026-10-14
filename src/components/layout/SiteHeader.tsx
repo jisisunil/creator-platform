@@ -22,7 +22,7 @@ export async function SiteHeader() {
     isSignedIn && role === 'CREATOR' ? await countOpenRequests(getContainer(), session.user.id) : 0;
 
   return (
-    <header className="border-b">
+    <header className="border-b print:hidden">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="font-semibold">
           {t('home')}
@@ -37,6 +37,9 @@ export async function SiteHeader() {
                 <>
                   <Link href="/creator/profile" className="underline-offset-4 hover:underline">
                     {t('profile')}
+                  </Link>
+                  <Link href="/deals" className="underline-offset-4 hover:underline">
+                    {t('deals')}
                   </Link>
                   <Link href="/creator/requests" className="underline-offset-4 hover:underline">
                     {t('requests')}
@@ -63,6 +66,9 @@ export async function SiteHeader() {
                   </Link>
                   <Link href="/brand/requests" className="underline-offset-4 hover:underline">
                     {t('requests')}
+                  </Link>
+                  <Link href="/deals" className="underline-offset-4 hover:underline">
+                    {t('deals')}
                   </Link>
                   <Link href="/brand/team" className="underline-offset-4 hover:underline">
                     {t('team')}

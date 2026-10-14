@@ -3,6 +3,7 @@ import type { Repositories } from '@/adapters/db/repositories';
 import type { SocialAccountStatus } from '@/adapters/db/social-account-repository';
 import {
   type PlatformAccount,
+  type PostStats,
   type ProviderTokens,
   type SocialPlatform,
   SocialProviderError,
@@ -375,4 +376,40 @@ export async function queueDueRefreshes(ctx: ServiceContext): Promise<{ queued: 
   );
   for (const accountId of ids) await requestRefresh(ctx, accountId);
   return { queued: ids.length };
+}
+
+/**
+ * UC-R6: a post's current stats, read through the account that published it (with a fresh
+ * token where the platform needs one). Null when the post is gone or not on that account,
+ * or the account no longer exists. Provider errors (private, quota, temporary) are thrown.
+ */
+export async function fetchPostStatsFor(
+  ctx: ServiceContext,
+  input: { readonly socialAccountId: string; readonly postId: string },
+): Promise<PostStats | null> {
+  const account = await ctx.repos.socialAccounts.findForRefresh(input.socialAccountId);
+  if (!account || account.status !== 'ACTIVE') return null;
+  return ctx.socialProviders[account.platform].fetchPostStats({
+    postId: input.postId,
+    accountExternalId: account.externalId,
+    accessToken: await freshAccessToken(ctx, account),
+  });
+}
+
+/**
+ * UC-R6: which of the creator's active accounts on the platform published the post, with
+ * its stats; null when none did (a link to someone else's post is rejected by the caller).
+ */
+export async function findCreatorPost(
+  ctx: ServiceContext,
+  input: { readonly creatorId: string; readonly platform: SocialPlatform; readonly postId: string },
+): Promise<{ socialAccountId: string; stats: PostStats } | null> {
+  for (const socialAccountId of await ctx.repos.socialAccounts.listActiveIds(
+    input.creatorId,
+    input.platform,
+  )) {
+    const stats = await fetchPostStatsFor(ctx, { socialAccountId, postId: input.postId });
+    if (stats) return { socialAccountId, stats };
+  }
+  return null;
 }

@@ -16,16 +16,31 @@ export function requestInput(overrides: Partial<RequestInput> = {}): RequestInpu
   };
 }
 
+export interface PartyOptions {
+  readonly brandEmail?: string;
+  readonly creatorEmail?: string;
+  readonly brandPlan?: 'FREE_BETA' | 'TRIAL' | 'STARTER' | 'PRO';
+}
+
+/** The creator's YouTube account id in collaboration tests; mock post links use it. */
+export const CREATOR_CHANNEL_ID = 'mock-yt-asha-cooks';
+
 /** A brand owner and a searchable creator, ready for requests. */
 export async function createBrandAndCreator(
   ctx: TestContext,
   db: DatabaseClient,
-  options: { brandEmail?: string; creatorEmail?: string } = {},
+  options: PartyOptions = {},
 ) {
-  const brand = await createBrandOwner(ctx, db, options.brandEmail ?? 'owner@spiceco.in');
+  const brand = await createBrandOwner(
+    ctx,
+    db,
+    options.brandEmail ?? 'owner@spiceco.in',
+    options.brandPlan,
+  );
   const creator = await createSearchableCreator(ctx, db, {
     email: options.creatorEmail ?? 'creator@example.in',
     displayName: 'Asha Cooks',
+    externalId: options.creatorEmail ? undefined : CREATOR_CHANNEL_ID,
   });
   const creatorUser = await db.user.findUniqueOrThrow({
     where: { email: options.creatorEmail ?? 'creator@example.in' },
@@ -47,7 +62,7 @@ export function sendTestRequest(
 export async function acceptedRequest(
   ctx: TestContext,
   db: DatabaseClient,
-  options: { brandEmail?: string; creatorEmail?: string } = {},
+  options: PartyOptions = {},
 ) {
   const parties = await createBrandAndCreator(ctx, db, options);
   const requestId = await sendTestRequest(ctx, parties.brand.id, parties.creator.creatorId);

@@ -42,3 +42,22 @@ export const CHAT_ATTACHMENT = {
 
 /** FR-8.3: a report's reason. */
 export const REPORT_REASON_MAX = 1000;
+
+/** FR-9 deal tunables. */
+export const DEAL_LIMITS = {
+  reasonMax: 500,
+  postUrlMax: 500,
+  /** UC-R5: without an agreed due date, payment is due this many days after posting. */
+  paymentGraceDays: 7,
+  /** UC-R5: overdue payments are reminded again every this many days. */
+  paymentReminderRepeatDays: 7,
+  /** Deals handled per reminder job run. */
+  remindersPerRun: 500,
+} as const;
+
+/** UC-R6: post stats are refreshed daily for 90 days after posting. */
+export const POST_STATS_REFRESH = {
+  staleAfterMs: 20 * 3_600_000,
+  refreshForDays: 90,
+  postsPerRun: 500,
+} as const;

@@ -8,7 +8,14 @@ import type { EmailTemplates } from '@/adapters/email/templates';
 import { queueEmail } from '../email';
 
 /** Emails about collaboration events. */
-export type CollaborationTemplate = 'requestReceived' | 'requestAccepted' | 'requestDeclined';
+export type CollaborationTemplate =
+  | 'requestReceived'
+  | 'requestAccepted'
+  | 'requestDeclined'
+  | 'dealCancelled'
+  | 'paymentMarked'
+  | 'dealDeadlinePassed'
+  | 'paymentOverdue';
 
 export type NotificationEmail = {
   [Name in CollaborationTemplate]: {
@@ -48,4 +55,18 @@ export async function notifyUsers(
       ...notice.email({ name: user.name, link }),
     });
   }
+}
+
+/**
+ * Who on a brand's team hears about a collaboration: the member who sent the request if
+ * they are still active on the team, otherwise the owner (or the longest-standing member).
+ */
+export async function brandContactIds(
+  repos: Repositories,
+  brandId: string,
+  preferredUserId: string | null,
+): Promise<string[]> {
+  const memberIds = await repos.brands.activeMemberIds(brandId);
+  if (preferredUserId && memberIds.includes(preferredUserId)) return [preferredUserId];
+  return memberIds.slice(0, 1);
 }

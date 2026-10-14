@@ -181,6 +181,7 @@ model User {
   emailOutbox              EmailOutbox[]
   sentRequests             CollabRequest[]
   sentMessages             Message[]
+  dealEvents               DealEvent[]
   reports                  Report[]
 
   @@index([status, createdAt])
@@ -382,6 +383,7 @@ model Brand {
   requests      CollabRequest[]
   blocks        Block[]
   chatThreads   ChatThread[]
+  deals         Deal[]
 
   @@index([countryCode])
   @@index([planId])
@@ -481,6 +483,7 @@ model CreatorProfile {
   requests          CollabRequest[]
   blocks            Block[]
   chatThreads       ChatThread[]
+  deals             Deal[]
 
   @@index([countryCode, stateCode, city])
   @@index([isSearchable, currentScore])
@@ -593,6 +596,7 @@ model SocialAccount {
   snapshots             StatsSnapshot[]
   audience              AudienceSegment[]
   disputes              OwnershipDispute[]
+  dealPosts             DealPost[]
 
   @@unique([platform, externalId])
   @@index([creatorId])
@@ -850,6 +854,7 @@ model Campaign {
   updatedAt DateTime        @updatedAt
   brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
   requests  CollabRequest[]
+  deals     Deal[]
 
   @@unique([brandId, name])
 }
@@ -885,6 +890,7 @@ model CollabRequest {
   campaign      Campaign            @relation(fields: [campaignId], references: [id])
   sentBy        User?               @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
   chatThread    ChatThread?
+  deal          Deal?
 
   @@index([brandId, createdAt])
   @@index([brandId, status])
@@ -1018,4 +1024,116 @@ model Report {
   @@index([reporterUserId])
   @@index([targetType, targetId])
   @@index([threadId])
+}
+
+// ---------------------------------------------------------------------------
+// Deals and campaign reports (phase e)
+// ---------------------------------------------------------------------------
+
+/// FR-9.1: requested → accepted → content submitted → posted → payment marked → completed.
+enum DealStatus {
+  ACCEPTED
+  CONTENT_SUBMITTED
+  POSTED
+  PAYMENT_MARKED
+  COMPLETED
+  CANCELLED
+}
+
+/// A collaboration after the creator accepted (FR-9, UC-R4, UC-R5).
+model Deal {
+  id                     String         @id @default(cuid())
+  requestId              String         @unique
+  campaignId             String
+  brandId                String
+  creatorId              String
+  status                 DealStatus     @default(ACCEPTED)
+  /// Agreed amount in minor units (paise); starts as the request's budget.
+  agreedAmountMinor      Int?
+  currencyCode           String
+  /// FR-9.2: share paid in advance, 0-100; the rest is the balance.
+  advancePercent         Int?
+  paymentDueOn           DateTime?      @db.Date
+  deadline               DateTime       @db.Date
+  postedAt               DateTime?
+  paymentMarkedAt        DateTime?
+  completedAt            DateTime?
+  cancelledAt            DateTime?
+  cancelledBySide        CollabSide?
+  cancelReason           String?
+  deadlineReminderSentAt DateTime?
+  paymentReminderSentAt  DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  request                CollabRequest  @relation(fields: [requestId], references: [id])
+  campaign               Campaign       @relation(fields: [campaignId], references: [id])
+  brand                  Brand          @relation(fields: [brandId], references: [id])
+  creator                CreatorProfile @relation(fields: [creatorId], references: [id])
+  events                 DealEvent[]
+  posts                  DealPost[]
+
+  @@index([brandId, status])
+  @@index([creatorId, status])
+  @@index([campaignId])
+  @@index([status, deadline])
+  @@index([status, postedAt])
+}
+
+enum DealEventKind {
+  CREATED
+  TERMS_UPDATED
+  CONTENT_SUBMITTED
+  POST_ADDED
+  PAYMENT_MARKED
+  PAYMENT_CONFIRMED
+  PAYMENT_DISPUTED
+  CANCELLED
+  DEADLINE_REMINDER
+  PAYMENT_REMINDER
+}
+
+/// The deal's history, shown to both sides (FR-9.1).
+model DealEvent {
+  id          String        @id @default(cuid())
+  dealId      String
+  kind        DealEventKind
+  actorUserId String?
+  actorSide   CollabSide?
+  note        String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deal        Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actor       User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, createdAt])
+  @@index([actorUserId])
+}
+
+enum DealPostStatus {
+  LIVE
+  DELETED // gone from the platform; last stats kept (UC-R6)
+  PRIVATE // made private; last stats kept (UC-R6)
+}
+
+/// A published post for a deal, with its latest public stats (FR-9.3, UC-R6).
+model DealPost {
+  id              String         @id @default(cuid())
+  dealId          String
+  socialAccountId String?
+  platform        SocialPlatform
+  url             String
+  externalPostId  String
+  views           Int?
+  likes           Int            @default(0)
+  comments        Int            @default(0)
+  statsFetchedAt  DateTime?
+  status          DealPostStatus @default(LIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deal            Deal           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  socialAccount   SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+
+  @@unique([dealId, platform, externalPostId])
+  @@index([socialAccountId])
+  @@index([status, statsFetchedAt])
 }

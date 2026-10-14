@@ -17,6 +17,10 @@ export interface EmailTemplates {
   requestReceived: { name: string; brandName: string; campaignName: string; link: string };
   requestAccepted: { name: string; creatorName: string; campaignName: string; link: string };
   requestDeclined: { name: string; creatorName: string; campaignName: string; link: string };
+  dealCancelled: { name: string; otherPartyName: string; campaignName: string; link: string };
+  paymentMarked: { name: string; brandName: string; campaignName: string; link: string };
+  dealDeadlinePassed: { name: string; campaignName: string; link: string };
+  paymentOverdue: { name: string; creatorName: string; campaignName: string; link: string };
 }
 
 export type EmailTemplateName = keyof EmailTemplates;
@@ -37,6 +41,10 @@ const ACTION_KEYS = {
   requestReceived: 'requestReceived.action',
   requestAccepted: 'requestAccepted.action',
   requestDeclined: 'requestDeclined.action',
+  dealCancelled: 'dealCancelled.action',
+  paymentMarked: 'paymentMarked.action',
+  dealDeadlinePassed: 'dealDeadlinePassed.action',
+  paymentOverdue: 'paymentOverdue.action',
 } as const satisfies Partial<Record<EmailTemplateName, string>>;
 
 const MESSAGES = { en, hi } as const satisfies Record<SupportedLocale, unknown>;

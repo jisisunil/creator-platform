@@ -37,6 +37,29 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/brand/requests/r1',
   },
+  dealCancelled: {
+    name: 'Ravi',
+    otherPartyName: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  paymentMarked: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  dealDeadlinePassed: {
+    name: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  paymentOverdue: {
+    name: 'Ravi',
+    creatorName: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
 };
 
 describe('email templates (NFR-7)', () => {

@@ -9,6 +9,8 @@ import {
 } from './provider';
 
 const DAY_MS = 86_400_000;
+/** Mock post links look like https://mock.social/<account id>/<post name>. */
+const MOCK_POST_HOST = 'mock.social';
 const YEAR_DAYS = 365;
 /** Fixed reference date so a given account's curve never changes between runs. */
 const CURVE_START = Date.UTC(2026, 0, 1);
@@ -132,6 +134,35 @@ export function createMockProvider(
     async fetchStats({ externalId, now }) {
       failIfSimulated(externalId);
       return { ...account(externalId), ...mockStatsFor(platform, externalId, now) };
+    },
+
+    parsePostUrl(input) {
+      let url: URL;
+      try {
+        url = new URL(input.trim());
+      } catch {
+        // Not a URL.
+        return null;
+      }
+      const [accountId, postName] = url.pathname.split('/').filter(Boolean);
+      if (url.hostname !== MOCK_POST_HOST || !accountId?.startsWith(prefix) || !postName) {
+        return null;
+      }
+      return `${accountId}/${postName}`;
+    },
+
+    async fetchPostStats({ postId, accountExternalId }) {
+      const [owner, postName = ''] = postId.split('/');
+      // "deleted" and "private" in the post name simulate UC-R6 edge cases.
+      if (owner !== accountExternalId || postName.includes('deleted')) return null;
+      if (postName.includes('private'))
+        throw new SocialProviderError('ACCOUNT_PRIVATE', 'simulated');
+      const views = Math.round(between(postId, 'post-views', 2_000, 80_000));
+      return {
+        views: platform === 'YOUTUBE' ? views : null,
+        likes: Math.round(views * between(postId, 'post-likes', 0.02, 0.08)),
+        comments: Math.round(views * between(postId, 'post-comments', 0.001, 0.01)),
+      };
     },
 
     async findPublicAccount(urlOrId) {

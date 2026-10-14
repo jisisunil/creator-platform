@@ -98,6 +98,16 @@ export function createSocialAccountRepository(db: DbClient) {
     findForRefresh: (id: string): Promise<SocialAccountForRefresh | null> =>
       db.socialAccount.findUnique({ where: { id }, select: FOR_REFRESH_SELECT }),
 
+    /** The creator's working accounts on a platform (UC-R6 post ownership). */
+    async listActiveIds(creatorId: string, platform: SocialPlatform): Promise<string[]> {
+      const rows = await db.socialAccount.findMany({
+        where: { creatorId, platform, status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      });
+      return rows.map((row) => row.id);
+    },
+
     async countForCreator(creatorId: string): Promise<number> {
       return db.socialAccount.count({ where: { creatorId } });
     },

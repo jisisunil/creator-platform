@@ -20,6 +20,8 @@ export interface CreatorSpec {
   readonly isOpen?: boolean;
   /** Share of women in the audience, thousandths. */
   readonly womenPermille?: number;
+  /** The connected account's platform id; mock post links name it (UC-R6). */
+  readonly externalId?: string;
 }
 
 let externalCounter = 0;
@@ -52,7 +54,7 @@ export async function createSearchableCreator(
   const accountId = await repos.socialAccounts.create({
     creatorId: profile.id,
     platform: spec.platform ?? 'YOUTUBE',
-    externalId: `test-${Date.now()}-${externalCounter}`,
+    externalId: spec.externalId ?? `test-${Date.now()}-${externalCounter}`,
     handle: `@test${externalCounter}`,
     displayName: spec.displayName ?? 'Test Creator',
     isVerified: spec.isVerified ?? true,

@@ -1,4 +1,5 @@
 import type { JobDefinition } from '../job-definition';
+import { refreshDealPostsJob, sendDealRemindersJob } from './deals';
 import { dispatchEmailsJob } from './dispatch-emails';
 import { heartbeatJob } from './heartbeat';
 import { expireRequestsJob } from './requests';
@@ -14,4 +15,6 @@ export const ALL_JOBS: readonly JobDefinition[] = [
   queueDueRefreshesJob,
   refreshSocialAccountJob,
   expireRequestsJob,
+  sendDealRemindersJob,
+  refreshDealPostsJob,
 ];

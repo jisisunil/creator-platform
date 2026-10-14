@@ -37,6 +37,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               <Link href="/brand/requests">{tNav('requests')}</Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/deals">{tNav('deals')}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/brand/campaigns">{tNav('campaigns')}</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="/brand/saved-searches">{tNav('savedSearches')}</Link>
             </Button>
           </div>
@@ -90,6 +96,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
         </Button>
         <Button asChild variant="outline">
           <Link href="/creator/requests">{tCreator('viewRequests')}</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/deals">{tCreator('viewDeals')}</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/creator/accounts">{tCreator('manageAccounts')}</Link>

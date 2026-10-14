@@ -44,6 +44,14 @@ export interface AccountStats {
   readonly audience: readonly AudienceShare[] | null;
 }
 
+/** Public statistics of one post (FR-9.3, UC-R6). */
+export interface PostStats {
+  /** Null where the platform doesn't give views without extra permissions (Instagram). */
+  readonly views: number | null;
+  readonly likes: number;
+  readonly comments: number;
+}
+
 export type ProviderErrorKind =
   /** UC-C4: daily API quota used up; retry in the next window, keep old data. */
   | 'QUOTA_EXCEEDED'
@@ -99,4 +107,17 @@ export interface SocialPlatformProvider {
    * without public lookup (Instagram) return null.
    */
   findPublicAccount(urlOrId: string): Promise<PlatformAccount | null>;
+
+  /** FR-9.3: the post id in a link to a post on this platform, or null when it isn't one. */
+  parsePostUrl(url: string): string | null;
+
+  /**
+   * UC-R6: a post's current statistics, or null when the post is not (or no longer) on this
+   * account: deleted, or someone else's. Throws ACCOUNT_PRIVATE when it was made private.
+   */
+  fetchPostStats(input: {
+    postId: string;
+    accountExternalId: string;
+    accessToken: string | null;
+  }): Promise<PostStats | null>;
 }

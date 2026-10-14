@@ -7,6 +7,8 @@ export const JOB_NAMES = {
   queueDueRefreshes: 'social.queue-due-refreshes',
   refreshSocialAccount: 'social.refresh-account',
   expireRequests: 'requests.expire',
+  sendDealReminders: 'deals.send-reminders',
+  refreshDealPosts: 'deals.refresh-posts',
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];

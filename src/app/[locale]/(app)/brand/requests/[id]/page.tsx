@@ -66,10 +66,19 @@ export default async function BrandRequestPage({
       {request.status === 'DECLINED' && request.declineReason ? (
         <p className="text-sm">{t('declinedBecause', { reason: request.declineReason })}</p>
       ) : null}
-      {request.chatId ? (
-        <Button asChild className="w-fit">
-          <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
-        </Button>
+      {request.dealId || request.chatId ? (
+        <div className="flex flex-wrap gap-3">
+          {request.dealId ? (
+            <Button asChild>
+              <Link href={`/deals/${request.dealId}`}>{t('openDeal')}</Link>
+            </Button>
+          ) : null}
+          {request.chatId ? (
+            <Button asChild variant="outline">
+              <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
+            </Button>
+          ) : null}
+        </div>
       ) : null}
       <RequestTerms request={request} locale={locale} countryCode={session.user.countryCode} />
       {request.canEdit && formContext ? (

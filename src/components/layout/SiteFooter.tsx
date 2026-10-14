@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 export async function SiteFooter() {
   const t = await getTranslations('nav');
   return (
-    <footer className="mt-16 border-t">
+    <footer className="mt-16 border-t print:hidden">
       <nav
         aria-label={t('privacy')}
         className="text-muted-foreground mx-auto flex max-w-5xl flex-wrap gap-4 px-4 py-6 text-sm"

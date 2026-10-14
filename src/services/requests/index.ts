@@ -35,9 +35,10 @@ import {
 import { getLogger } from '@/lib/logger';
 import { openChatThread } from '../chat';
 import type { ServiceContext } from '../context';
+import { createDealFromRequest } from '../deals';
 import { requireBrandMembership } from '../discovery';
 import { requestEmailDispatch } from '../email';
-import { notifyUsers } from '../notifications';
+import { brandContactIds, notifyUsers } from '../notifications';
 import { consumeRateLimit, recordSecurityEvent } from '../security';
 
 export type { RequestSummary } from '@/adapters/db/request-repository';
@@ -278,15 +279,6 @@ export async function withdrawRequest(
   if (!isClosed) throw invalidState();
 }
 
-/** The brand member to tell about a request: its sender if still on the team, else the owner. */
-async function brandRecipient(repos: Repositories, request: RequestRecord): Promise<string[]> {
-  const memberIds = await repos.brands.activeMemberIds(request.brandId);
-  if (request.sentByUserId && memberIds.includes(request.sentByUserId)) {
-    return [request.sentByUserId];
-  }
-  return memberIds.slice(0, 1);
-}
-
 /**
  * FR-7.2 / UC-R2: the creator accepts or declines (with an optional reason). Expired
  * requests can't be answered; if the brand changed the request after the creator opened
@@ -311,7 +303,7 @@ export async function respondToRequest(
   }
   assertOpen(request, now);
   if (request.version !== input.version) throw conflict();
-  const recipients = await brandRecipient(ctx.repos, request);
+  const recipients = await brandContactIds(ctx.repos, request.brandId, request.sentByUserId);
   if (input.decision === 'accept' && recipients.length === 0) throw notAvailable();
 
   const isAccepted = input.decision === 'accept';
@@ -323,10 +315,14 @@ export async function respondToRequest(
       declineReason: isAccepted ? null : input.reason?.trim() || null,
     });
     if (!isClosed) throw conflict();
-    if (isAccepted) await openChatThread(repos, request, now);
+    let dealId: string | null = null;
+    if (isAccepted) {
+      await openChatThread(repos, request, now);
+      dealId = await createDealFromRequest(repos, request, now);
+    }
     await notifyUsers(repos, ctx.appUrl, {
       userIds: recipients,
-      path: `/brand/requests/${request.id}`,
+      path: isAccepted ? `/deals/${dealId}` : `/brand/requests/${request.id}`,
       email: (recipient) => {
         const payload = {
           ...recipient,
@@ -354,8 +350,9 @@ export interface RequestView extends RequestRecord {
   readonly isBlockedByViewer: boolean;
   readonly canEdit: boolean;
   readonly canRespond: boolean;
-  /** The chat opened when the request was accepted. */
+  /** The chat and deal opened when the request was accepted. */
   readonly chatId: string | null;
+  readonly dealId: string | null;
 }
 
 /**
@@ -397,6 +394,7 @@ export async function getRequest(
     canEdit: viewerSide === 'BRAND' && status === 'OPEN',
     canRespond: viewerSide === 'CREATOR' && status === 'OPEN',
     chatId: await ctx.repos.chat.findThreadIdForRequest(request.id),
+    dealId: await ctx.repos.deals.findIdForRequest(request.id),
   };
 }
 

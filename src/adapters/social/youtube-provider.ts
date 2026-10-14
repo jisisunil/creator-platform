@@ -15,6 +15,7 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
 const MAX_IDS_PER_REQUEST = 50;
 const CHANNEL_ID_PATTERN = /^UC[\w-]{22}$/;
+const VIDEO_ID_PATTERN = /^[\w-]{11}$/;
 
 export interface YouTubeConfig {
   readonly apiKey: string;
@@ -203,6 +204,27 @@ export function createYouTubeProvider(
       };
     },
 
+    parsePostUrl: parseVideoUrl,
+
+    async fetchPostStats({ postId, accountExternalId, accessToken }) {
+      const body = await get(
+        'videos',
+        { part: 'snippet,statistics,status', id: postId },
+        accessToken,
+      );
+      const video = pick(body, 'items', 0);
+      // Missing (deleted, or private and we can't see it) or on another channel.
+      if (!video || pick(video, 'snippet', 'channelId') !== accountExternalId) return null;
+      if (pick(video, 'status', 'privacyStatus') === 'private') {
+        throw new SocialProviderError('ACCOUNT_PRIVATE', 'video is private');
+      }
+      return {
+        views: toCount(pick(video, 'statistics', 'viewCount')),
+        likes: toCount(pick(video, 'statistics', 'likeCount')),
+        comments: toCount(pick(video, 'statistics', 'commentCount')),
+      };
+    },
+
     async findPublicAccount(urlOrId) {
       const query = parseChannelReference(urlOrId);
       if (!query) return null;
@@ -232,4 +254,24 @@ export function parseChannelReference(
   if (first === 'channel' && second && CHANNEL_ID_PATTERN.test(second)) return { id: second };
   if (first?.startsWith('@')) return { forHandle: first };
   return null;
+}
+
+/** The video id in a watch, short, live or youtu.be link; null for anything else. */
+export function parseVideoUrl(input: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(input.trim());
+  } catch {
+    // Not a URL.
+    return null;
+  }
+  const host = url.hostname.replace(/^(www|m)\./, '');
+  const segments = url.pathname.split('/').filter(Boolean);
+  let id: string | null | undefined = null;
+  if (host === 'youtu.be') id = segments[0];
+  else if (host === 'youtube.com' && segments[0] === 'watch') id = url.searchParams.get('v');
+  else if (host === 'youtube.com' && (segments[0] === 'shorts' || segments[0] === 'live')) {
+    id = segments[1];
+  }
+  return id && VIDEO_ID_PATTERN.test(id) ? id : null;
 }

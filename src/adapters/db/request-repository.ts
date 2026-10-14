@@ -100,6 +100,11 @@ const SUMMARY_SELECT = {
 type RecordRow = Prisma.CollabRequestGetPayload<{ select: typeof RECORD_SELECT }>;
 type SummaryRow = Prisma.CollabRequestGetPayload<{ select: typeof SUMMARY_SELECT }>;
 
+/** Deliverables JSON from the database, validated. */
+export function parseStoredDeliverables(value: unknown): DeliverableLine[] {
+  return storedDeliverablesSchema.parse(value);
+}
+
 function toJson(lines: readonly DeliverableLine[]): Prisma.InputJsonValue {
   return lines.map((line) => ({ deliverable: line.deliverable, quantity: line.quantity }));
 }
@@ -113,7 +118,7 @@ function toRecord(row: RecordRow): RequestRecord {
     creatorDisplayName: creator.displayName,
     creatorSlug: creator.slug,
     campaignName: campaign.name,
-    deliverables: storedDeliverablesSchema.parse(deliverables),
+    deliverables: parseStoredDeliverables(deliverables),
   };
 }
 

@@ -18,6 +18,10 @@ const SHORT_TOKEN_URL = 'https://api.instagram.com/oauth/access_token';
 const SCOPES = 'instagram_business_basic,instagram_business_manage_insights';
 const PROFESSIONAL_ACCOUNT_TYPES = new Set(['BUSINESS', 'MEDIA_CREATOR']);
 const PERMILLE = 1000;
+/** UC-R6: a deal's post is looked up among the account's latest posts. */
+const MAX_MEDIA_LOOKUP = 100;
+const SHORTCODE_PATTERN = /^[\w-]{5,40}$/;
+const POST_PATH_KINDS = new Set(['p', 'reel', 'reels', 'tv']);
 
 // Graph API error codes (developers.facebook.com/docs/graph-api/guides/error-handling).
 const EXPIRED_OR_REVOKED_TOKEN = 190;
@@ -218,5 +222,41 @@ export function createInstagramProvider(
     },
 
     findPublicAccount: async () => null,
+
+    parsePostUrl: parsePostShortcode,
+
+    async fetchPostStats({ postId, accountExternalId, accessToken }) {
+      if (!accessToken) throw new SocialProviderError('TOKEN_REVOKED', 'no token');
+      // The Graph API has no lookup by link, so find the post among the account's own.
+      const media = await graphGet(`${accountExternalId}/media`, {
+        fields: 'id,permalink,like_count,comments_count',
+        limit: String(MAX_MEDIA_LOOKUP),
+        access_token: accessToken,
+      });
+      const items = pick(media, 'data');
+      const post = (Array.isArray(items) ? items : []).find((item) =>
+        String(pick(item, 'permalink') ?? '').includes(`/${postId}/`),
+      );
+      if (!post) return null;
+      return {
+        views: null,
+        likes: toCount(pick(post, 'like_count')),
+        comments: toCount(pick(post, 'comments_count')),
+      };
+    },
   };
+}
+
+/** The shortcode in an instagram.com post, reel or IGTV link; null for anything else. */
+export function parsePostShortcode(input: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(input.trim());
+  } catch {
+    // Not a URL.
+    return null;
+  }
+  if (url.hostname.replace(/^www\./, '') !== 'instagram.com') return null;
+  const [kind, code] = url.pathname.split('/').filter(Boolean);
+  return kind && POST_PATH_KINDS.has(kind) && code && SHORTCODE_PATTERN.test(code) ? code : null;
 }

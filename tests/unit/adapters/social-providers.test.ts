@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createInstagramProvider } from '@/adapters/social/instagram-provider';
+import { createInstagramProvider, parsePostShortcode } from '@/adapters/social/instagram-provider';
 import { createMockProvider, mockStatsFor } from '@/adapters/social/mock-provider';
-import { createYouTubeProvider, parseChannelReference } from '@/adapters/social/youtube-provider';
+import {
+  createYouTubeProvider,
+  parseChannelReference,
+  parseVideoUrl,
+} from '@/adapters/social/youtube-provider';
 
 const now = new Date('2026-10-13T10:00:00Z');
 const recent = '2026-10-01T10:00:00Z';
@@ -278,5 +282,110 @@ describe('mock provider', () => {
     ).rejects.toMatchObject({
       kind: 'QUOTA_EXCEEDED',
     });
+  });
+});
+
+describe('post links and post stats (FR-9.3, UC-R6)', () => {
+  it('reads video ids from watch, short, live and youtu.be links only', () => {
+    expect(parseVideoUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10')).toBe('dQw4w9WgXcQ');
+    expect(parseVideoUrl('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(parseVideoUrl('https://m.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(parseVideoUrl('https://www.youtube.com/@asha')).toBeNull();
+    expect(parseVideoUrl('https://evil.example/watch?v=dQw4w9WgXcQ')).toBeNull();
+    expect(parseVideoUrl('not a link')).toBeNull();
+  });
+
+  it('reads shortcodes from Instagram post, reel and IGTV links only', () => {
+    expect(parsePostShortcode('https://www.instagram.com/p/C8xYz12AbC/')).toBe('C8xYz12AbC');
+    expect(parsePostShortcode('https://instagram.com/reel/C8xYz12AbC/?igsh=x')).toBe('C8xYz12AbC');
+    expect(parsePostShortcode('https://www.instagram.com/asha.cooks/')).toBeNull();
+    expect(parsePostShortcode('https://instagram.com.evil.example/p/C8xYz12AbC/')).toBeNull();
+  });
+
+  it("UC-R6 returns a YouTube video's stats only when it is on the creator's channel", async () => {
+    const video = (channelId: string) => ({
+      items: [
+        {
+          snippet: { channelId },
+          status: { privacyStatus: 'public' },
+          statistics: { viewCount: '12000', likeCount: '800', commentCount: '45' },
+        },
+      ],
+    });
+    const own = createYouTubeProvider(
+      youtubeConfig,
+      fakeFetch([['/videos?', 200, video('UCown')]]),
+    );
+    const other = createYouTubeProvider(
+      youtubeConfig,
+      fakeFetch([['/videos?', 200, video('UCother')]]),
+    );
+    const gone = createYouTubeProvider(
+      youtubeConfig,
+      fakeFetch([['/videos?', 200, { items: [] }]]),
+    );
+    const input = { postId: 'dQw4w9WgXcQ', accountExternalId: 'UCown', accessToken: null };
+
+    expect(await own.fetchPostStats(input)).toEqual({ views: 12_000, likes: 800, comments: 45 });
+    expect(await other.fetchPostStats(input)).toBeNull();
+    expect(await gone.fetchPostStats(input)).toBeNull();
+  });
+
+  it("UC-R6 finds an Instagram post among the account's own media", async () => {
+    const provider = createInstagramProvider(
+      { appId: 'app', appSecret: 'secret' },
+      fakeFetch([
+        [
+          '/media?',
+          200,
+          {
+            data: [
+              {
+                id: '1',
+                permalink: 'https://www.instagram.com/reel/OTHER123/',
+                like_count: 1,
+                comments_count: 1,
+              },
+              {
+                id: '2',
+                permalink: 'https://www.instagram.com/p/C8xYz12AbC/',
+                like_count: 950,
+                comments_count: 40,
+              },
+            ],
+          },
+        ],
+      ]),
+    );
+    const input = { accountExternalId: '1789', accessToken: 'token' };
+
+    expect(await provider.fetchPostStats({ ...input, postId: 'C8xYz12AbC' })).toEqual({
+      views: null,
+      likes: 950,
+      comments: 40,
+    });
+    expect(await provider.fetchPostStats({ ...input, postId: 'MISSING99' })).toBeNull();
+  });
+
+  it('mock post links belong to the account they name', async () => {
+    const provider = createMockProvider('YOUTUBE', 'https://app.test');
+    const postId = provider.parsePostUrl('https://mock.social/mock-yt-asha/diwali-reel');
+
+    expect(postId).toBe('mock-yt-asha/diwali-reel');
+    expect(provider.parsePostUrl('https://mock.social/mock-ig-asha/diwali-reel')).toBeNull();
+    expect(
+      await provider.fetchPostStats({
+        postId: postId ?? '',
+        accountExternalId: 'mock-yt-asha',
+        accessToken: null,
+      }),
+    ).toMatchObject({ views: expect.any(Number) });
+    expect(
+      await provider.fetchPostStats({
+        postId: postId ?? '',
+        accountExternalId: 'mock-yt-other',
+        accessToken: null,
+      }),
+    ).toBeNull();
   });
 });

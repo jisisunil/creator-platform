@@ -9,6 +9,12 @@ const PRIVACY_NOTICE_PUBLISHED_AT = new Date('2026-10-09T00:00:00Z');
 
 /** Upserts countries, languages, categories, plans and settings. Safe to run repeatedly. */
 export async function seedReferenceData(db: DatabaseClient): Promise<void> {
+  await seedStaticReferenceData(db);
+  await seedChangeableReferenceData(db);
+}
+
+/** Countries, languages and categories: rarely change and are never edited in the app. */
+async function seedStaticReferenceData(db: DatabaseClient): Promise<void> {
   for (const country of COUNTRY_SETTINGS) {
     const data = {
       ...country,
@@ -16,23 +22,6 @@ export async function seedReferenceData(db: DatabaseClient): Promise<void> {
       enabledPlatforms: [...country.enabledPlatforms],
     };
     await db.countrySettings.upsert({ where: { code: country.code }, create: data, update: data });
-  }
-
-  // PR-3: the first published notice per country. Later versions are added by migration
-  // or admin tooling, with isMaterialChange set when users must agree again.
-  for (const country of COUNTRY_SETTINGS) {
-    await db.privacyNotice.upsert({
-      where: {
-        countryCode_version: { countryCode: country.code, version: country.privacyNoticeVersion },
-      },
-      create: {
-        countryCode: country.code,
-        version: country.privacyNoticeVersion,
-        publishedAt: PRIVACY_NOTICE_PUBLISHED_AT,
-        isMaterialChange: false,
-      },
-      update: {},
-    });
   }
 
   for (const [index, language] of CONTENT_LANGUAGES.entries()) {
@@ -48,6 +37,29 @@ export async function seedReferenceData(db: DatabaseClient): Promise<void> {
         update: { sortOrder: index, isActive: true },
       });
     }
+  }
+}
+
+/**
+ * Privacy notices, plans and platform settings: the reference data that admins or tests
+ * change. Needs the countries to exist.
+ */
+export async function seedChangeableReferenceData(db: DatabaseClient): Promise<void> {
+  // PR-3: the first published notice per country. Later versions are added by migration
+  // or admin tooling, with isMaterialChange set when users must agree again.
+  for (const country of COUNTRY_SETTINGS) {
+    await db.privacyNotice.upsert({
+      where: {
+        countryCode_version: { countryCode: country.code, version: country.privacyNoticeVersion },
+      },
+      create: {
+        countryCode: country.code,
+        version: country.privacyNoticeVersion,
+        publishedAt: PRIVACY_NOTICE_PUBLISHED_AT,
+        isMaterialChange: false,
+      },
+      update: {},
+    });
   }
 
   for (const plan of PLAN_DEFINITIONS) {

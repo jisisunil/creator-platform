@@ -10,7 +10,7 @@ import { createSocialProviderRegistry } from '@/adapters/social/registry';
 import { createInMemoryFileStorage } from '../fakes/in-memory-file-storage';
 import type { JobName } from '@/config/jobs';
 import type { RequestInfo, ServiceContext } from '@/services/context';
-import { seedReferenceData } from '../../prisma/seed/reference-data';
+import { seedChangeableReferenceData } from '../../prisma/seed/reference-data';
 import { type MutableClock, mutableClock } from '../fakes/mutable-clock';
 
 export const VALID_CAPTCHA = 'valid-captcha-token';
@@ -71,12 +71,30 @@ export function requestFrom(
   return { ipAddress, userAgent, locale: 'en' };
 }
 
-/** Removes everything tests create, keeping reference data, then re-seeds reference data. */
+/** Tables tests never change; everything else is emptied before each test. */
+const KEPT_TABLES = ['_prisma_migrations', 'CountrySettings', 'Language', 'Category'];
+
+/**
+ * Removes everything tests create, keeping reference data, then re-seeds reference data.
+ * Rows are deleted rather than truncated: TRUNCATE rewrites every table and index file,
+ * which took 2.5 s per test on Docker for Windows; DELETE on these small tables is quick.
+ * Foreign-key checks are paused for this statement only (needs the test superuser).
+ */
 export async function resetDatabase(db: DatabaseClient): Promise<void> {
-  await db.$executeRawUnsafe(
-    'TRUNCATE "User", "Brand", "AuditEvent", "RateLimitCounter", "EmailOutbox", "PrivacyNotice", "PlatformSetting", "CreatorProfile", "Plan" CASCADE',
-  );
-  await seedReferenceData(db);
+  const kept = KEPT_TABLES.map((table) => `'${table}'`).join(', ');
+  await db.$executeRawUnsafe(`
+    DO $$
+    DECLARE table_name text;
+    BEGIN
+      SET LOCAL session_replication_role = replica;
+      FOR table_name IN
+        SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename NOT IN (${kept})
+      LOOP
+        EXECUTE format('DELETE FROM %I', table_name);
+      END LOOP;
+    END $$;
+  `);
+  await seedChangeableReferenceData(db);
 }
 
 /** Pulls the token out of the newest queued email link of a template. */

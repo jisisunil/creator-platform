@@ -7,7 +7,7 @@ search, shortlist, chat and track campaigns.
 - Product spec: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
 - Engineering rules: [CLAUDE.md](CLAUDE.md)
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
-- Decisions: [docs/adr/](docs/adr/)
+- Decisions: [docs/adr/](docs/adr/) · Open questions: [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md)
 
 > **Status:** Phases a–f are built: skeleton, accounts and security, creator profiles with
 > YouTube/Instagram and the content score, brand search with shortlists, compare and saved

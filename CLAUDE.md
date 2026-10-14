@@ -26,7 +26,8 @@ Extract shared code only when the third copy appears and the copies truly mean t
 - **Plan before coding** any change touching more than ~3 files: list files to change,
   approach, risks, and tests. Wait for approval on large changes.
 - **Ask, don't assume**, when requirements are unclear, contradictory or missing.
-  Write the open question down; never invent business rules.
+  Write the open question down in `docs/OPEN-QUESTIONS.md` (with the default built, if
+  work couldn't wait); never invent business rules.
 - **Small steps:** one logical change at a time. Keep diffs focused; no drive-by
   refactors mixed with features (do them as a separate commit).
 - **Read before writing:** look at neighbouring code, existing helpers and tests first.

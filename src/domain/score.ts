@@ -32,6 +32,8 @@ export interface AccountHistory {
 export interface ScoreInput {
   readonly accounts: readonly AccountHistory[];
   readonly completenessPercent: number;
+  /** UC-M2: signals an admin recently cleared as false alarms; they neither count nor flag. */
+  readonly clearedFlagTypes?: readonly AuthenticityFlagType[];
 }
 
 export type AuthenticityFlagType = 'FOLLOWER_SPIKE' | 'LOW_VIEWS_RATIO' | 'ABNORMAL_ENGAGEMENT';
@@ -195,7 +197,10 @@ export function computeContentScore(input: ScoreInput): ScoreBreakdown {
       ? NEUTRAL_SCORE
       : clampScore(NEUTRAL_SCORE + (growth / GROWTH_FULL_SCORE_PERCENT) * NEUTRAL_SCORE);
 
-  const flags = detectAuthenticityFlags(input.accounts, overallEngagementBp, tier);
+  const cleared = new Set(input.clearedFlagTypes ?? []);
+  const flags = detectAuthenticityFlags(input.accounts, overallEngagementBp, tier).filter(
+    (flag) => !cleared.has(flag.type),
+  );
   const authenticityScore = clampScore(
     MAX_SCORE - flags.reduce((sum, flag) => sum + AUTHENTICITY_RULES.penaltyPerFlag[flag.type], 0),
   );

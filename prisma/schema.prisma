@@ -188,6 +188,7 @@ model User {
   sentMessages             Message[]
   dealEvents               DealEvent[]
   ratingsGiven             Rating[]
+  chatAccessGrants         ChatAccessGrant[]
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
   reports                  Report[]
@@ -697,6 +698,9 @@ model AuthenticityFlag {
   status           AuthenticityFlagStatus @default(OPEN)
   reviewedByUserId String?
   reviewedAt       DateTime?
+  /// UC-M2: the creator's explanation when they appeal a "suspicious" decision.
+  appealText       String?
+  appealedAt       DateTime?
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
   creator          CreatorProfile         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -960,19 +964,20 @@ enum ContactFlag {
 /// One chat per accepted request (FR-8.1). Read positions are per side: a brand's team
 /// shares one inbox.
 model ChatThread {
-  id                String         @id @default(cuid())
-  requestId         String         @unique
+  id                String            @id @default(cuid())
+  requestId         String            @unique
   brandId           String
   creatorId         String
   lastMessageAt     DateTime?
   brandLastReadAt   DateTime?
   creatorLastReadAt DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  request           CollabRequest  @relation(fields: [requestId], references: [id])
-  brand             Brand          @relation(fields: [brandId], references: [id])
-  creator           CreatorProfile @relation(fields: [creatorId], references: [id])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  request           CollabRequest     @relation(fields: [requestId], references: [id])
+  brand             Brand             @relation(fields: [brandId], references: [id])
+  creator           CreatorProfile    @relation(fields: [creatorId], references: [id])
   messages          Message[]
+  accessGrants      ChatAccessGrant[]
 
   @@index([brandId, lastMessageAt])
   @@index([creatorId, lastMessageAt])
@@ -1263,4 +1268,25 @@ model NotificationPreference {
   user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category, channel])
+}
+
+// ---------------------------------------------------------------------------
+// Moderation (phase g)
+// ---------------------------------------------------------------------------
+
+/// SEC-11: an admin opened a chat to investigate, with a written reason. Valid for an hour.
+model ChatAccessGrant {
+  id          String     @id @default(cuid())
+  adminUserId String
+  threadId    String
+  reportId    String?
+  reason      String
+  expiresAt   DateTime
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  admin       User       @relation(fields: [adminUserId], references: [id])
+  thread      ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, createdAt])
+  @@index([threadId])
 }

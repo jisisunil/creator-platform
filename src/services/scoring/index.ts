@@ -1,7 +1,7 @@
 /** Scoring module: content score, authenticity flags and search columns (FR-4). */
 import type { CreatorProfileRecord } from '@/adapters/db/creator-repository';
 import type { Repositories } from '@/adapters/db/repositories';
-import { GROWTH_WINDOW_DAYS } from '@/config/score';
+import { AUTHENTICITY_RULES, GROWTH_WINDOW_DAYS } from '@/config/score';
 import { profileCompletenessPercent } from '@/domain/creators';
 import { computeContentScore, type ScoreBreakdown } from '@/domain/score';
 import type { ServiceContext } from '../context';
@@ -47,6 +47,10 @@ export async function recomputeCreatorScore(
     const breakdown = computeContentScore({
       accounts: history,
       completenessPercent: completenessOf(profile),
+      clearedFlagTypes: await repos.scores.recentlyClearedFlagTypes(
+        creatorId,
+        new Date(now.getTime() - AUTHENTICITY_RULES.clearanceDays * DAY_MS),
+      ),
     });
     await repos.scores.addResult(creatorId, breakdown, now);
     await repos.scores.raiseFlags(creatorId, breakdown.components.authenticity.flags);

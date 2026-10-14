@@ -10,6 +10,7 @@ import { createDiscoveryRepository } from './discovery-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
+import { createModerationRepository } from './moderation-repository';
 import { createNotificationRepository } from './notification-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createPlanRepository } from './plan-repository';
@@ -52,6 +53,7 @@ export function createRepositories(db: DbClient) {
     plans: createPlanRepository(db),
     notifications: createNotificationRepository(db),
     admin: createAdminRepository(db),
+    moderation: createModerationRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getContainer } from '@/adapters/container';
+import { AppealFlagForm } from '@/components/creators/AppealFlagForm';
 import { FollowersChart, type FollowerSeries } from '@/components/creators/FollowersChart';
 import { ScoreBreakdown } from '@/components/creators/ScoreBreakdown';
 import { PageShell } from '@/components/layout/PageShell';
@@ -9,6 +10,7 @@ import { MIN_HISTORY_DAYS } from '@/config/score';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { formatCount } from '@/lib/format';
 import { getCreatorAnalytics } from '@/services/creators';
+import { getOwnFlags } from '@/services/moderation';
 
 const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -22,6 +24,9 @@ export default async function CreatorAnalyticsPage({
   setRequestLocale(locale);
   const session = await requirePageSession(locale, { roles: ['CREATOR'] });
   const analytics = await getCreatorAnalytics(getContainer(), session.user.id);
+  const flags = await getOwnFlags(getContainer(), session.user.id);
+  const tFlags = await getTranslations('creator.analytics.flags');
+  const tScore = await getTranslations('score');
   const t = await getTranslations('creator.analytics');
   const tPlatforms = await getTranslations('platforms');
 
@@ -104,6 +109,23 @@ export default async function CreatorAnalyticsPage({
           )}
         </div>
       </Card>
+      {flags.length > 0 ? (
+        <Card className="grid gap-4">
+          <CardTitle>{tFlags('title')}</CardTitle>
+          <p className="text-muted-foreground text-sm">{tFlags('intro')}</p>
+          <ul className="grid gap-4">
+            {flags.map((flag) => (
+              <li key={flag.id} className="grid gap-2 text-sm">
+                <p>
+                  <span className="font-medium">{tScore(`flags.${flag.type}`)}</span> ·{' '}
+                  {flag.status === 'SUSPICIOUS' ? tFlags('suspicious') : tFlags('underReview')}
+                </p>
+                {flag.status === 'SUSPICIOUS' ? <AppealFlagForm flagId={flag.id} /> : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </PageShell>
   );
 }

@@ -150,7 +150,8 @@
       "tooFewLanguages": "Choose at least one language.",
       "tooManyLanguages": "Choose up to 5 languages.",
       "invalidUrl": "Enter a full link starting with https://",
-      "invalidAmount": "Enter a whole amount in rupees."
+      "invalidAmount": "Enter a whole amount in rupees.",
+      "appealTooShort": "Explain in at least 20 characters."
     },
     "social": {
       "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname."
@@ -572,6 +573,19 @@
       "subject": "Payment not received for {campaignName}",
       "body": "Hi {name},\n{creatorName} says the payment for \"{campaignName}\" hasn't arrived. Our team will look into it; please check your payment and reply in the chat.",
       "action": "View deal"
+    },
+    "accountWarning": {
+      "subject": "A warning about your account",
+      "body": "Hi {name},\nOur team reviewed a report about your account and is sending you this warning:\n{reason}\nRepeated problems can lead to suspension. Reply to this email if you think this is a mistake."
+    },
+    "disputeWon": {
+      "subject": "The {platform} account {handle} is now yours",
+      "body": "Hi {name},\nAfter reviewing the ownership dispute, our team moved {platform} {handle} to your profile. Reconnect it through the official login to show it as verified.",
+      "action": "Reconnect the account"
+    },
+    "disputeLost": {
+      "subject": "Ownership decision for {platform} {handle}",
+      "body": "Hi {name},\nAfter reviewing the ownership dispute for {platform} {handle}, our team decided it belongs to another creator. Reply to this email if you have more proof."
     }
   },
   "platforms": {
@@ -697,7 +711,17 @@
       "date": "Date",
       "scoreTitle": "Content score",
       "noScore": "Your score appears after your first account refresh.",
-      "profileViews": "{count, plural, =0 {No brand has viewed your profile in the last 30 days} one {# brand view in the last 30 days} other {# brand views in the last 30 days}}"
+      "profileViews": "{count, plural, =0 {No brand has viewed your profile in the last 30 days} one {# brand view in the last 30 days} other {# brand views in the last 30 days}}",
+      "flags": {
+        "title": "Authenticity review",
+        "intro": "Our checks noticed something unusual. Flags marked suspicious lower your score; you can explain.",
+        "underReview": "being reviewed",
+        "suspicious": "marked suspicious",
+        "appealLabel": "Explain what happened",
+        "appealHint": "For example a viral video or a giveaway. Our team will look again.",
+        "appeal": "Send appeal",
+        "appealSent": "Appeal sent. We'll review it again."
+      }
     }
   },
   "score": {
@@ -720,7 +744,12 @@
     "growthNotYet": "Not enough history yet",
     "growthValue": "{percent}% in 90 days",
     "postsValue": "{count} posts in 30 days",
-    "flagsValue": "{count, plural, =0 {No unusual signals} one {# unusual signal} other {# unusual signals}}"
+    "flagsValue": "{count, plural, =0 {No unusual signals} one {# unusual signal} other {# unusual signals}}",
+    "flags": {
+      "FOLLOWER_SPIKE": "Sudden jump in followers",
+      "LOW_VIEWS_RATIO": "Very few views for the number of followers",
+      "ABNORMAL_ENGAGEMENT": "Engagement far from normal for this size"
+    }
   },
   "publicProfile": {
     "unavailable": "Profile unavailable",
@@ -1397,6 +1426,81 @@
       "packOption": "{credits} credits, {days} days",
       "addPack": "Add credit pack",
       "packAdded": "Credit pack added."
+    },
+    "reports": {
+      "title": "Reports",
+      "statuses": {
+        "OPEN": "Open",
+        "RESOLVED": "Resolved",
+        "DISMISSED": "Dismissed"
+      },
+      "targets": {
+        "BRAND": "Report about a brand",
+        "CREATOR": "Report about a creator",
+        "RATING": "Unfair rating",
+        "PAYMENT": "Payment not received"
+      },
+      "empty": "Nothing here.",
+      "filed": "Filed by {name} on {date}",
+      "deletedUser": "a deleted user",
+      "details": "Details",
+      "about": "About:",
+      "noText": "(no text)",
+      "targetGone": "no longer exists",
+      "reason": "Reason:",
+      "reporterHistory": "This person has filed {total} reports; {dismissed} were dismissed.",
+      "people": "Accounts involved:",
+      "account": "account {number}",
+      "resolution": "Outcome:",
+      "actions": "Actions",
+      "hideRating": "Hide this rating",
+      "showRating": "Show this rating again",
+      "chatReason": "Why do you need to read this chat? (logged)",
+      "openChat": "Open the chat",
+      "warnReason": "Warning to send (the user sees this)",
+      "warn": "Send warning",
+      "warned": "Warning sent.",
+      "resolveNote": "What was done",
+      "resolve": "Mark resolved",
+      "dismissNote": "Why it is unfounded",
+      "dismiss": "Dismiss"
+    },
+    "chat": {
+      "title": "Chat: {brand} and {creator}",
+      "logged": "Opened for: {reason}. This access is logged and ends at {time}.",
+      "deletedUser": "deleted user",
+      "attachment": "Attachment: {name}"
+    },
+    "flags": {
+      "title": "Authenticity flags",
+      "intro": "Clearing a flag stops that signal counting against the creator's score for 90 days. Suspicious flags keep counting; the creator can appeal.",
+      "statuses": {
+        "OPEN": "To review",
+        "SUSPICIOUS": "Suspicious",
+        "CLEARED": "Cleared"
+      },
+      "empty": "Nothing here.",
+      "appeal": "Creator's appeal: {text}",
+      "clear": "Clear (false alarm)",
+      "markSuspicious": "Mark suspicious"
+    },
+    "disputes": {
+      "title": "Ownership disputes",
+      "statuses": {
+        "OPEN": "Open",
+        "RESOLVED": "Resolved"
+      },
+      "empty": "Nothing here.",
+      "owner": "Current owner:",
+      "claimant": "Claimed by:",
+      "verified": "proved through official login",
+      "notVerified": "not proved",
+      "suggestTransfer": "Both proved ownership through the official login. The latest proof (the claimant's) usually wins.",
+      "claimantProved": "The claimant proved ownership through the official login; the current owner did not.",
+      "claimUnverified": "The claimant did not prove ownership. Keep it with the current owner unless you have other evidence.",
+      "note": "Reason (kept in the audit log)",
+      "transfer": "Give it to the claimant",
+      "keep": "Keep with the current owner"
     }
   }
 }

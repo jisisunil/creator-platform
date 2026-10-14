@@ -10,6 +10,19 @@ import {
   suspendUser,
   verifyUserEmail,
 } from '@/services/admin';
+import {
+  closeReport,
+  getChatForReview,
+  getReport,
+  listDisputes,
+  listFlags,
+  listReports,
+  openChatForReview,
+  resolveDispute,
+  reviewFlag,
+  setRatingHidden,
+  warnUser,
+} from '@/services/moderation';
 import { addCreditPack, changeBrandPlan, extendTrial } from '@/services/plans';
 import { createBrandOwner, createSearchableCreator } from '../integration/discovery-fixtures';
 import { createTestDatabaseClient } from '../integration/test-database';
@@ -58,6 +71,46 @@ describe('admin console access (SR-5, SR-17, SEC-11)', () => {
         () => changeBrandPlan(ctx, { adminUserId: actor.id, brandId, planCode: 'AGENCY' }),
         () => extendTrial(ctx, { adminUserId: actor.id, brandId, days: 30 }),
         () => addCreditPack(ctx, { adminUserId: actor.id, brandId, packCode: 'PACK_50' }),
+        () => listReports(ctx, { adminUserId: actor.id, status: 'OPEN', page: 1 }),
+        () => getReport(ctx, { adminUserId: actor.id, reportId: 'any' }),
+        () =>
+          closeReport(ctx, {
+            adminUserId: actor.id,
+            request,
+            reportId: 'any',
+            outcome: 'DISMISSED',
+            note: 'not allowed',
+          }),
+        () =>
+          setRatingHidden(ctx, { adminUserId: actor.id, request, ratingId: 'any', isHidden: true }),
+        () =>
+          warnUser(ctx, {
+            adminUserId: actor.id,
+            request,
+            userId: creator.id,
+            reason: 'not allowed',
+          }),
+        () =>
+          openChatForReview(ctx, {
+            adminUserId: actor.id,
+            request,
+            threadId: 'any',
+            reportId: null,
+            reason: 'not allowed',
+          }),
+        () => getChatForReview(ctx, { adminUserId: actor.id, grantId: 'any' }),
+        () => listFlags(ctx, { adminUserId: actor.id, status: 'OPEN', page: 1 }),
+        () =>
+          reviewFlag(ctx, { adminUserId: actor.id, request, flagId: 'any', decision: 'CLEARED' }),
+        () => listDisputes(ctx, { adminUserId: actor.id, status: 'OPEN', page: 1 }),
+        () =>
+          resolveDispute(ctx, {
+            adminUserId: actor.id,
+            request,
+            disputeId: 'any',
+            decision: 'KEEP',
+            note: 'not allowed',
+          }),
       ];
       for (const attempt of attempts) {
         await expect(attempt()).rejects.toMatchObject({ code: 'NOT_ALLOWED' });

@@ -55,3 +55,34 @@ export const addCreditPackSchema = z.object({
 export const freeBetaSchema = z.object({
   isActive: z.enum(['true', 'false']).transform((value) => value === 'true'),
 });
+
+export const closeReportSchema = z.object({
+  reportId: id,
+  outcome: z.enum(['RESOLVED', 'DISMISSED']),
+  note: reasonSchema,
+});
+
+export const ratingVisibilitySchema = z.object({
+  ratingId: id,
+  reportId: id,
+  isHidden: z.enum(['true', 'false']).transform((value) => value === 'true'),
+});
+
+export const warnUserSchema = z.object({ userId: id, reportId: id, reason: reasonSchema });
+
+export const openChatSchema = z.object({
+  threadId: id,
+  reportId: id.optional(),
+  reason: reasonSchema,
+});
+
+export const reviewFlagSchema = z.object({
+  flagId: id,
+  decision: z.enum(['CLEARED', 'SUSPICIOUS']),
+});
+
+export const resolveDisputeSchema = z.object({
+  disputeId: id,
+  decision: z.enum(['TRANSFER', 'KEEP']),
+  note: reasonSchema,
+});

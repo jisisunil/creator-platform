@@ -95,3 +95,9 @@ export const chooseAccountSchema = z.object({
   pendingId: z.string().min(1).max(64),
   externalId: z.string().min(1).max(128),
 });
+
+/** UC-M2: a creator's appeal against a "suspicious" authenticity decision. */
+export const appealFlagSchema = z.object({
+  flagId: z.string().min(1).max(64),
+  appealText: z.string().trim().min(20, 'profile.appealTooShort').max(1000, 'validation.tooLong'),
+});

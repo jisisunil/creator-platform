@@ -84,6 +84,14 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },
+  accountWarning: { name: 'Ravi', reason: 'Asking creators to pay a fee' },
+  disputeWon: {
+    name: 'Asha',
+    platform: 'YouTube',
+    handle: '@asha',
+    link: 'https://app.test/en/creator/accounts',
+  },
+  disputeLost: { name: 'Ravi', platform: 'YouTube', handle: '@asha' },
   trialEnding: { name: 'Ravi', brandName: 'Spice Co', link: 'https://app.test/en/brand/plan' },
   trialEnded: { name: 'Ravi', brandName: 'Spice Co', link: 'https://app.test/en/brand/plan' },
   ratingRequested: {

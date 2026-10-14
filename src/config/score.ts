@@ -64,4 +64,6 @@ export const AUTHENTICITY_RULES = {
   abnormalEngagementLowFactor: 0.1,
   /** Points taken off the authenticity component per flag (it starts at 100). */
   penaltyPerFlag: { FOLLOWER_SPIKE: 40, LOW_VIEWS_RATIO: 30, ABNORMAL_ENGAGEMENT: 30 },
+  /** UC-M2: after an admin clears a flag, that signal is ignored for this many days. */
+  clearanceDays: 90,
 } as const;

@@ -1,4 +1,4 @@
-import type { DetectedFlag, ScoreBreakdown } from '@/domain/score';
+import type { AuthenticityFlagType, DetectedFlag, ScoreBreakdown } from '@/domain/score';
 import type { Prisma } from '@/generated/prisma/client';
 import type { DbClient } from './db-client';
 
@@ -34,6 +34,19 @@ export function createScoreRepository(db: DbClient) {
       });
       if (!row) return null;
       return { ...row, components: row.components as unknown as ScoreBreakdown['components'] };
+    },
+
+    /** UC-M2: flag types an admin cleared since `since` (false alarms to ignore for now). */
+    async recentlyClearedFlagTypes(
+      creatorId: string,
+      since: Date,
+    ): Promise<AuthenticityFlagType[]> {
+      const rows = await db.authenticityFlag.findMany({
+        where: { creatorId, status: 'CLEARED', reviewedAt: { gte: since } },
+        distinct: ['type'],
+        select: { type: true },
+      });
+      return rows.map((row) => row.type);
     },
 
     /**

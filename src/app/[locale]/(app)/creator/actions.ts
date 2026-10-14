@@ -9,6 +9,7 @@ import { type ActionState, runAction } from '@/lib/action';
 import { requireActionSession } from '@/lib/auth/current-session';
 import { targetIdSchema } from '@/lib/validation/account-schemas';
 import {
+  appealFlagSchema,
   availabilitySchema,
   channelLinkSchema,
   chooseAccountSchema,
@@ -17,6 +18,7 @@ import {
   rateCardSchema,
 } from '@/lib/validation/creator-schemas';
 import { parseForm } from '@/lib/validation/form-data';
+import { appealFlag } from '@/services/moderation';
 import {
   addPortfolioItem,
   removePortfolioItem,
@@ -169,5 +171,15 @@ export async function disconnectAccountAction(
     const { id } = parseForm(targetIdSchema, formData);
     await disconnectAccount(getContainer(), { userId: session.user.id, accountId: id });
     revalidatePath(ACCOUNTS_PATH, 'page');
+  });
+}
+
+/** UC-M2: appeal a "suspicious" authenticity decision. */
+export async function appealFlagAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await creatorOnly();
+    const input = parseForm(appealFlagSchema, formData);
+    await appealFlag(getContainer(), { userId: session.user.id, ...input });
+    revalidatePath('/[locale]/creator/analytics', 'page');
   });
 }

@@ -81,6 +81,20 @@ describe('computeContentScore (FR-4)', () => {
     expect(result.components.authenticity.score).toBe(60);
   });
 
+  it('UC-M2 ignores a signal an admin recently cleared as a false alarm', () => {
+    const stats = history(30, 20_000, 20_000);
+    const spiked = stats.map((day, index) => (index >= 20 ? { ...day, followers: 30_000 } : day));
+
+    const result = computeContentScore({
+      accounts: [account(spiked)],
+      completenessPercent: 100,
+      clearedFlagTypes: ['FOLLOWER_SPIKE'],
+    });
+
+    expect(result.components.authenticity.flags).toEqual([]);
+    expect(result.components.authenticity.score).toBe(100);
+  });
+
   it('FR-4.5 ignores spikes on tiny accounts', () => {
     const stats = history(20, 100, 100).map((day, index) =>
       index >= 10 ? { ...day, followers: 500 } : day,

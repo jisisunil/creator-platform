@@ -4,6 +4,9 @@ import { Link } from '@/i18n/navigation';
 const SECTIONS = [
   ['overview', '/admin'],
   ['users', '/admin/users'],
+  ['reports', '/admin/reports'],
+  ['flags', '/admin/flags'],
+  ['disputes', '/admin/disputes'],
 ] as const;
 
 /** Links between the admin console's sections (FR-13). */

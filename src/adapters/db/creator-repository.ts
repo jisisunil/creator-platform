@@ -193,6 +193,7 @@ export function createCreatorRepository(db: DbClient) {
         tier: CreatorTier | null;
         totalFollowers: number;
         engagementRateBp: number;
+        growth90dBp: number | null;
         currentScore: number | null;
         scoreUpdatedAt: Date | null;
         lastRefreshedAt: Date | null;

@@ -46,4 +46,7 @@ export const RATE_LIMITS = {
   verificationResendPerAccount: { limit: 3, windowMs: HOUR_MS },
   twoFactorPerAccount: { limit: 5, windowMs: 15 * MINUTE_MS },
   teamInvitePerBrand: { limit: 20, windowMs: DAY_MS },
+  /** SR-11 / SEC-3: brand searches per user, and public profile views per IP (scraping). */
+  searchPerUser: { limit: 300, windowMs: HOUR_MS },
+  publicProfilePerIp: { limit: 120, windowMs: HOUR_MS },
 } as const satisfies Record<string, RateLimitRule>;

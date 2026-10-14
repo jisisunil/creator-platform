@@ -84,7 +84,10 @@
     "grievance": "Grievance contact",
     "profile": "Profile",
     "accounts": "Accounts",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "search": "Search",
+    "shortlists": "Shortlists",
+    "savedSearches": "Saved searches"
   },
   "fieldErrors": {
     "validation": {
@@ -134,6 +137,10 @@
     },
     "social": {
       "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname."
+    },
+    "search": {
+      "tooMany": "You've saved the maximum number of searches. Delete one first.",
+      "compareCount": "Choose 2 to 4 creators to compare."
     }
   },
   "industries": {
@@ -534,7 +541,8 @@
       "tableCaption": "Daily followers",
       "date": "Date",
       "scoreTitle": "Content score",
-      "noScore": "Your score appears after your first account refresh."
+      "noScore": "Your score appears after your first account refresh.",
+      "profileViews": "{count, plural, =0 {No brand has viewed your profile in the last 30 days} one {# brand view in the last 30 days} other {# brand views in the last 30 days}}"
     }
   },
   "score": {
@@ -625,6 +633,152 @@
       "UK": "Uttarakhand",
       "UP": "Uttar Pradesh",
       "WB": "West Bengal"
+    }
+  },
+  "brand": {
+    "search": {
+      "title": "Find creators",
+      "filtersTitle": "Filters",
+      "query": "Name or bio contains",
+      "platform": "Platform",
+      "category": "Category",
+      "language": "Language",
+      "tier": "Size",
+      "state": "State",
+      "anyState": "Any state",
+      "city": "City",
+      "minFollowers": "Followers from",
+      "maxFollowers": "Followers up to",
+      "minEngagement": "Minimum engagement (%)",
+      "minScore": "Minimum score",
+      "verified": "Verified accounts only",
+      "open": "Open to collaborations only",
+      "audienceGender": "Audience mostly",
+      "audienceAge": "Audience age",
+      "any": "Any",
+      "women": "Women",
+      "men": "Men",
+      "apply": "Search",
+      "reset": "Clear filters",
+      "sort": "Sort by",
+      "sorts": {
+        "score": "Highest score",
+        "engagement": "Highest engagement",
+        "followers": "Most followers",
+        "growth": "Fastest growth"
+      },
+      "results": "{total, plural, =0 {No creators match} one {# creator} other {# creators}}",
+      "noResults": "No creators match these filters.",
+      "tryInstead": "Try instead:",
+      "widenings": {
+        "cityToState": "Search the whole state",
+        "stateToCountry": "Search all states",
+        "dropQuery": "Remove the text search",
+        "dropMinScore": "Remove the minimum score",
+        "dropMinEngagement": "Remove the minimum engagement",
+        "dropFollowerRange": "Remove the follower range",
+        "dropVerifiedOnly": "Include unverified accounts",
+        "dropAudience": "Remove the audience filters",
+        "dropLanguages": "Any language",
+        "dropTiers": "Any size"
+      },
+      "wideningCount": "({count} creators)",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {pageCount}",
+      "compareSelected": "Compare selected",
+      "compareHint": "Tick 2 to 4 creators to compare them.",
+      "select": "Select {name} to compare",
+      "saveTitle": "Save this search",
+      "saveName": "Name",
+      "save": "Save search",
+      "saved": "Search saved.",
+      "upgradeToSave": "Saving searches is available on Starter and higher plans.",
+      "viewLimit": "You've reached your plan's limit of profile views for this hour. Try again later or upgrade your plan."
+    },
+    "card": {
+      "followers": "{count} followers",
+      "engagement": "{rate}% engagement",
+      "score": "Score {score}",
+      "noScore": "No score yet",
+      "verified": "Verified",
+      "closed": "Not taking requests",
+      "viewProfile": "View profile"
+    },
+    "shortlists": {
+      "title": "Shortlists",
+      "empty": "No shortlists yet. Create one, then add creators from search.",
+      "createTitle": "New shortlist",
+      "name": "Name",
+      "create": "Create",
+      "itemCount": "{count, plural, one {# creator} other {# creators}}",
+      "shared": "Shared with team",
+      "private": "Only you",
+      "by": "by {name}",
+      "addTo": "Add to shortlist",
+      "chooseList": "Shortlist",
+      "add": "Add",
+      "added": "Added.",
+      "alreadyThere": "Already on that list.",
+      "noLists": "Create a shortlist first.",
+      "open": "Open",
+      "rename": "Rename",
+      "delete": "Delete shortlist",
+      "deleteConfirm": "Delete this shortlist? This can't be undone.",
+      "share": "Share with team",
+      "unshare": "Make private",
+      "exportCsv": "Download CSV",
+      "upgradeForCsv": "CSV export is available on Pro and higher plans.",
+      "remove": "Remove",
+      "note": "Note",
+      "saveNote": "Save note",
+      "noteSaved": "Note saved.",
+      "unavailable": "This creator is no longer available.",
+      "emptyList": "No creators on this list yet.",
+      "compare": "Compare selected",
+      "limitReached": "You've reached your plan's number of shortlists."
+    },
+    "compare": {
+      "title": "Compare creators",
+      "needTwo": "Choose 2 to 4 creators to compare, from search or a shortlist.",
+      "upgrade": "Comparing creators is available on Starter and higher plans.",
+      "metric": "Metric",
+      "location": "Location",
+      "tier": "Size",
+      "score": "Score",
+      "engagement": "Engagement",
+      "followers": "Followers",
+      "posts": "Posts (30 days)",
+      "views": "Views (30 days)",
+      "audience": "Audience",
+      "notShared": "Not shared",
+      "notOnPlatform": "–",
+      "hidden": "Hidden"
+    },
+    "savedSearches": {
+      "title": "Saved searches",
+      "empty": "No saved searches yet. Save one from the search page.",
+      "run": "Run",
+      "delete": "Delete",
+      "droppedValues": "Some filters in this saved search no longer exist and were removed."
+    },
+    "csv": {
+      "headers": {
+        "name": "Name",
+        "profile": "Profile link",
+        "city": "City",
+        "state": "State",
+        "categories": "Categories",
+        "platforms": "Platforms",
+        "tier": "Tier",
+        "followers": "Followers",
+        "engagement": "Engagement %",
+        "score": "Score",
+        "verified": "Verified",
+        "note": "Note"
+      },
+      "yes": "Yes",
+      "no": "No"
     }
   }
 }

@@ -43,3 +43,24 @@ worker.
 - Connection count = (web instances × pool) + worker pools; it must stay under the server's
   `max_connections`. PgBouncer removes that limit for the web tier.
 - Partitioning `StatsSnapshot` later is a planned migration, not a rewrite.
+
+## Measured (2026-10-14, phase d)
+
+50,000 fake creators (year-one volume) in a scratch database, 15 typical searches × 10 runs
+each, on a developer laptop under memory pressure, timing the result query plus the total
+count:
+
+| Search                                       | p95    |
+| -------------------------------------------- | ------ |
+| No filters, sorted by score (counts all 50k) | 190 ms |
+| Audience mostly women + platform             | 169 ms |
+| State + category                             | 149 ms |
+| Sort by growth / deep page 50                | 150 ms |
+| Text search in bio ("biryani")               | 88 ms  |
+| City + language                              | 103 ms |
+| Everything combined / no results             | 35 ms  |
+
+Every case is well under the NFR-1 target (1 s at p95). The slowest are unfiltered searches,
+where the total count scans every searchable creator; at 10× volume (500k) that grows roughly
+linearly, so phase h repeats this at 500k and, if needed, caps or estimates the total
+("10,000+ creators") instead of counting exactly.

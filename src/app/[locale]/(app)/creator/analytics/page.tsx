@@ -39,7 +39,7 @@ export default async function CreatorAnalyticsPage({
   const country = analytics.profile.countryCode;
 
   return (
-    <PageShell title={t('title')}>
+    <PageShell title={t('title')} intro={t('profileViews', { count: analytics.profileViews30d })}>
       <Card>
         <CardTitle>{t('followersTitle')}</CardTitle>
         <div className="mt-4">

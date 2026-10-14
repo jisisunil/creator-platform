@@ -175,6 +175,8 @@ model User {
   creatorProfile           CreatorProfile?
   pendingSocialConnections PendingSocialConnection[]
   ownershipDisputes        OwnershipDispute[]
+  shortlists               Shortlist[]
+  savedSearches            SavedSearch[]
   sentInvites              BrandInvite[]
   emailOutbox              EmailOutbox[]
 
@@ -370,6 +372,9 @@ model Brand {
   plan          Plan            @relation(fields: [planId], references: [id])
   members       BrandMember[]
   invites       BrandInvite[]
+  shortlists    Shortlist[]
+  savedSearches SavedSearch[]
+  profileViews  ProfileView[]
 
   @@index([countryCode])
   @@index([planId])
@@ -449,6 +454,8 @@ model CreatorProfile {
   currentScore           Int?
   scoreUpdatedAt         DateTime?
   lastRefreshedAt        DateTime?
+  /// Follower growth over 90 days in basis points, for the "recent growth" sort (FR-5.2).
+  growth90dBp            Int?
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 
@@ -462,6 +469,8 @@ model CreatorProfile {
   scores            ScoreResult[]
   authenticityFlags AuthenticityFlag[]
   embeddings        CreatorEmbedding[]
+  shortlistItems    ShortlistItem[]
+  profileViews      ProfileView[]
 
   @@index([countryCode, stateCode, city])
   @@index([isSearchable, currentScore])
@@ -470,6 +479,13 @@ model CreatorProfile {
   @@index([engagementRateBp])
   @@index([isVerified])
   @@index([isOpenToCollaborations])
+  // Sort paths for search (FR-5.2, ADR-005): filter on isSearchable, order by the metric.
+  @@index([isSearchable, engagementRateBp])
+  @@index([isSearchable, totalFollowers])
+  @@index([isSearchable, growth90dBp])
+  // Text search on name and bio (FR-5.2); pg_trgm is enabled in the migration.
+  @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "CreatorProfile_displayName_trgm_idx")
+  @@index([bio(ops: raw("gin_trgm_ops"))], type: Gin, map: "CreatorProfile_bio_trgm_idx")
 }
 
 model CreatorLanguage {
@@ -719,4 +735,79 @@ model CreatorEmbedding {
   creator    CreatorProfile               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@unique([creatorId, model, version])
+}
+
+// ---------------------------------------------------------------------------
+// Brand discovery: shortlists, saved searches, profile views (FR-5, FR-6, UC-D)
+// ---------------------------------------------------------------------------
+
+/**
+ * FR-6.1: a brand's named list of creators. Private to its maker until shared with the team.
+ */
+model Shortlist {
+  id               String          @id @default(cuid())
+  brandId          String
+  createdByUserId  String
+  name             String
+  isSharedWithTeam Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  brand            Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdBy        User            @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  items            ShortlistItem[]
+
+  @@index([brandId])
+  @@index([createdByUserId])
+}
+
+model ShortlistItem {
+  id          String         @id @default(cuid())
+  shortlistId String
+  creatorId   String
+  /// The brand's private note about this creator (FR-6.1).
+  note        String         @default("")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  shortlist   Shortlist      @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistId, creatorId])
+  @@index([creatorId])
+}
+
+/**
+ * FR-5.4 / UC-D5: search filters saved by a brand user to rerun later.
+ */
+model SavedSearch {
+  id              String   @id @default(cuid())
+  brandId         String
+  createdByUserId String
+  name            String
+  /// Validated search filters; filtersVersion says which schema wrote them.
+  filters         Json
+  filtersVersion  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  brand           Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdBy       User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([createdByUserId])
+}
+
+/**
+ * A brand viewing a creator profile: per-hour view limits (SEC-3) and creator analytics (UC-C7).
+ */
+model ProfileView {
+  id            String         @id @default(cuid())
+  creatorId     String
+  viewerBrandId String
+  viewedAt      DateTime
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  creator       CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  viewerBrand   Brand          @relation(fields: [viewerBrandId], references: [id], onDelete: Cascade)
+
+  @@index([viewerBrandId, viewedAt])
+  @@index([creatorId, viewedAt])
 }

@@ -236,6 +236,32 @@ export function createSocialAccountRepository(db: DbClient) {
       });
     },
 
+    /** UC-D4: each active account of these creators with its newest snapshot. */
+    async latestStatsForCreators(creatorIds: readonly string[]) {
+      return db.socialAccount.findMany({
+        where: { creatorId: { in: [...creatorIds] }, status: 'ACTIVE' },
+        select: {
+          creatorId: true,
+          platform: true,
+          handle: true,
+          isVerified: true,
+          isFollowerCountHidden: true,
+          snapshots: {
+            orderBy: { capturedOn: 'desc' },
+            take: 1,
+            select: {
+              followers: true,
+              posts30d: true,
+              views30d: true,
+              likes30d: true,
+              comments30d: true,
+            },
+          },
+          audience: { select: { dimension: true, bucket: true, sharePermille: true } },
+        },
+      });
+    },
+
     /** Aggregate audience shares across a creator's accounts (PR-8). */
     async audienceForCreator(creatorId: string) {
       return db.audienceSegment.findMany({

@@ -18,12 +18,26 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const container = getContainer();
 
   if (session.user.role === 'BRAND') {
+    const tNav = await getTranslations('nav');
     const membership = await findBrandMembership(container, session.user.id);
     return (
       <PageShell title={title}>
         <p>
           {membership ? t('brandIntro', { brandName: membership.brandName }) : t('brandNoTeam')}
         </p>
+        {membership ? (
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/brand/search">{tNav('search')}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/brand/shortlists">{tNav('shortlists')}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/brand/saved-searches">{tNav('savedSearches')}</Link>
+            </Button>
+          </div>
+        ) : null}
       </PageShell>
     );
   }

@@ -40,3 +40,20 @@ export async function signedInNewCreator(page: Page, email: string): Promise<voi
   await signIn(page, email);
   await expect(page).toHaveURL(/\/en\/dashboard$/);
 }
+
+/** A new, verified, signed-in brand owner (free beta plan: every discovery feature). */
+export async function signedInNewBrand(page: Page, email: string): Promise<void> {
+  await page.goto('/en/sign-up?role=BRAND');
+  await page.getByLabel('Your name').fill('E2E Brand Owner');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByLabel('Brand name').fill('E2E Spices (fake)');
+  await page.getByLabel('Industry').selectOption({ label: 'Food and beverage' });
+  await page.getByLabel('I confirm I am 18 or older').check();
+  await page.getByLabel(/I have read and agree to the/).check();
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/en\/check-email$/);
+  await verifyFromEmail(page, email);
+  await signIn(page, email);
+  await expect(page).toHaveURL(/\/en\/dashboard$/);
+}

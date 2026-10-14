@@ -9,6 +9,7 @@ import type { ServiceContext } from '../context';
 const DAY_MS = 86_400_000;
 /** A little more history than the growth window, so the window always has a baseline. */
 const HISTORY_DAYS = GROWTH_WINDOW_DAYS + 30;
+const BASIS_POINTS_PER_PERCENT = 100;
 
 /** Completeness inputs from a stored profile (FR-4.2). */
 export function completenessOf(profile: CreatorProfileRecord): number {
@@ -60,6 +61,10 @@ export async function recomputeCreatorScore(
       tier: activeAccounts.length > 0 ? breakdown.tier : null,
       totalFollowers: breakdown.totalFollowers,
       engagementRateBp: breakdown.engagementRateBp,
+      growth90dBp:
+        breakdown.components.growth.growthPercent === null
+          ? null
+          : Math.round(breakdown.components.growth.growthPercent * BASIS_POINTS_PER_PERCENT),
       currentScore: breakdown.score,
       scoreUpdatedAt: now,
       lastRefreshedAt: lastRefreshes.length > 0 ? new Date(Math.min(...lastRefreshes)) : null,

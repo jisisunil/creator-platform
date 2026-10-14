@@ -22,6 +22,9 @@ export default defineConfig({
           setupFiles: ['tests/integration/setup-env.ts'],
           // One shared test database: run files one at a time so cleanup can't interfere.
           fileParallelism: false,
+          // Account tests hash many passwords with Argon2, which is slow on purpose (SR-1).
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
         },
       },
     ],

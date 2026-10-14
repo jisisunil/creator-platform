@@ -233,6 +233,8 @@ export async function uploadProfilePhoto(
 
 /** What brands and visitors see on a creator profile (FR-2.4, PR-8). No contact details. */
 export interface PublicCreatorProfile {
+  /** Internal creator id (not personal data), for shortlists and compare. */
+  readonly id: string;
   readonly slug: string;
   readonly displayName: string;
   readonly bio: string;
@@ -281,6 +283,7 @@ export async function getPublicProfile(
     ctx.repos.socialAccounts.audienceForCreator(profile.id),
   ]);
   return {
+    id: profile.id,
     slug: profile.slug,
     displayName: profile.displayName,
     bio: profile.bio,
@@ -309,15 +312,20 @@ export async function getPublicProfile(
 }
 
 const ANALYTICS_DAYS = 120;
+const PROFILE_VIEW_WINDOW_DAYS = 30;
 const DAY_MS = 86_400_000;
 
-/** UC-C7: the creator's growth charts and score breakdown. */
+/** UC-C7: the creator's growth charts, score breakdown and brand profile views. */
 export async function getCreatorAnalytics(ctx: ServiceContext, userId: string) {
   const profile = await requireOwnProfile(ctx, userId);
   const since = new Date(ctx.clock.now().getTime() - ANALYTICS_DAYS * DAY_MS);
-  const [series, score] = await Promise.all([
+  const [series, score, profileViews30d] = await Promise.all([
     ctx.repos.socialAccounts.followerSeries(profile.id, since),
     ctx.repos.scores.latestForCreator(profile.id),
+    ctx.repos.discovery.countViewsOfCreatorSince(
+      profile.id,
+      new Date(ctx.clock.now().getTime() - PROFILE_VIEW_WINDOW_DAYS * DAY_MS),
+    ),
   ]);
-  return { profile, series, score, checklist: profileChecklist(profile) };
+  return { profile, series, score, profileViews30d, checklist: profileChecklist(profile) };
 }

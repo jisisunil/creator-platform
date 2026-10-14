@@ -37,9 +37,20 @@ export async function SiteHeader() {
                 </>
               ) : null}
               {session.user.role === 'BRAND' ? (
-                <Link href="/brand/team" className="underline-offset-4 hover:underline">
-                  {t('team')}
-                </Link>
+                <>
+                  <Link href="/brand/search" className="underline-offset-4 hover:underline">
+                    {t('search')}
+                  </Link>
+                  <Link href="/brand/shortlists" className="underline-offset-4 hover:underline">
+                    {t('shortlists')}
+                  </Link>
+                  <Link href="/brand/saved-searches" className="underline-offset-4 hover:underline">
+                    {t('savedSearches')}
+                  </Link>
+                  <Link href="/brand/team" className="underline-offset-4 hover:underline">
+                    {t('team')}
+                  </Link>
+                </>
               ) : null}
               <Link href="/settings" className="underline-offset-4 hover:underline">
                 {t('settings')}

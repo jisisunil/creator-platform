@@ -110,3 +110,36 @@ Services: `src/services/{creators,social,scoring}`; adapters: `src/adapters/soci
 **Personal data added:** `CreatorProfile`, `RateCardItem`, `PortfolioItem`, `SocialAccount`,
 `PendingSocialConnection` (purged after 15 minutes), `OwnershipDispute`. Export and account
 deletion for them arrive in phase g, as planned.
+
+## Phase d — Brand search, shortlists, compare, saved searches
+
+Services: `src/services/{discovery,shortlists}`; repositories: `search-repository.ts`,
+`shortlist-repository.ts`, `discovery-repository.ts`; pages under
+`src/app/[locale]/(app)/brand/{search,creators,shortlists,compare,saved-searches}`; CSV route
+`src/app/api/shortlists/[id]/csv`. Search performance measured in ADR-005.
+
+| ID      | Status        | Code                                                                                   | Tests                                                                                | Notes                                                      |
+| ------- | ------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| FR-5.1  | Done          | `whereForFilters`, search page filters                                                 | `integration/discovery.test.ts`, `e2e/brands.spec.ts`                                | Audience: "mostly" = ≥50% gender, ≥30% age bucket (config) |
+| FR-5.2  | Done          | sorts, trigram text search on name and bio                                             | `integration/discovery.test.ts`, `unit/domain/search.test.ts`                        |                                                            |
+| FR-5.3  | Done          | pagination cap, `wideningsFor` suggestions                                             | `integration/discovery.test.ts`, `e2e/brands.spec.ts`                                |                                                            |
+| FR-5.4  | Done          | saved searches                                                                         | `integration/discovery.test.ts`, `e2e/brands.spec.ts`                                |                                                            |
+| FR-6.1  | Done          | shortlists, notes, team sharing                                                        | `integration/shortlists.test.ts`, `e2e/brands.spec.ts`                               | Maker or brand owner manages; team edits shared lists      |
+| FR-6.2  | Done          | compare 2–4, per platform                                                              | `integration/discovery.test.ts`, `e2e/brands.spec.ts`                                |                                                            |
+| FR-6.3  | Done          | CSV export, public fields, formula-safe                                                | `integration/shortlists.test.ts`, `unit/domain/search.test.ts`, `e2e/brands.spec.ts` |                                                            |
+| UC-D1   | Done          | search, empty suggestions, page cap                                                    | `integration/discovery.test.ts`                                                      | Trial expiry (contact blocked) in phase f                  |
+| UC-D2   | Done          | brand profile view, "profile unavailable"                                              | `integration/discovery.test.ts`, `e2e/creators.spec.ts`                              |                                                            |
+| UC-D3   | Done          | duplicates ignored, unavailable creators flagged                                       | `integration/shortlists.test.ts`                                                     |                                                            |
+| UC-D4   | Done          | per-platform compare, "not shared"                                                     | `integration/discovery.test.ts`                                                      |                                                            |
+| UC-D5   | Done          | `pruneUnknownFilterValues`                                                             | `integration/discovery.test.ts`, `unit/domain/search.test.ts`                        |                                                            |
+| UC-C7   | Done          | profile views in analytics                                                             | `integration/discovery.test.ts`                                                      | Completes phase c note                                     |
+| SEC-2   | Done          | other brands get "not found", logged                                                   | `security/cross-account-discovery.test.ts`                                           |                                                            |
+| SEC-3   | Done          | per-plan hourly profile views, public profile per-IP limit, no contact data in exports | `integration/discovery.test.ts`                                                      | Anomaly alerts in phase g                                  |
+| SR-5    | Partial       | brand-only discovery, shortlist ownership                                              | `security/*.test.ts`                                                                 |                                                            |
+| SR-11   | Partial       | search per user, public profile per IP                                                 | `integration/discovery.test.ts`                                                      | Requests and messages in phase e                           |
+| SR-12   | Done (search) | results, compare and CSV exclude contact details                                       | `integration/discovery.test.ts`, `integration/shortlists.test.ts`                    |                                                            |
+| NFR-1   | Partial       | indexed search; 50k creators p95 ≤ 190 ms                                              | ADR-005                                                                              | 500k test in phase h                                       |
+| FR-11.2 | Partial       | plan features: saved searches, compare, CSV, shortlist limit, views/hour               | `integration/discovery.test.ts`, `integration/shortlists.test.ts`                    | Usage counters, trials and packs in phase f                |
+
+**Personal data added:** `Shortlist` and `ShortlistItem` (brand notes about creators),
+`SavedSearch`, `ProfileView`. Export and deletion in phase g.

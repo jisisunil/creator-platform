@@ -14,6 +14,9 @@ const serverEnv = {
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
+  // Sign-ups and sign-ins hash passwords with Argon2 on purpose (slow); too many at once
+  // overloads one dev machine or CI runner.
+  workers: isCi ? 2 : 4,
   forbidOnly: isCi,
   retries: isCi ? 1 : 0,
   // Sign-up and sign-in hash passwords with Argon2, which is slow by design.

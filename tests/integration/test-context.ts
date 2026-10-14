@@ -74,7 +74,7 @@ export function requestFrom(
 /** Removes everything tests create, keeping reference data, then re-seeds reference data. */
 export async function resetDatabase(db: DatabaseClient): Promise<void> {
   await db.$executeRawUnsafe(
-    'TRUNCATE "User", "Brand", "AuditEvent", "RateLimitCounter", "EmailOutbox", "PrivacyNotice", "PlatformSetting", "CreatorProfile" CASCADE',
+    'TRUNCATE "User", "Brand", "AuditEvent", "RateLimitCounter", "EmailOutbox", "PrivacyNotice", "PlatformSetting", "CreatorProfile", "Plan" CASCADE',
   );
   await seedReferenceData(db);
 }

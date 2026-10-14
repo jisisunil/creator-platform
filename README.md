@@ -9,9 +9,9 @@ search, shortlist, chat and track campaigns.
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/)
 
-> **Status:** Phases a (skeleton), b (accounts, consent, security) and c (creator profiles,
-> YouTube/Instagram, daily refresh, content score) are built. Search, collaboration, plans, admin
-> and infrastructure arrive in phases d–i.
+> **Status:** Phases a–d are built: skeleton, accounts and security, creator profiles with
+> YouTube/Instagram and the content score, and brand search with shortlists, compare and saved
+> searches. Collaboration, plans, admin, hardening and infrastructure arrive in phases e–i.
 
 ## Set up (local)
 

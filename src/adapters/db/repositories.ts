@@ -3,6 +3,7 @@ import { createAuthAccountRepository } from './auth-account-repository';
 import { createBrandRepository } from './brand-repository';
 import { createConsentRepository } from './consent-repository';
 import { createCreatorRepository } from './creator-repository';
+import { createDiscoveryRepository } from './discovery-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
@@ -10,7 +11,9 @@ import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
 import { createReferenceRepository } from './reference-repository';
 import { createScoreRepository } from './score-repository';
+import { createSearchRepository } from './search-repository';
 import { createSessionRepository } from './session-repository';
+import { createShortlistRepository } from './shortlist-repository';
 import { createSocialAccountRepository } from './social-account-repository';
 import { createUserRepository } from './user-repository';
 
@@ -31,6 +34,9 @@ export function createRepositories(db: DbClient) {
     creators: createCreatorRepository(db),
     socialAccounts: createSocialAccountRepository(db),
     scores: createScoreRepository(db),
+    search: createSearchRepository(db),
+    shortlists: createShortlistRepository(db),
+    discovery: createDiscoveryRepository(db),
   };
 }
 

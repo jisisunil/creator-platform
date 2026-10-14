@@ -2,11 +2,24 @@ import type { DbClient } from './db-client';
 
 export type BrandMemberRole = 'OWNER' | 'MEMBER';
 
+/** The plan limits and features a brand has (FR-11.1). */
+export interface PlanAllowance {
+  readonly code: string;
+  readonly seatLimit: number;
+  readonly shortlistLimit: number;
+  readonly profileViewsPerHour: number;
+  readonly canSaveSearch: boolean;
+  readonly canCompare: boolean;
+  readonly canCsvExport: boolean;
+}
+
 export interface BrandMembership {
   readonly brandId: string;
   readonly brandName: string;
+  readonly countryCode: string;
   readonly role: BrandMemberRole;
   readonly seatLimit: number;
+  readonly plan: PlanAllowance;
 }
 
 export interface TeamMember {
@@ -58,15 +71,34 @@ export function createBrandRepository(db: DbClient) {
         where: { userId },
         select: {
           role: true,
-          brand: { select: { id: true, name: true, plan: { select: { seatLimit: true } } } },
+          brand: {
+            select: {
+              id: true,
+              name: true,
+              countryCode: true,
+              plan: {
+                select: {
+                  code: true,
+                  seatLimit: true,
+                  shortlistLimit: true,
+                  profileViewsPerHour: true,
+                  canSaveSearch: true,
+                  canCompare: true,
+                  canCsvExport: true,
+                },
+              },
+            },
+          },
         },
       });
       if (!row) return null;
       return {
         brandId: row.brand.id,
         brandName: row.brand.name,
+        countryCode: row.brand.countryCode,
         role: row.role,
         seatLimit: row.brand.plan.seatLimit,
+        plan: row.brand.plan,
       };
     },
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getCurrentSession } from '@/lib/auth/current-session';
 import { countUnreadMessages } from '@/services/chat';
+import { countUnreadNotifications } from '@/services/notifications';
 import { countOpenRequests } from '@/services/requests';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -18,6 +19,10 @@ export async function SiteHeader() {
   // FR-8.3: unread counts in the navigation.
   const unreadMessages =
     isSignedIn && isParticipant ? await countUnreadMessages(getContainer(), session.user.id) : 0;
+  const unreadNotifications =
+    isSignedIn && isParticipant
+      ? await countUnreadNotifications(getContainer(), session.user.id)
+      : 0;
   const openRequests =
     isSignedIn && role === 'CREATOR' ? await countOpenRequests(getContainer(), session.user.id) : 0;
 
@@ -81,6 +86,15 @@ export async function SiteHeader() {
                   <CountBadge
                     count={unreadMessages}
                     label={t('unreadMessages', { count: unreadMessages })}
+                  />
+                </Link>
+              ) : null}
+              {isParticipant ? (
+                <Link href="/notifications" className="underline-offset-4 hover:underline">
+                  {t('notifications')}
+                  <CountBadge
+                    count={unreadNotifications}
+                    label={t('unreadNotifications', { count: unreadNotifications })}
                   />
                 </Link>
               ) : null}

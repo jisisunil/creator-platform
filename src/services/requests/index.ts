@@ -195,6 +195,7 @@ export async function sendRequest(
       createdAt: now,
     });
     await notifyUsers(repos, ctx.appUrl, {
+      now: ctx.clock.now(),
       userIds: [creator.userId],
       path: `/creator/requests/${id}`,
       email: (recipient) => ({
@@ -304,6 +305,7 @@ export async function respondToRequest(
       dealId = await createDealFromRequest(repos, request, now);
     }
     await notifyUsers(repos, ctx.appUrl, {
+      now: ctx.clock.now(),
       userIds: recipients,
       path: isAccepted ? `/deals/${dealId}` : `/brand/requests/${request.id}`,
       email: (recipient) => {

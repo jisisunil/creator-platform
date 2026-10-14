@@ -212,6 +212,12 @@ export function createChatRepository(db: DbClient) {
       return (await db.message.count({ where: { id: messageId, threadId } })) > 0;
     },
 
+    /** Messages from one side newer than `since` (null: all), i.e. unread by the other side. */
+    countFromSideSince: (threadId: string, side: CollabSide, since: Date | null): Promise<number> =>
+      db.message.count({
+        where: { threadId, senderSide: side, ...(since ? { createdAt: { gt: since } } : {}) },
+      }),
+
     async markRead(threadId: string, side: CollabSide, at: Date): Promise<void> {
       await db.chatThread.update({ where: { id: threadId }, data: { [lastReadField(side)]: at } });
     },

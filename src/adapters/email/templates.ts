@@ -22,6 +22,11 @@ export interface EmailTemplates {
   dealDeadlinePassed: { name: string; campaignName: string; link: string };
   paymentOverdue: { name: string; creatorName: string; campaignName: string; link: string };
   ratingRequested: { name: string; otherPartyName: string; campaignName: string; link: string };
+  newMessage: { name: string; senderName: string; campaignName: string; link: string };
+  dealTermsUpdated: { name: string; brandName: string; campaignName: string; link: string };
+  dealContentSubmitted: { name: string; creatorName: string; campaignName: string; link: string };
+  dealPostAdded: { name: string; creatorName: string; campaignName: string; link: string };
+  paymentDisputed: { name: string; creatorName: string; campaignName: string; link: string };
   trialEnding: { name: string; brandName: string; link: string };
   trialEnded: { name: string; brandName: string; link: string };
 }
@@ -49,6 +54,11 @@ const ACTION_KEYS = {
   dealDeadlinePassed: 'dealDeadlinePassed.action',
   paymentOverdue: 'paymentOverdue.action',
   ratingRequested: 'ratingRequested.action',
+  newMessage: 'newMessage.action',
+  dealTermsUpdated: 'dealTermsUpdated.action',
+  dealContentSubmitted: 'dealContentSubmitted.action',
+  dealPostAdded: 'dealPostAdded.action',
+  paymentDisputed: 'paymentDisputed.action',
   trialEnding: 'trialEnding.action',
   trialEnded: 'trialEnded.action',
 } as const satisfies Partial<Record<EmailTemplateName, string>>;

@@ -206,6 +206,7 @@ function notifyOtherSide(
 ) {
   return async (repos: Repositories) => {
     await notifyUsers(repos, ctx.appUrl, {
+      now: ctx.clock.now(),
       userIds: await otherSideContacts(repos, deal, side),
       path: `/deals/${deal.id}`,
       email,
@@ -225,7 +226,7 @@ export async function updateDealTerms(
   ctx: ServiceContext,
   input: DealTermsInput & { readonly userId: string; readonly dealId: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'UPDATE_TERMS', (_deal, _side, now) => {
+  await performAction(ctx, input, 'UPDATE_TERMS', (deal, side, now) => {
     const paymentDueOn = input.paymentDueOn ? new Date(`${input.paymentDueOn}T00:00:00Z`) : null;
     const today = new Date(Math.floor(now.getTime() / DAY_MS) * DAY_MS);
     if (paymentDueOn && (Number.isNaN(paymentDueOn.getTime()) || paymentDueOn < today)) {
@@ -239,6 +240,10 @@ export async function updateDealTerms(
         paymentDueOn,
       },
       event: { kind: 'TERMS_UPDATED' },
+      alsoDo: notifyOtherSide(ctx, deal, side, (recipient) => ({
+        template: 'dealTermsUpdated',
+        payload: { ...recipient, brandName: deal.brandName, campaignName: deal.campaignName },
+      })),
     };
   });
 }
@@ -248,8 +253,16 @@ export async function submitContent(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string; readonly note: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'SUBMIT_CONTENT', () => ({
+  await performAction(ctx, input, 'SUBMIT_CONTENT', (deal, side) => ({
     event: { kind: 'CONTENT_SUBMITTED', note: input.note.trim() || null },
+    alsoDo: notifyOtherSide(ctx, deal, side, (recipient) => ({
+      template: 'dealContentSubmitted',
+      payload: {
+        ...recipient,
+        creatorName: deal.creatorDisplayName,
+        campaignName: deal.campaignName,
+      },
+    })),
   }));
 }
 
@@ -277,7 +290,7 @@ export async function addPostLink(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string; readonly url: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'ADD_POST', async (deal, _side, now) => {
+  await performAction(ctx, input, 'ADD_POST', async (deal, side, now) => {
     const link = parsePostLink(ctx, input.url);
     if (!link) throw validationFailed({ url: 'deal.unknownLink' });
     let found;
@@ -305,6 +318,14 @@ export async function addPostLink(
           statsFetchedAt: now,
         });
         if (!isNew) throw validationFailed({ url: 'deal.alreadyAdded' });
+        await notifyOtherSide(ctx, deal, side, (recipient) => ({
+          template: 'dealPostAdded',
+          payload: {
+            ...recipient,
+            creatorName: deal.creatorDisplayName,
+            campaignName: deal.campaignName,
+          },
+        }))(repos);
       },
     };
   });
@@ -344,6 +365,7 @@ export async function confirmPaymentReceived(
         },
       }))(repos);
       await notifyUsers(repos, ctx.appUrl, {
+        now: ctx.clock.now(),
         userIds: [deal.creatorUserId],
         path: `/deals/${deal.id}`,
         email: (recipient) => ({
@@ -367,9 +389,17 @@ export async function reportPaymentNotReceived(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string; readonly note: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'REPORT_NOT_RECEIVED', (deal) => ({
+  await performAction(ctx, input, 'REPORT_NOT_RECEIVED', (deal, side) => ({
     event: { kind: 'PAYMENT_DISPUTED', note: input.note.trim() || null },
     alsoDo: async (repos) => {
+      await notifyOtherSide(ctx, deal, side, (recipient) => ({
+        template: 'paymentDisputed',
+        payload: {
+          ...recipient,
+          creatorName: deal.creatorDisplayName,
+          campaignName: deal.campaignName,
+        },
+      }))(repos);
       if (await repos.reports.hasOpenReport(input.userId, 'PAYMENT', deal.id)) return;
       await repos.reports.create({
         reporterUserId: input.userId,
@@ -433,6 +463,7 @@ export async function sendDealReminders(
           createdAt: now,
         });
         await notifyUsers(repos, deps.appUrl, {
+          now,
           userIds: [
             deal.creatorUserId,
             ...(await brandContactIds(repos, deal.brandId, deal.sentByUserId)),
@@ -456,6 +487,7 @@ export async function sendDealReminders(
           createdAt: now,
         });
         await notifyUsers(repos, deps.appUrl, {
+          now,
           userIds: await brandContactIds(repos, deal.brandId, deal.sentByUserId),
           path: `/deals/${deal.id}`,
           email: (recipient) => ({

@@ -9,10 +9,11 @@ search, shortlist, chat and track campaigns.
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/)
 
-> **Status:** Phases a–e are built: skeleton, accounts and security, creator profiles with
+> **Status:** Phases a–f are built: skeleton, accounts and security, creator profiles with
 > YouTube/Instagram and the content score, brand search with shortlists, compare and saved
-> searches, and collaboration (requests, chat, deals, campaign reports, ratings). Plans and
-> notifications, admin, hardening and infrastructure arrive in phases f–i.
+> searches, collaboration (requests, chat, deals, campaign reports, ratings), and plans with
+> trials, credit packs and notifications. Admin, hardening and infrastructure arrive in
+> phases g–i.
 
 ## Set up (local)
 
@@ -47,21 +48,26 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 All variables are documented in [.env.example](.env.example) and validated at startup by
 [src/config/env.ts](src/config/env.ts); the app refuses to start if any are invalid.
 
-| Variable                                                 | Required           | Purpose                                                       |
-| -------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
-| `APP_ENV`                                                | no (development)   | development, test, staging or production                      |
-| `APP_URL`                                                | yes                | Public base URL                                               |
-| `DATABASE_URL`                                           | yes                | PostgreSQL connection                                         |
-| `DATABASE_URL_TEST`                                      | tests only         | Integration-test database (name must end in `_test`)          |
-| `LOG_LEVEL`                                              | no (info)          | Log verbosity                                                 |
-| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                   | no                 | Error reporting; personal data is not collected               |
-| `AUTH_SECRET`                                            | yes                | Signs short-lived Google sign-up state                        |
-| `TOKEN_ENCRYPTION_KEY`                                   | yes                | 32-byte key encrypting TOTP secrets (and social tokens later) |
-| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                   | no                 | Google sign-in; set both or neither                           |
-| `SMTP_URL`, `EMAIL_FROM`                                 | yes                | Outgoing email (Mailpit locally)                              |
-| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | staging/production | CAPTCHA                                                       |
-| `BREACHED_PASSWORD_CHECK`                                | no (hibp)          | `hibp` online check or `offline` list                         |
-| `TRUSTED_PROXY_HOPS`                                     | no (0)             | Reverse proxies to trust for the client IP                    |
+| Variable                                                      | Required           | Purpose                                                       |
+| ------------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
+| `APP_ENV`                                                     | no (development)   | development, test, staging or production                      |
+| `APP_URL`                                                     | yes                | Public base URL                                               |
+| `DATABASE_URL`                                                | yes                | PostgreSQL connection                                         |
+| `DATABASE_URL_TEST`                                           | tests only         | Integration-test database (name must end in `_test`)          |
+| `LOG_LEVEL`                                                   | no (info)          | Log verbosity                                                 |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                        | no                 | Error reporting; personal data is not collected               |
+| `AUTH_SECRET`                                                 | yes                | Signs short-lived Google sign-up state                        |
+| `TOKEN_ENCRYPTION_KEY`                                        | yes                | 32-byte key encrypting TOTP secrets (and social tokens later) |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                        | no                 | Google sign-in; set both or neither                           |
+| `SMTP_URL`, `EMAIL_FROM`                                      | yes                | Outgoing email (Mailpit locally)                              |
+| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`      | staging/production | CAPTCHA                                                       |
+| `BREACHED_PASSWORD_CHECK`                                     | no (hibp)          | `hibp` online check or `offline` list                         |
+| `TRUSTED_PROXY_HOPS`                                          | no (0)             | Reverse proxies to trust for the client IP                    |
+| `SALES_EMAIL`                                                 | staging/production | Shown on the plan page for plan changes and credit packs      |
+| `SOCIAL_PROVIDER_MODE`                                        | no (mock)          | `mock` (development) or `live` (official APIs)                |
+| `YOUTUBE_API_KEY`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | live mode          | YouTube Data API and Instagram API credentials                |
+| `FILE_STORAGE_DIR`                                            | no (./storage)     | Private uploads (photos, chat attachments)                    |
+| `MALWARE_SCANNER`, `CLAMAV_HOST`, `CLAMAV_PORT`               | staging/production | Upload scanning with ClamAV                                   |
 
 ## Architecture
 

@@ -5,6 +5,7 @@ import { UNVERIFIED_ACCOUNT_RETENTION_MS } from '@/config/auth';
 import {
   AUDIT_LOG_RETENTION_MS,
   EMAIL_OUTBOX_RETENTION_MS,
+  NOTIFICATION_RETENTION_MS,
   RATE_LIMIT_RETENTION_MS,
 } from '@/config/retention';
 
@@ -21,7 +22,10 @@ export async function purgeUnverifiedAccounts(
   return { deletedAccounts: await deps.repos.users.deleteUnverifiedCreatedBefore(cutoff) };
 }
 
-/** Removes expired sessions, links, invites and counters, and logs older than a year. */
+/**
+ * Removes expired sessions, links, invites and counters, logs older than a year, and
+ * in-app notifications older than 180 days (PR-9).
+ */
 export async function purgeExpiredSecurityData(
   deps: RetentionDependencies,
 ): Promise<Record<string, number>> {
@@ -35,5 +39,8 @@ export async function purgeExpiredSecurityData(
     rateLimitWindows: await deps.repos.rateLimits.deleteWindowsBefore(ago(RATE_LIMIT_RETENTION_MS)),
     emails: await deps.repos.emailOutbox.deleteFinishedBefore(ago(EMAIL_OUTBOX_RETENTION_MS)),
     auditEvents: await deps.repos.audit.deleteOlderThan(ago(AUDIT_LOG_RETENTION_MS)),
+    notifications: await deps.repos.notifications.deleteCreatedBefore(
+      ago(NOTIFICATION_RETENTION_MS),
+    ),
   };
 }

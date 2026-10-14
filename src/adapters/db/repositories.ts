@@ -9,6 +9,7 @@ import { createDiscoveryRepository } from './discovery-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
+import { createNotificationRepository } from './notification-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createPlanRepository } from './plan-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
@@ -48,6 +49,7 @@ export function createRepositories(db: DbClient) {
     deals: createDealRepository(db),
     ratings: createRatingRepository(db),
     plans: createPlanRepository(db),
+    notifications: createNotificationRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

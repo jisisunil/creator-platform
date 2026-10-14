@@ -8,6 +8,8 @@ import { notAvailable, notFound, validationFailed } from '@/domain/errors';
 import { detectAttachmentType } from '@/domain/file-types';
 import { getLogger } from '@/lib/logger';
 import type { ServiceContext } from '../context';
+import { requestEmailDispatch } from '../email';
+import { brandContactIds, notifyUsers } from '../notifications';
 import { consumeRateLimit, recordSecurityEvent } from '../security';
 
 export type { MessageRecord, ThreadSummary } from '@/adapters/db/chat-repository';
@@ -176,9 +178,13 @@ export async function sendMessage(
     now,
     CHAT_LIMITS,
   );
+  // FR-12.1: tell the other side once per batch, not for every message.
+  const otherSideReadAt = side === 'BRAND' ? thread.creatorLastReadAt : thread.brandLastReadAt;
+  const hasUnreadAlready =
+    (await ctx.repos.chat.countFromSideSince(thread.id, side, otherSideReadAt)) > 0;
   try {
-    await ctx.transaction((repos) =>
-      repos.chat.addMessage({
+    await ctx.transaction(async (repos) => {
+      await repos.chat.addMessage({
         threadId: thread.id,
         senderUserId: input.userId,
         senderSide: side,
@@ -186,13 +192,43 @@ export async function sendMessage(
         contactFlags: contactFlagsFor(body, isEarly),
         createdAt: now,
         attachment,
-      }),
-    );
+      });
+      if (!hasUnreadAlready) await notifyNewMessage(repos, ctx.appUrl, thread, side, now);
+    });
   } catch (error) {
     // Don't leave an unreferenced file behind.
     if (attachment) await ctx.fileStorage.delete(attachment.storageKey);
     throw error;
   }
+  if (!hasUnreadAlready) await requestEmailDispatch(ctx.jobQueue);
+}
+
+/** FR-12.1: the other side of the chat hears there is a new message (never its content). */
+async function notifyNewMessage(
+  repos: Repositories,
+  appUrl: string,
+  thread: ThreadRecord,
+  senderSide: CollabSide,
+  now: Date,
+): Promise<void> {
+  const request = await repos.requests.findById(thread.requestId);
+  const userIds =
+    senderSide === 'BRAND'
+      ? [thread.creatorUserId]
+      : await brandContactIds(repos, thread.brandId, request?.sentByUserId ?? null);
+  await notifyUsers(repos, appUrl, {
+    now,
+    userIds,
+    path: `/messages/${thread.id}`,
+    email: (recipient) => ({
+      template: 'newMessage',
+      payload: {
+        ...recipient,
+        senderName: senderSide === 'BRAND' ? thread.brandName : thread.creatorDisplayName,
+        campaignName: thread.campaignName,
+      },
+    }),
+  });
 }
 
 export interface ChatListPage {

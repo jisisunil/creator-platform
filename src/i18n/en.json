@@ -101,7 +101,9 @@
     "openRequests": "{count, plural, one {# request waiting} other {# requests waiting}}",
     "deals": "Deals",
     "campaigns": "Campaigns",
-    "plan": "Plan and usage"
+    "plan": "Plan and usage",
+    "notifications": "Notifications",
+    "unreadNotifications": "{count, plural, one {# new notification} other {# new notifications}}"
   },
   "fieldErrors": {
     "validation": {
@@ -360,6 +362,27 @@
       "withdrawn": "Withdrawn",
       "version": "Notice version {version}",
       "noticeLink": "Read the privacy notice"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "intro": "Choose what you hear about in the app and by email.",
+      "category": "Type",
+      "channels": {
+        "IN_APP": "In the app",
+        "EMAIL": "Email"
+      },
+      "categories": {
+        "REQUESTS": "Collaboration requests",
+        "MESSAGES": "New messages",
+        "DEALS": "Deal updates and payment reminders",
+        "RATINGS": "Rating requests",
+        "ACCOUNT": "Problems with connected accounts",
+        "PLAN": "Trial and plan"
+      },
+      "toggleLabel": "{category}: {channel}",
+      "securityNote": "Security emails (sign-in from a new device, password and email changes) are always sent.",
+      "save": "Save notification settings",
+      "saved": "Notification settings saved."
     }
   },
   "team": {
@@ -519,6 +542,31 @@
       "subject": "Your free trial has ended",
       "body": "Hi {name},\nThe free trial for {brandName} has ended. Your searches and shortlists are still here. Choose a plan to keep contacting creators.",
       "action": "See plans"
+    },
+    "newMessage": {
+      "subject": "New message from {senderName}",
+      "body": "Hi {name},\n{senderName} sent you a message about \"{campaignName}\". Reply in the chat; we never put message text in emails.",
+      "action": "Open chat"
+    },
+    "dealTermsUpdated": {
+      "subject": "{brandName} updated a deal",
+      "body": "Hi {name},\n{brandName} updated the amount or payment terms for \"{campaignName}\". Check the deal page.",
+      "action": "View deal"
+    },
+    "dealContentSubmitted": {
+      "subject": "{creatorName} submitted content",
+      "body": "Hi {name},\n{creatorName} submitted the content for \"{campaignName}\". Review it in the chat.",
+      "action": "View deal"
+    },
+    "dealPostAdded": {
+      "subject": "{creatorName} posted",
+      "body": "Hi {name},\n{creatorName} added a post link for \"{campaignName}\". Its stats will update every day.",
+      "action": "View deal"
+    },
+    "paymentDisputed": {
+      "subject": "Payment not received for {campaignName}",
+      "body": "Hi {name},\n{creatorName} says the payment for \"{campaignName}\" hasn't arrived. Our team will look into it; please check your payment and reply in the chat.",
+      "action": "View deal"
     }
   },
   "platforms": {
@@ -1234,6 +1282,30 @@
       "title": "Upgrade options",
       "howToChange": "Online payment is coming later. To change plan or buy credits, email",
       "changeSubject": "Plan change"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "settingsLink": "Choose which notifications you get",
+    "empty": "No notifications yet.",
+    "new": "New",
+    "kinds": {
+      "requestReceived": "{brandName} sent you a collaboration request for \"{campaignName}\".",
+      "requestAccepted": "{creatorName} accepted your request for \"{campaignName}\".",
+      "requestDeclined": "{creatorName} declined your request for \"{campaignName}\".",
+      "newMessage": "New message from {senderName} about \"{campaignName}\".",
+      "dealTermsUpdated": "{brandName} updated the amount or payment terms for \"{campaignName}\".",
+      "dealContentSubmitted": "{creatorName} submitted the content for \"{campaignName}\".",
+      "dealPostAdded": "{creatorName} added a post link for \"{campaignName}\".",
+      "dealCancelled": "{otherPartyName} cancelled the deal for \"{campaignName}\".",
+      "paymentMarked": "{brandName} marked \"{campaignName}\" as paid. Please confirm.",
+      "paymentDisputed": "{creatorName} says the payment for \"{campaignName}\" hasn't arrived.",
+      "dealDeadlinePassed": "The content deadline for \"{campaignName}\" has passed.",
+      "paymentOverdue": "The payment to {creatorName} for \"{campaignName}\" is overdue.",
+      "ratingRequested": "Rate {otherPartyName} for \"{campaignName}\".",
+      "socialRefreshFailed": "Your {platform} account needs attention: we couldn't update its stats.",
+      "trialEnding": "The free trial for {brandName} ends in 3 days.",
+      "trialEnded": "The free trial for {brandName} has ended."
     }
   }
 }

@@ -7,7 +7,13 @@ import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { getConsentHistory, getConsentStatus } from '@/services/consent';
 import { signOutEverywhereAction } from './actions';
-import { ChangeEmailForm, ChangePasswordForm, MarketingConsentForm } from './SettingsForms';
+import { getNotificationPreferences } from '@/services/notifications';
+import {
+  ChangeEmailForm,
+  ChangePasswordForm,
+  MarketingConsentForm,
+  NotificationPreferencesForm,
+} from './SettingsForms';
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -16,9 +22,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   const t = await getTranslations('settings');
   const format = await getFormatter();
   const container = getContainer();
-  const [consent, history] = await Promise.all([
+  const [consent, history, notificationPreferences] = await Promise.all([
     getConsentStatus(container, session.user),
     getConsentHistory(container, session.user.id),
+    getNotificationPreferences(container, session.user),
   ]);
   const hasPassword = session.user.passwordHash !== null;
 
@@ -47,6 +54,16 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           <ChangePasswordForm hasPassword={hasPassword} />
         </div>
       </Card>
+
+      {notificationPreferences.length > 0 ? (
+        <Card>
+          <CardTitle>{t('notifications.title')}</CardTitle>
+          <CardDescription>{t('notifications.intro')}</CardDescription>
+          <div className="mt-4">
+            <NotificationPreferencesForm preferences={notificationPreferences} />
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <CardTitle>{t('sessions.title')}</CardTitle>

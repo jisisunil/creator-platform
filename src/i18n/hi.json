@@ -101,7 +101,9 @@
     "openRequests": "{count} अनुरोध जवाब के इंतज़ार में",
     "deals": "डील",
     "campaigns": "अभियान",
-    "plan": "प्लान और उपयोग"
+    "plan": "प्लान और उपयोग",
+    "notifications": "सूचनाएँ",
+    "unreadNotifications": "{count} नई सूचनाएँ"
   },
   "fieldErrors": {
     "validation": {
@@ -360,6 +362,27 @@
       "withdrawn": "वापस ली",
       "version": "सूचना संस्करण {version}",
       "noticeLink": "गोपनीयता सूचना पढ़ें"
+    },
+    "notifications": {
+      "title": "सूचनाएँ",
+      "intro": "चुनें कि ऐप में और ईमेल पर आपको किस बारे में बताया जाए।",
+      "category": "प्रकार",
+      "channels": {
+        "IN_APP": "ऐप में",
+        "EMAIL": "ईमेल"
+      },
+      "categories": {
+        "REQUESTS": "सहयोग अनुरोध",
+        "MESSAGES": "नए संदेश",
+        "DEALS": "डील अपडेट और भुगतान रिमाइंडर",
+        "RATINGS": "रेटिंग अनुरोध",
+        "ACCOUNT": "जुड़े हुए अकाउंट की समस्याएँ",
+        "PLAN": "ट्रायल और प्लान"
+      },
+      "toggleLabel": "{category}: {channel}",
+      "securityNote": "सुरक्षा ईमेल (नए डिवाइस से साइन-इन, पासवर्ड और ईमेल बदलाव) हमेशा भेजे जाते हैं।",
+      "save": "सूचना सेटिंग सहेजें",
+      "saved": "सूचना सेटिंग सहेजी गई।"
     }
   },
   "team": {
@@ -519,6 +542,31 @@
       "subject": "आपका मुफ़्त ट्रायल ख़त्म हो गया है",
       "body": "नमस्ते {name},\n{brandName} का मुफ़्त ट्रायल ख़त्म हो गया है। आपकी खोजें और शॉर्टलिस्ट बनी हुई हैं। क्रिएटर्स से संपर्क जारी रखने के लिए प्लान चुनें।",
       "action": "प्लान देखें"
+    },
+    "newMessage": {
+      "subject": "{senderName} का नया संदेश",
+      "body": "नमस्ते {name},\n{senderName} ने \"{campaignName}\" के बारे में आपको संदेश भेजा है। चैट में जवाब दें; हम ईमेल में संदेश का टेक्स्ट नहीं डालते।",
+      "action": "चैट खोलें"
+    },
+    "dealTermsUpdated": {
+      "subject": "{brandName} ने एक डील अपडेट की",
+      "body": "नमस्ते {name},\n{brandName} ने \"{campaignName}\" की राशि या भुगतान शर्तें बदली हैं। डील पेज देखें।",
+      "action": "डील देखें"
+    },
+    "dealContentSubmitted": {
+      "subject": "{creatorName} ने कंटेंट जमा किया",
+      "body": "नमस्ते {name},\n{creatorName} ने \"{campaignName}\" का कंटेंट जमा किया है। चैट में इसे देखें।",
+      "action": "डील देखें"
+    },
+    "dealPostAdded": {
+      "subject": "{creatorName} ने पोस्ट किया",
+      "body": "नमस्ते {name},\n{creatorName} ने \"{campaignName}\" के लिए पोस्ट लिंक जोड़ा है। इसके आँकड़े रोज़ अपडेट होंगे।",
+      "action": "डील देखें"
+    },
+    "paymentDisputed": {
+      "subject": "{campaignName} का भुगतान नहीं मिला",
+      "body": "नमस्ते {name},\n{creatorName} के अनुसार \"{campaignName}\" का भुगतान नहीं मिला है। हमारी टीम इसे देखेगी; कृपया अपना भुगतान जाँचें और चैट में जवाब दें।",
+      "action": "डील देखें"
     }
   },
   "platforms": {
@@ -1234,6 +1282,30 @@
       "title": "अपग्रेड विकल्प",
       "howToChange": "ऑनलाइन भुगतान बाद में आएगा। प्लान बदलने या क्रेडिट लेने के लिए ईमेल करें",
       "changeSubject": "प्लान बदलाव"
+    }
+  },
+  "notifications": {
+    "title": "सूचनाएँ",
+    "settingsLink": "चुनें कि आपको कौन-सी सूचनाएँ मिलें",
+    "empty": "अभी कोई सूचना नहीं।",
+    "new": "नई",
+    "kinds": {
+      "requestReceived": "{brandName} ने आपको \"{campaignName}\" के लिए सहयोग अनुरोध भेजा।",
+      "requestAccepted": "{creatorName} ने \"{campaignName}\" के लिए आपका अनुरोध स्वीकार किया।",
+      "requestDeclined": "{creatorName} ने \"{campaignName}\" के लिए आपका अनुरोध अस्वीकार किया।",
+      "newMessage": "\"{campaignName}\" के बारे में {senderName} का नया संदेश।",
+      "dealTermsUpdated": "{brandName} ने \"{campaignName}\" की राशि या भुगतान शर्तें बदलीं।",
+      "dealContentSubmitted": "{creatorName} ने \"{campaignName}\" का कंटेंट जमा किया।",
+      "dealPostAdded": "{creatorName} ने \"{campaignName}\" के लिए पोस्ट लिंक जोड़ा।",
+      "dealCancelled": "{otherPartyName} ने \"{campaignName}\" की डील रद्द की।",
+      "paymentMarked": "{brandName} ने \"{campaignName}\" को भुगतान किया हुआ दर्ज किया। कृपया पुष्टि करें।",
+      "paymentDisputed": "{creatorName} के अनुसार \"{campaignName}\" का भुगतान नहीं मिला।",
+      "dealDeadlinePassed": "\"{campaignName}\" के कंटेंट की अंतिम तारीख निकल गई है।",
+      "paymentOverdue": "\"{campaignName}\" के लिए {creatorName} का भुगतान बाकी है।",
+      "ratingRequested": "\"{campaignName}\" के लिए {otherPartyName} को रेटिंग दें।",
+      "socialRefreshFailed": "आपके {platform} अकाउंट पर ध्यान दें: हम इसके आँकड़े अपडेट नहीं कर पाए।",
+      "trialEnding": "{brandName} का मुफ़्त ट्रायल 3 दिन में ख़त्म होगा।",
+      "trialEnded": "{brandName} का मुफ़्त ट्रायल ख़त्म हो गया है।"
     }
   }
 }

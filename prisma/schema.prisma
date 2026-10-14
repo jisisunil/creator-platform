@@ -188,6 +188,8 @@ model User {
   sentMessages             Message[]
   dealEvents               DealEvent[]
   ratingsGiven             Rating[]
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference[]
   reports                  Report[]
 
   @@index([status, createdAt])
@@ -1208,4 +1210,57 @@ model CreditPack {
   requests      CollabRequest[]
 
   @@index([brandId, expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (phase f)
+// ---------------------------------------------------------------------------
+
+/// Groups of notifications a user can switch on or off per channel (FR-12.2).
+enum NotificationCategory {
+  REQUESTS
+  MESSAGES
+  DEALS
+  RATINGS
+  ACCOUNT
+  PLAN
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+/// An in-app notification (FR-12.1). The text comes from i18n by `kind`, filled with `params`.
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String
+  category  NotificationCategory
+  /// Same names as the email templates, e.g. "requestReceived".
+  kind      String
+  params    Json
+  /// Where it leads, without the locale, e.g. "/deals/abc".
+  path      String
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+/// A user's choice to turn a category off (or back on) for a channel; no row means on.
+model NotificationPreference {
+  id        String               @id @default(cuid())
+  userId    String
+  category  NotificationCategory
+  channel   NotificationChannel
+  isEnabled Boolean
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, channel])
 }

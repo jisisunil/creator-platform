@@ -13,7 +13,8 @@ import { JOB_NAMES } from '@/config/jobs';
 import { invalidLink, notAllowed, notFound, validationFailed } from '@/domain/errors';
 import { getLogger } from '@/lib/logger';
 import type { ServiceContext } from '../context';
-import { queueEmail, requestEmailDispatch } from '../email';
+import { requestEmailDispatch } from '../email';
+import { notifyUsers } from '../notifications';
 import { recomputeCreatorScore } from '../scoring';
 import { recordSecurityEvent } from '../security';
 
@@ -288,18 +289,15 @@ async function notifyRefreshProblem(
   platform: SocialPlatform,
 ): Promise<void> {
   const profile = await ctx.repos.creators.findById(creatorId);
-  const owner = profile ? await ctx.repos.users.findById(profile.userId) : null;
-  if (!owner) return;
-  await queueEmail(ctx.repos, {
-    userId: owner.id,
-    toAddress: owner.email,
-    locale: owner.locale,
-    template: 'socialRefreshFailed',
-    payload: {
-      name: owner.name,
-      platform: platform === 'YOUTUBE' ? 'YouTube' : 'Instagram',
-      link: new URL(`/${owner.locale}/creator/accounts`, ctx.appUrl).toString(),
-    },
+  if (!profile) return;
+  await notifyUsers(ctx.repos, ctx.appUrl, {
+    now: ctx.clock.now(),
+    userIds: [profile.userId],
+    path: '/creator/accounts',
+    email: (recipient) => ({
+      template: 'socialRefreshFailed',
+      payload: { ...recipient, platform: platform === 'YOUTUBE' ? 'YouTube' : 'Instagram' },
+    }),
   });
   await requestEmailDispatch(ctx.jobQueue);
 }

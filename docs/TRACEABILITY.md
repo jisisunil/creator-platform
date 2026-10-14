@@ -189,3 +189,29 @@ Social providers gained `parsePostUrl` / `fetchPostStats` (official APIs only).
 `DealEvent`, `DealPost`, `Rating` (comments), `Report`, `Block`. Kept until both accounts are
 deleted; the other side keeps its copy with "Deleted user" (spec data inventory). Export,
 deletion or anonymisation, and retention in phase g.
+
+## Phase f — Plans and limits, notifications
+
+Services: `src/services/{plans,notifications}`; domain rules: `src/domain/plans.ts`,
+`nextContactPeriodStart` in `src/domain/requests.ts`, `canonicalMailbox` in
+`src/domain/email-address.ts`; repositories: `plan-repository.ts`,
+`notification-repository.ts`; pages: `brand/plan`, `notifications`, notification settings in
+`settings`; job `plans.trial-reminders` (daily). Decisions in ADR-008.
+
+| ID      | Status         | Code                                                                                                                                  | Tests                                                                                                         | Notes                                                          |
+| ------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| FR-11.1 | Done           | plans in the database with limits; pay-as-you-go credit packs                                                                         | `integration/plans.test.ts`, `unit/domain/plans.test.ts`, `e2e/plans-and-notifications.spec.ts`               | Usage counted from sent requests (ADR-008)                     |
+| FR-11.2 | Done           | limits enforced on the server; reason + upgrade options on every form and the plan page                                               | `integration/plans.test.ts`, `unit/lib/http-errors.test.ts`, `e2e/plans-and-notifications.spec.ts`            | Plan changes through `SALES_EMAIL` until online payments       |
+| FR-11.3 | Partial        | `changeBrandPlan`, `extendTrial`, `addCreditPack` (admin only, audited)                                                               | `integration/plans.test.ts`                                                                                   | Admin screens in phase g                                       |
+| FR-12.1 | Done           | in-app and email for requests, answers, new messages, deal steps, payment reminders, rating requests, refresh failures, trial notices | `integration/notifications.test.ts`, `e2e/plans-and-notifications.spec.ts`                                    | Messages notified once per unread batch, never with their text |
+| FR-12.2 | Done           | preferences by category and channel; security emails bypass them                                                                      | `integration/notifications.test.ts`, `unit/i18n/notifications.test.ts`, `e2e/plans-and-notifications.spec.ts` |                                                                |
+| UC-B1   | Done           | free beta, then 14-day trial; one per company domain or mailbox; trial reminders                                                      | `integration/plans.test.ts`, `unit/domain/plans.test.ts`                                                      |                                                                |
+| UC-B2   | Done           | limit and credit used in the same transaction under a brand lock                                                                      | `integration/plans.test.ts`, `integration/requests.test.ts`                                                   |                                                                |
+| UC-B3   | Done (service) | plan change starts a new period; downgrade keeps members, blocks invites                                                              | `integration/plans.test.ts`                                                                                   | Admin screen in phase g                                        |
+| UC-D1   | Done           | trial ended: search open, contact blocked                                                                                             | `integration/plans.test.ts`                                                                                   |                                                                |
+| UC-A6   | Done           | seat limit with reason and upgrade link                                                                                               | `integration/plans.test.ts`, `integration/team.test.ts`                                                       |                                                                |
+| PR-9    | Partial        | notifications deleted after 180 days                                                                                                  | `integration/notifications.test.ts`                                                                           | Remaining retention jobs in phase g                            |
+
+**Personal data added:** `Notification` (event details, no message text),
+`NotificationPreference`, `User.canonicalEmail` (derived from the email already held),
+`CreditPack` (brand purchases). Export and deletion in phase g.

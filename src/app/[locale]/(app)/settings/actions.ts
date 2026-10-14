@@ -14,8 +14,10 @@ import {
   marketingConsentSchema,
 } from '@/lib/validation/account-schemas';
 import { parseForm } from '@/lib/validation/form-data';
+import { notificationPreferencesSchema } from '@/lib/validation/notification-schemas';
 import { changePassword, requestEmailChange, signOutEverywhere } from '@/services/accounts';
 import { setMarketingConsent } from '@/services/consent';
+import { saveNotificationPreferences } from '@/services/notifications';
 
 /** FR-1.3: change password; other sessions are signed out. */
 export async function changePasswordAction(
@@ -63,6 +65,23 @@ export async function setMarketingConsentAction(
       isGranted,
       await getRequestInfo(locale),
     );
+    revalidatePath('/[locale]/settings', 'page');
+  });
+}
+
+/** FR-12.2: which notifications the user gets in the app and by email. */
+export async function saveNotificationPreferencesAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await requireActionSession();
+    const { enabled } = parseForm(notificationPreferencesSchema, formData);
+    await saveNotificationPreferences(getContainer(), {
+      userId: session.user.id,
+      role: session.user.role,
+      enabled,
+    });
     revalidatePath('/[locale]/settings', 'page');
   });
 }

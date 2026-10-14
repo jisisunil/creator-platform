@@ -312,6 +312,7 @@ export async function sendTrialReminders(
     await deps.transaction(async (repos) => {
       await repos.plans.markTrialNotice(brand.brandId, notice, now);
       await notifyUsers(repos, deps.appUrl, {
+        now,
         userIds: await repos.brands.activeMemberIds(brand.brandId),
         path: '/brand/plan',
         email: (recipient) =>

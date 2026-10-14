@@ -81,7 +81,10 @@
     "team": "Team",
     "privacy": "Privacy notice",
     "terms": "Terms",
-    "grievance": "Grievance contact"
+    "grievance": "Grievance contact",
+    "profile": "Profile",
+    "accounts": "Accounts",
+    "analytics": "Analytics"
   },
   "fieldErrors": {
     "validation": {
@@ -113,6 +116,24 @@
     },
     "twoFactor": {
       "invalidCode": "That code didn't work. Check your authenticator app and try again."
+    },
+    "profile": {
+      "noContactDetails": "Remove phone numbers, emails and links. Brands contact you through the platform.",
+      "noProfanity": "Please remove offensive words.",
+      "photoTooLarge": "Choose an image under 2 MB.",
+      "photoType": "Use a JPG, PNG or WebP image.",
+      "photoRejected": "This file couldn't be accepted. Try another image.",
+      "portfolioFull": "You can list up to 20 collaborations. Remove one to add another.",
+      "dateInFuture": "The date can't be in the future.",
+      "tooManyCategories": "Choose up to 3 categories.",
+      "tooFewCategories": "Choose at least one category.",
+      "tooFewLanguages": "Choose at least one language.",
+      "tooManyLanguages": "Choose up to 5 languages.",
+      "invalidUrl": "Enter a full link starting with https://",
+      "invalidAmount": "Enter a whole amount in rupees."
+    },
+    "social": {
+      "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname."
     }
   },
   "industries": {
@@ -386,6 +407,224 @@
       "subject": "Join {brandName} on Creator Platform",
       "body": "{inviterName} invited you to join {brandName}'s team. The invite works for 7 days.",
       "action": "Accept invite"
+    },
+    "socialRefreshFailed": {
+      "subject": "Your {platform} account needs attention",
+      "body": "Hi {name},\nWe couldn't update your {platform} stats: access was removed, or the account is private or deleted. Reconnect it so brands see current numbers.",
+      "action": "Check connected accounts"
+    }
+  },
+  "platforms": {
+    "YOUTUBE": "YouTube",
+    "INSTAGRAM": "Instagram"
+  },
+  "tiers": {
+    "NANO": "Nano",
+    "MICRO": "Micro",
+    "MID": "Mid",
+    "MACRO": "Macro",
+    "MEGA": "Mega"
+  },
+  "deliverables": {
+    "REEL": "Reel",
+    "STORY": "Story",
+    "VIDEO": "Video",
+    "POST": "Post"
+  },
+  "creator": {
+    "home": {
+      "intro": "Complete your profile and connect an account so brands can find you.",
+      "completeness": "Profile {percent}% complete",
+      "todo": "Still to do",
+      "allDone": "Your profile is complete.",
+      "missing": {
+        "displayName": "Add your display name",
+        "bio": "Write a short bio (30+ characters)",
+        "photo": "Upload a profile photo",
+        "location": "Add your city and state",
+        "languages": "Choose your content languages",
+        "categories": "Choose your categories",
+        "rateCard": "Add your prices",
+        "portfolio": "Add a past brand collaboration",
+        "connectedAccount": "Connect YouTube or Instagram"
+      },
+      "editProfile": "Edit profile",
+      "manageAccounts": "Connected accounts",
+      "viewAnalytics": "Analytics",
+      "viewPublic": "View public profile",
+      "searchVisible": "Brands can find you in search.",
+      "searchHidden": "You're not in search yet: connect an account first."
+    },
+    "profile": {
+      "title": "Your profile",
+      "photoTitle": "Profile photo",
+      "photoHint": "JPG, PNG or WebP, up to 2 MB.",
+      "photoAlt": "Your profile photo",
+      "noPhoto": "No photo yet.",
+      "upload": "Upload photo",
+      "detailsTitle": "About you",
+      "displayName": "Display name",
+      "bio": "Bio",
+      "bioHint": "Up to 500 characters. No phone numbers, emails or links.",
+      "state": "State or union territory",
+      "statePlaceholder": "Choose a state",
+      "city": "City",
+      "languages": "Content languages",
+      "languagesHint": "Choose 1 to 5.",
+      "categories": "Categories",
+      "categoriesHint": "Choose 1 to 3.",
+      "saveDetails": "Save",
+      "saved": "Saved.",
+      "availabilityTitle": "Availability",
+      "openNow": "You're open to collaborations. Brands can send you requests.",
+      "closedNow": "You're closed to collaborations. Brands can't send new requests.",
+      "close": "Close to new requests",
+      "open": "Open to collaborations",
+      "rateCardTitle": "Prices (optional)",
+      "rateCardHint": "In rupees. Leave blank for prices you don't want to show.",
+      "saveRates": "Save prices",
+      "portfolioTitle": "Past collaborations",
+      "portfolioEmpty": "No collaborations listed yet.",
+      "brandName": "Brand",
+      "link": "Link to the post",
+      "date": "Date",
+      "addItem": "Add",
+      "remove": "Remove"
+    },
+    "accounts": {
+      "title": "Connected accounts",
+      "intro": "Connecting through the official login proves the account is yours and earns the Verified badge.",
+      "empty": "No accounts connected yet.",
+      "verified": "Verified",
+      "unverified": "Not verified",
+      "lastUpdated": "Last updated {date}",
+      "neverUpdated": "Waiting for the first update",
+      "status": {
+        "ACTIVE": "Active",
+        "TOKEN_REVOKED": "Access was removed: reconnect to keep your stats up to date",
+        "PRIVATE": "The account is private, so it's hidden from search",
+        "DELETED": "The account no longer exists on the platform"
+      },
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Disconnect this account? Its stats and audience data will be deleted.",
+      "connectTitle": "Connect an account",
+      "connectYouTube": "Connect YouTube (sign in with Google)",
+      "connectInstagram": "Connect Instagram",
+      "instagramNote": "Instagram needs a Creator or Business account.",
+      "linkTitle": "Or link a YouTube channel without signing in",
+      "linkHint": "Paste your channel link. It won't be verified until you sign in with Google.",
+      "channelUrl": "Channel link or ID",
+      "link": "Link channel",
+      "results": {
+        "connected": "Account connected. Your stats will appear within a few minutes.",
+        "disputed": "Another creator has already claimed this account. We've sent it to our team to review.",
+        "personal-account": "This is a personal Instagram account. Switch it to a Creator or Business account in the Instagram app (Settings → Account type), then try again.",
+        "no-accounts": "That login doesn't have a channel or account we can connect.",
+        "expired": "That connection attempt expired. Please try again.",
+        "failed": "We couldn't connect the account. Please try again in a few minutes."
+      },
+      "chooseTitle": "Choose a channel",
+      "chooseIntro": "Your Google account manages several channels. Which one do you want to connect?",
+      "choose": "Connect this channel"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "followersTitle": "Followers over time",
+      "needMoreData": "Charts appear after 7 days of data. Check back soon.",
+      "tableCaption": "Daily followers",
+      "date": "Date",
+      "scoreTitle": "Content score",
+      "noScore": "Your score appears after your first account refresh."
+    }
+  },
+  "score": {
+    "outOf": "{score} out of 100",
+    "weightsVersion": "Scoring rules {version}",
+    "components": {
+      "engagement": "Engagement",
+      "consistency": "Consistency",
+      "growth": "Growth",
+      "authenticity": "Authenticity",
+      "completeness": "Profile completeness"
+    },
+    "explain": {
+      "engagement": "Likes and comments per post compared with similar-sized creators.",
+      "consistency": "Posts in the last 30 days.",
+      "growth": "Follower change over 90 days.",
+      "authenticity": "Lowered by unusual follower jumps or engagement.",
+      "completeness": "How much of the profile is filled in."
+    },
+    "growthNotYet": "Not enough history yet",
+    "growthValue": "{percent}% in 90 days",
+    "postsValue": "{count} posts in 30 days",
+    "flagsValue": "{count, plural, =0 {No unusual signals} one {# unusual signal} other {# unusual signals}}"
+  },
+  "publicProfile": {
+    "unavailable": "Profile unavailable",
+    "unavailableText": "This profile doesn't exist or isn't available right now.",
+    "verified": "Verified",
+    "openToCollaborations": "Open to collaborations",
+    "closedToCollaborations": "Not taking new collaborations",
+    "followers": "{count} followers",
+    "engagement": "{rate}% engagement",
+    "tier": "{tier} creator",
+    "lastUpdated": "Stats last updated {date}",
+    "languages": "Languages",
+    "categories": "Categories",
+    "accounts": "Accounts",
+    "rateCard": "Prices",
+    "portfolio": "Past collaborations",
+    "audience": "Audience",
+    "audienceNotShared": "Not shared",
+    "dimension": {
+      "AGE": "Age",
+      "GENDER": "Gender",
+      "CITY": "Top cities"
+    },
+    "gender": {
+      "F": "Women",
+      "M": "Men",
+      "U": "Other"
+    }
+  },
+  "regions": {
+    "IN": {
+      "AN": "Andaman and Nicobar Islands",
+      "AP": "Andhra Pradesh",
+      "AR": "Arunachal Pradesh",
+      "AS": "Assam",
+      "BR": "Bihar",
+      "CH": "Chandigarh",
+      "CG": "Chhattisgarh",
+      "DH": "Dadra and Nagar Haveli and Daman and Diu",
+      "DL": "Delhi",
+      "GA": "Goa",
+      "GJ": "Gujarat",
+      "HP": "Himachal Pradesh",
+      "HR": "Haryana",
+      "JH": "Jharkhand",
+      "JK": "Jammu and Kashmir",
+      "KA": "Karnataka",
+      "KL": "Kerala",
+      "LA": "Ladakh",
+      "LD": "Lakshadweep",
+      "MH": "Maharashtra",
+      "ML": "Meghalaya",
+      "MN": "Manipur",
+      "MP": "Madhya Pradesh",
+      "MZ": "Mizoram",
+      "NL": "Nagaland",
+      "OD": "Odisha",
+      "PB": "Punjab",
+      "PY": "Puducherry",
+      "RJ": "Rajasthan",
+      "SK": "Sikkim",
+      "TN": "Tamil Nadu",
+      "TR": "Tripura",
+      "TS": "Telangana",
+      "UK": "Uttarakhand",
+      "UP": "Uttar Pradesh",
+      "WB": "West Bengal"
     }
   }
 }

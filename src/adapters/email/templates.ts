@@ -13,6 +13,7 @@ export interface EmailTemplates {
   emailChangeRequested: { name: string; newEmail: string };
   newDeviceSignIn: { name: string; device: string; time: string };
   teamInvite: { brandName: string; inviterName: string; link: string };
+  socialRefreshFailed: { name: string; platform: string; link: string };
 }
 
 export type EmailTemplateName = keyof EmailTemplates;
@@ -29,6 +30,7 @@ const ACTION_KEYS = {
   passwordReset: 'passwordReset.action',
   confirmEmailChange: 'confirmEmailChange.action',
   teamInvite: 'teamInvite.action',
+  socialRefreshFailed: 'socialRefreshFailed.action',
 } as const satisfies Partial<Record<EmailTemplateName, string>>;
 
 const MESSAGES = { en, hi } as const satisfies Record<SupportedLocale, unknown>;

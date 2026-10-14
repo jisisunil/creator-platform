@@ -1,11 +1,17 @@
 import type { z } from 'zod';
 import { type FieldErrors, validationFailed } from '@/domain/errors';
 
-/** FormData as a plain object of strings (files and Next.js internals are dropped). */
-export function formDataToObject(formData: FormData): Record<string, string> {
-  const result: Record<string, string> = {};
+/**
+ * FormData as a plain object (files and Next.js internals are dropped). A field sent more
+ * than once, such as a group of checkboxes, becomes an array.
+ */
+export function formDataToObject(formData: FormData): Record<string, string | string[]> {
+  const result: Record<string, string | string[]> = {};
   for (const [key, value] of formData.entries()) {
-    if (typeof value === 'string' && !key.startsWith('$ACTION')) result[key] = value;
+    if (typeof value !== 'string' || key.startsWith('$ACTION')) continue;
+    const existing = result[key];
+    if (existing === undefined) result[key] = value;
+    else result[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
   }
   return result;
 }

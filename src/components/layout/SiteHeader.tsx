@@ -23,6 +23,19 @@ export async function SiteHeader() {
               <Link href="/dashboard" className="underline-offset-4 hover:underline">
                 {t('dashboard')}
               </Link>
+              {session.user.role === 'CREATOR' ? (
+                <>
+                  <Link href="/creator/profile" className="underline-offset-4 hover:underline">
+                    {t('profile')}
+                  </Link>
+                  <Link href="/creator/accounts" className="underline-offset-4 hover:underline">
+                    {t('accounts')}
+                  </Link>
+                  <Link href="/creator/analytics" className="underline-offset-4 hover:underline">
+                    {t('analytics')}
+                  </Link>
+                </>
+              ) : null}
               {session.user.role === 'BRAND' ? (
                 <Link href="/brand/team" className="underline-offset-4 hover:underline">
                   {t('team')}

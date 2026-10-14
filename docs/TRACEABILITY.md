@@ -69,3 +69,44 @@ Mailpit (`tests/e2e/accounts.spec.ts`).
 **Known gap (CLAUDE.md §8):** the new personal-data tables (`User`, `Session`, `ConsentRecord`,
 `AuditEvent`, `EmailOutbox`, `BrandMember`, `BrandInvite`, `AuthAccount`, `OneTimeToken`) are
 covered by retention jobs now; account export and deletion for them arrive in phase g, as planned.
+
+## Phase c — Creator profiles, platforms, refresh and score
+
+Services: `src/services/{creators,social,scoring}`; adapters: `src/adapters/social/*`,
+`src/adapters/storage`, `src/adapters/scan`; pages under `src/app/[locale]/(app)/creator` and
+`src/app/[locale]/(public)/c/[slug]`; jobs in `worker/jobs/social-refresh.ts`. Decision: ADR-007.
+
+| ID            | Status          | Code                                                                            | Tests                                                                                | Notes                                      |
+| ------------- | --------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------ |
+| FR-2.1        | Done            | `services/creators`, `creator/profile` page                                     | `integration/creators.test.ts`, `e2e/creators.spec.ts`                               |                                            |
+| FR-2.2        | Done            | portfolio add/remove                                                            | `integration/creators.test.ts`                                                       |                                            |
+| FR-2.3        | Done            | availability toggle                                                             | `integration/creators.test.ts`                                                       | Request blocking uses it in phase e        |
+| FR-2.4        | Done            | `/c/[slug]`, `getPublicProfile`                                                 | `integration/creators.test.ts`, `e2e/creators.spec.ts`                               |                                            |
+| FR-3.1        | Done            | `youtube-provider.ts`, link by URL                                              | `unit/adapters/social-providers.test.ts`, `integration/social.test.ts`               | Live mode needs Google OAuth verification  |
+| FR-3.2        | Done            | `instagram-provider.ts`                                                         | `unit/adapters/social-providers.test.ts`                                             | Needs Meta app review                      |
+| FR-3.3        | Done            | verified only via official login                                                | `integration/social.test.ts`                                                         |                                            |
+| FR-3.4        | Done            | daily refresh jobs, `StatsSnapshot`                                             | `integration/social.test.ts`                                                         |                                            |
+| FR-3.5        | Done            | typed provider errors, status handling                                          | `integration/social.test.ts`                                                         |                                            |
+| FR-4.1–4.5    | Done            | `domain/score.ts`, `config/score.ts`, `services/scoring`                        | `unit/domain/score.test.ts`, `integration/social.test.ts`                            | Weights are starting assumptions           |
+| UC-C1         | Done            | profile validation, contact/profanity checks                                    | `integration/creators.test.ts`, `e2e/creators.spec.ts`                               |                                            |
+| UC-C2         | Done            | channel choice, hidden counts, disputes                                         | `integration/social.test.ts`, `unit/adapters/social-providers.test.ts`               |                                            |
+| UC-C3         | Done            | personal-account guidance, partial permissions                                  | `integration/social.test.ts`, `unit/adapters/social-providers.test.ts`               |                                            |
+| UC-C4         | Done            | `refreshSocialAccount` outcomes                                                 | `integration/social.test.ts`                                                         |                                            |
+| UC-C5 / PRV-7 | Done            | `disconnectAccount` deletes tokens, snapshots, audience                         | `integration/social.test.ts`, `e2e/creators.spec.ts`                                 |                                            |
+| UC-C6         | Done            | rate card in paise, availability                                                | `integration/creators.test.ts`                                                       |                                            |
+| UC-C7         | Done            | analytics page, 7-day rule                                                      | `e2e/creators.spec.ts`, `unit/domain/score.test.ts`                                  | Profile views arrive with search (phase d) |
+| SR-5          | Partial         | creator-only actions, ownership checks                                          | `integration/creators.test.ts`, `integration/social.test.ts`, `e2e/creators.spec.ts` |                                            |
+| SR-6          | Done            | social tokens encrypted with AES-256-GCM                                        | `integration/social.test.ts`                                                         |                                            |
+| SR-9          | Partial         | photo uploads: magic bytes, size, scan, signed URLs                             | `integration/creators.test.ts`, `unit/lib/files-and-format.test.ts`                  | Chat attachments in phase e                |
+| SR-12         | Done (profiles) | public profile excludes contact details                                         | `integration/creators.test.ts`, `e2e/creators.spec.ts`                               | Every brand API in later phases            |
+| SEC-4         | Done            | disputes instead of takeover                                                    | `integration/social.test.ts`                                                         | Admin resolution in phase g                |
+| SEC-5         | Done            | authenticity flags                                                              | `unit/domain/score.test.ts`                                                          | Admin queue in phase g                     |
+| PR-8          | Done            | audience shown as aggregates only                                               | `e2e/creators.spec.ts`                                                               |                                            |
+| PR-14         | Done            | platform data deleted on disconnect                                             | `integration/social.test.ts`                                                         |                                            |
+| NFR-3         | Done            | 20-hour refresh window, daily schedule                                          | `integration/social.test.ts`                                                         |                                            |
+| NFR-8         | Done            | `lib/format.ts` (lakh/crore, paise)                                             | `unit/lib/files-and-format.test.ts`                                                  |                                            |
+| AI-ready      | Done            | `CreatorEmbedding` + HNSW index, `buildCreatorProfileText`, `EmbeddingProvider` | `unit/domain/creators.test.ts`                                                       | ADR-006                                    |
+
+**Personal data added:** `CreatorProfile`, `RateCardItem`, `PortfolioItem`, `SocialAccount`,
+`PendingSocialConnection` (purged after 15 minutes), `OwnershipDispute`. Export and account
+deletion for them arrive in phase g, as planned.

@@ -31,6 +31,7 @@ export async function purgeExpiredSecurityData(
     sessions: await deps.repos.sessions.deleteExpired(now),
     oneTimeLinks: await deps.repos.oneTimeTokens.deleteExpired(now),
     teamInvites: await deps.repos.brands.deleteExpiredInvites(now),
+    pendingSocialConnections: await deps.repos.socialAccounts.deleteExpiredPending(now),
     rateLimitWindows: await deps.repos.rateLimits.deleteWindowsBefore(ago(RATE_LIMIT_RETENTION_MS)),
     emails: await deps.repos.emailOutbox.deleteFinishedBefore(ago(EMAIL_OUTBOX_RETENTION_MS)),
     auditEvents: await deps.repos.audit.deleteOlderThan(ago(AUDIT_LOG_RETENTION_MS)),

@@ -5,6 +5,9 @@ import { createTotpService } from '@/adapters/crypto/totp';
 import type { DatabaseClient } from '@/adapters/db/client';
 import { createRepositories } from '@/adapters/db/repositories';
 import { createTransactionRunner } from '@/adapters/db/transaction';
+import { disabledMalwareScanner } from '@/adapters/scan/malware-scanner';
+import { createSocialProviderRegistry } from '@/adapters/social/registry';
+import { createInMemoryFileStorage } from '../fakes/in-memory-file-storage';
 import type { JobName } from '@/config/jobs';
 import type { RequestInfo, ServiceContext } from '@/services/context';
 import { seedReferenceData } from '../../prisma/seed/reference-data';
@@ -49,6 +52,9 @@ export function createTestContext(db: DatabaseClient): TestContext {
       },
     },
     appUrl: 'https://app.test',
+    socialProviders: createSocialProviderRegistry({ mode: 'mock', appUrl: 'https://app.test' }),
+    fileStorage: createInMemoryFileStorage(),
+    malwareScanner: disabledMalwareScanner,
     enqueuedJobs,
     breachedPasswordList,
     setCaptchaEnabled(isEnabled) {
@@ -68,7 +74,7 @@ export function requestFrom(
 /** Removes everything tests create, keeping reference data, then re-seeds reference data. */
 export async function resetDatabase(db: DatabaseClient): Promise<void> {
   await db.$executeRawUnsafe(
-    'TRUNCATE "User", "Brand", "AuditEvent", "RateLimitCounter", "EmailOutbox", "PrivacyNotice", "PlatformSetting" CASCADE',
+    'TRUNCATE "User", "Brand", "AuditEvent", "RateLimitCounter", "EmailOutbox", "PrivacyNotice", "PlatformSetting", "CreatorProfile" CASCADE',
   );
   await seedReferenceData(db);
 }

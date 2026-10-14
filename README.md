@@ -9,8 +9,9 @@ search, shortlist, chat and track campaigns.
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/)
 
-> **Status:** Phases a (skeleton) and b (accounts, consent, security basics) are built. Creator
-> profiles, search, collaboration, plans, admin and infrastructure arrive in phases c–i.
+> **Status:** Phases a (skeleton), b (accounts, consent, security) and c (creator profiles,
+> YouTube/Instagram, daily refresh, content score) are built. Search, collaboration, plans, admin
+> and infrastructure arrive in phases d–i.
 
 ## Set up (local)
 
@@ -87,4 +88,8 @@ there is no separate broker.
 - **A country:** add an entry to `src/config/countries.ts`, its categories to
   `src/config/categories.ts` and its plans to `src/config/plans.ts`, then run `npm run db:seed`.
   Work through the per-country launch checklist in the spec first.
-- **A social platform:** arrives in phase c (one provider class behind `SocialPlatformProvider`).
+- **A social platform:** add a class implementing `SocialPlatformProvider`
+  (`src/adapters/social/provider.ts`), register it in `src/adapters/social/registry.ts`, add the
+  value to the `SocialPlatform` enum (migration) and enable it per country in `CountrySettings`.
+- **Real YouTube/Instagram data:** set `SOCIAL_PROVIDER_MODE=live` with the API keys in
+  `.env.example`. Mock mode (the default) needs no keys; demo creators are seeded.

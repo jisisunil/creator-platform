@@ -1,32 +1,7 @@
-import type { Page } from '@playwright/test';
 import { TOTP } from 'otpauth';
-import { linkFromEmail } from './support/mailpit';
+import { signIn, signUpCreator, verifyFromEmail } from './support/accounts';
 import { expect, PASSWORD, test, uniqueEmail } from './support/fixtures';
-
-async function signUpCreator(page: Page, email: string) {
-  await page.goto('/en/sign-up');
-  await page.getByLabel('Your name').fill('E2E Creator');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(PASSWORD);
-  await page.getByLabel('I confirm I am 18 or older').check();
-  await page.getByLabel(/I have read and agree to the/).check();
-  await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page).toHaveURL(/\/en\/check-email$/);
-}
-
-async function verifyFromEmail(page: Page, email: string) {
-  const link = await linkFromEmail(email, /Verify your email/, '/verify-email');
-  await page.goto(link);
-  await page.getByRole('button', { name: 'Verify your email' }).click();
-  await expect(page.getByText('Your email is verified')).toBeVisible();
-}
-
-async function signIn(page: Page, email: string, password = PASSWORD) {
-  await page.goto('/en/sign-in');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-}
+import { linkFromEmail } from './support/mailpit';
 
 test.describe('accounts', () => {
   test('UC-A1 FR-1.1 a creator signs up, verifies their email and signs in', async ({ page }) => {

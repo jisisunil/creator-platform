@@ -4,6 +4,8 @@ export const JOB_NAMES = {
   dispatchEmails: 'email.dispatch',
   purgeUnverifiedAccounts: 'accounts.purge-unverified',
   purgeExpiredSecurityData: 'security.purge-expired',
+  queueDueRefreshes: 'social.queue-due-refreshes',
+  refreshSocialAccount: 'social.refresh-account',
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];

@@ -25,7 +25,11 @@ const nextConfig: NextConfig = {
   headers: async () => [{ source: '/:path*', headers: securityHeaders }],
   // Next defaults to one build worker per CPU; on a busy 16-thread laptop that ran out of
   // memory. Four keeps builds predictable on developer machines and CI runners.
-  experimental: { cpus: 4 },
+  experimental: {
+    cpus: 4,
+    // Profile photos are up to 2 MB (config/creators.ts); multipart overhead needs headroom.
+    serverActions: { bodySizeLimit: '3mb' },
+  },
 };
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');

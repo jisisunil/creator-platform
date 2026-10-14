@@ -25,5 +25,14 @@ services:
       - '1025:1025' # SMTP
       - '8025:8025' # web UI and API
 
+  # Malware scanning for uploads (SR-9). Opt-in locally because it needs ~1 GB of RAM:
+  #   docker compose --profile scan up -d   and set MALWARE_SCANNER=clamav
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    profiles: [scan]
+    ports:
+      - '3310:3310'
+
 volumes:
   postgres-data:

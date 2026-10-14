@@ -43,18 +43,43 @@ describe('parseServerEnv (SR-10)', () => {
     expect(run).toThrow(/TOKEN_ENCRYPTION_KEY/);
   });
 
+  const PRODUCTION = {
+    ...VALID,
+    APP_ENV: 'production',
+    TURNSTILE_SECRET_KEY: 'secret',
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site',
+    SOCIAL_PROVIDER_MODE: 'live',
+    YOUTUBE_API_KEY: 'yt-key',
+    AUTH_GOOGLE_ID: 'google-id',
+    AUTH_GOOGLE_SECRET: 'google-secret',
+    INSTAGRAM_APP_ID: 'ig-id',
+    INSTAGRAM_APP_SECRET: 'ig-secret',
+    MALWARE_SCANNER: 'clamav',
+  };
+
+  it('accepts a complete production configuration', () => {
+    expect(() => parseServerEnv(PRODUCTION)).not.toThrow();
+  });
+
   it('SR-3 requires CAPTCHA keys in production', () => {
-    expect(() => parseServerEnv({ ...VALID, APP_ENV: 'production' })).toThrow(
+    expect(() => parseServerEnv({ ...PRODUCTION, TURNSTILE_SECRET_KEY: '' })).toThrow(
       /TURNSTILE_SECRET_KEY/,
     );
-    expect(() =>
-      parseServerEnv({
-        ...VALID,
-        APP_ENV: 'production',
-        TURNSTILE_SECRET_KEY: 'secret',
-        NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site',
-      }),
-    ).not.toThrow();
+  });
+
+  it('FR-3 refuses mock social providers in production and live mode without keys', () => {
+    expect(() => parseServerEnv({ ...PRODUCTION, SOCIAL_PROVIDER_MODE: 'mock' })).toThrow(
+      /SOCIAL_PROVIDER_MODE/,
+    );
+    expect(() => parseServerEnv({ ...VALID, SOCIAL_PROVIDER_MODE: 'live' })).toThrow(
+      /YOUTUBE_API_KEY/,
+    );
+  });
+
+  it('SR-9 requires malware scanning in production', () => {
+    expect(() => parseServerEnv({ ...PRODUCTION, MALWARE_SCANNER: 'disabled' })).toThrow(
+      /MALWARE_SCANNER/,
+    );
   });
 
   it('needs both Google sign-in values or neither', () => {

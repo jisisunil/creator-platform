@@ -14,6 +14,11 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
   emailChangeRequested: { name: 'Asha', newEmail: 'n***@example.in' },
   newDeviceSignIn: { name: 'Asha', device: 'Firefox', time: '2026-10-09T10:00:00Z' },
   teamInvite: { brandName: 'Spice Co', inviterName: 'Ravi', link: 'https://app.test/en/invite/x' },
+  socialRefreshFailed: {
+    name: 'Asha',
+    platform: 'YouTube',
+    link: 'https://app.test/en/creator/accounts',
+  },
 };
 
 describe('email templates (NFR-7)', () => {

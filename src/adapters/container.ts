@@ -1,4 +1,9 @@
-import { databasePoolOptions, directDatabaseUrl, getServerEnv } from '@/config/env';
+import {
+  databasePoolOptions,
+  directDatabaseUrl,
+  getServerEnv,
+  socialProviderSettings,
+} from '@/config/env';
 import type { ServiceContext } from '@/services/context';
 import { type Clock, systemClock } from './clock';
 import { createArgon2PasswordHasher } from './crypto/password-hasher';
@@ -10,6 +15,7 @@ import { createRepositories } from './db/repositories';
 import { createTransactionRunner } from './db/transaction';
 import { createSmtpEmailSender, type EmailSender } from './email/email-sender';
 import { createPgBossJobQueue } from './jobs/job-queue';
+import { createClamAvScanner, disabledMalwareScanner } from './scan/malware-scanner';
 import {
   createHibpBreachedPasswordChecker,
   createOfflineBreachedPasswordChecker,
@@ -18,6 +24,8 @@ import {
   createTurnstileCaptchaVerifier,
   disabledCaptchaVerifier,
 } from './security/captcha-verifier';
+import { createSocialProviderRegistry } from './social/registry';
+import { createLocalFileStorage } from './storage/file-storage';
 
 /** Every concrete adapter, wired in one place (CLAUDE.md §4). */
 export interface Container extends ServiceContext {
@@ -49,6 +57,12 @@ function buildContainer(): Container {
     totp: createTotpService(),
     jobQueue: createPgBossJobQueue(directDatabaseUrl(env)),
     emailSender: createSmtpEmailSender(env.SMTP_URL, env.EMAIL_FROM),
+    socialProviders: createSocialProviderRegistry(socialProviderSettings(env)),
+    fileStorage: createLocalFileStorage(env.FILE_STORAGE_DIR),
+    malwareScanner:
+      env.MALWARE_SCANNER === 'clamav'
+        ? createClamAvScanner(env.CLAMAV_HOST, env.CLAMAV_PORT)
+        : disabledMalwareScanner,
     appUrl: env.APP_URL,
   };
 }

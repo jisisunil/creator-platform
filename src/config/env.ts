@@ -36,6 +36,16 @@ const serverEnvSchema = z
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
     BREACHED_PASSWORD_CHECK: z.enum(['hibp', 'offline']).default('hibp'),
     TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+
+    SOCIAL_PROVIDER_MODE: z.enum(['mock', 'live']).default('mock'),
+    YOUTUBE_API_KEY: z.string().optional(),
+    INSTAGRAM_APP_ID: z.string().optional(),
+    INSTAGRAM_APP_SECRET: z.string().optional(),
+
+    FILE_STORAGE_DIR: z.string().min(1).default('./storage'),
+    MALWARE_SCANNER: z.enum(['clamav', 'disabled']).default('disabled'),
+    CLAMAV_HOST: z.string().default('localhost'),
+    CLAMAV_PORT: z.coerce.number().int().min(1).max(65_535).default(3310),
   })
   .superRefine((env, context) => {
     const isLive = env.APP_ENV === 'production' || env.APP_ENV === 'staging';
@@ -44,6 +54,34 @@ const serverEnvSchema = z
         code: 'custom',
         path: ['TURNSTILE_SECRET_KEY'],
         message: 'CAPTCHA keys are required outside development (SR-3, SR-11)',
+      });
+    }
+    if (isLive && env.SOCIAL_PROVIDER_MODE !== 'live') {
+      context.addIssue({
+        code: 'custom',
+        path: ['SOCIAL_PROVIDER_MODE'],
+        message: 'mock social providers are for development only',
+      });
+    }
+    if (isLive && env.MALWARE_SCANNER === 'disabled') {
+      context.addIssue({
+        code: 'custom',
+        path: ['MALWARE_SCANNER'],
+        message: 'uploads must be scanned outside development (SR-9)',
+      });
+    }
+    const hasLiveKeys =
+      env.YOUTUBE_API_KEY &&
+      env.AUTH_GOOGLE_ID &&
+      env.AUTH_GOOGLE_SECRET &&
+      env.INSTAGRAM_APP_ID &&
+      env.INSTAGRAM_APP_SECRET;
+    if (env.SOCIAL_PROVIDER_MODE === 'live' && !hasLiveKeys) {
+      context.addIssue({
+        code: 'custom',
+        path: ['SOCIAL_PROVIDER_MODE'],
+        message:
+          'live mode needs YOUTUBE_API_KEY, AUTH_GOOGLE_ID/SECRET and INSTAGRAM_APP_ID/SECRET',
       });
     }
     if (Boolean(env.AUTH_GOOGLE_ID) !== Boolean(env.AUTH_GOOGLE_SECRET)) {
@@ -98,6 +136,26 @@ export function databasePoolOptions(env: ServerEnv) {
 /** The connection for session-level work (migrations, pg-boss locks), bypassing PgBouncer. */
 export function directDatabaseUrl(env: ServerEnv): string {
   return env.DATABASE_DIRECT_URL ?? env.DATABASE_URL;
+}
+
+/** Settings for the social provider registry (FR-3). */
+export function socialProviderSettings(env: ServerEnv) {
+  return {
+    mode: env.SOCIAL_PROVIDER_MODE,
+    appUrl: env.APP_URL,
+    youtube:
+      env.YOUTUBE_API_KEY && env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET
+        ? {
+            apiKey: env.YOUTUBE_API_KEY,
+            clientId: env.AUTH_GOOGLE_ID,
+            clientSecret: env.AUTH_GOOGLE_SECRET,
+          }
+        : undefined,
+    instagram:
+      env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
+        ? { appId: env.INSTAGRAM_APP_ID, appSecret: env.INSTAGRAM_APP_SECRET }
+        : undefined,
+  };
 }
 
 /** True when Google sign-in is configured. */

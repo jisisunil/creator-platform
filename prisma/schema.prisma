@@ -44,6 +44,7 @@ model CountrySettings {
   categories     Category[]
   plans          Plan[]
   users          User[]
+  creators       CreatorProfile[]
   brands         Brand[]
   privacyNotices PrivacyNotice[]
 }
@@ -55,18 +56,21 @@ model Language {
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  creators CreatorLanguage[]
 }
 
 /// Content categories, per country. Display names come from i18n (categories.<slug>).
 model Category {
-  id          String          @id @default(cuid())
+  id          String            @id @default(cuid())
   countryCode String
   slug        String
-  sortOrder   Int             @default(0)
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  country     CountrySettings @relation(fields: [countryCode], references: [code])
+  sortOrder   Int               @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  country     CountrySettings   @relation(fields: [countryCode], references: [code])
+  creators    CreatorCategory[]
 
   @@unique([countryCode, slug])
   @@index([countryCode])
@@ -162,14 +166,17 @@ model User {
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 
-  country       CountrySettings @relation(fields: [countryCode], references: [code])
-  authAccounts  AuthAccount[]
-  sessions      Session[]
-  oneTimeTokens OneTimeToken[]
-  consents      ConsentRecord[]
-  brandMember   BrandMember?
-  sentInvites   BrandInvite[]
-  emailOutbox   EmailOutbox[]
+  country                  CountrySettings           @relation(fields: [countryCode], references: [code])
+  authAccounts             AuthAccount[]
+  sessions                 Session[]
+  oneTimeTokens            OneTimeToken[]
+  consents                 ConsentRecord[]
+  brandMember              BrandMember?
+  creatorProfile           CreatorProfile?
+  pendingSocialConnections PendingSocialConnection[]
+  ownershipDisputes        OwnershipDispute[]
+  sentInvites              BrandInvite[]
+  emailOutbox              EmailOutbox[]
 
   @@index([status, createdAt])
   @@index([role])
@@ -401,4 +408,315 @@ model BrandInvite {
   @@index([email])
   @@index([invitedByUserId])
   @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Creators, social accounts, stats and score (FR-2, FR-3, FR-4, UC-C)
+// Personal data: CreatorProfile, RateCardItem, PortfolioItem, SocialAccount (encrypted
+// tokens), PendingSocialConnection, OwnershipDispute, CreatorEmbedding (source text).
+// StatsSnapshot and AudienceSegment hold public or aggregate data only.
+// ---------------------------------------------------------------------------
+
+enum CreatorTier {
+  NANO // < 10k
+  MICRO // 10k–100k
+  MID // 100k–500k
+  MACRO // 500k–1M
+  MEGA // 1M+
+}
+
+model CreatorProfile {
+  id                     String       @id @default(cuid())
+  userId                 String       @unique
+  /// Public profile URL segment (FR-2.4).
+  slug                   String       @unique
+  displayName            String
+  bio                    String       @default("")
+  /// Storage key of the profile photo (served through signed URLs, SR-9).
+  photoKey               String?
+  city                   String       @default("")
+  /// State/UT code from config/regions.ts.
+  stateCode              String       @default("")
+  countryCode            String
+  isOpenToCollaborations Boolean      @default(true)
+  // Denormalised for search and sorting (FR-5); recomputed after every refresh.
+  isSearchable           Boolean      @default(false)
+  isVerified             Boolean      @default(false)
+  tier                   CreatorTier?
+  totalFollowers         Int          @default(0)
+  /// Engagement rate in basis points (1% = 100) to keep integers.
+  engagementRateBp       Int          @default(0)
+  currentScore           Int?
+  scoreUpdatedAt         DateTime?
+  lastRefreshedAt        DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country           CountrySettings    @relation(fields: [countryCode], references: [code])
+  languages         CreatorLanguage[]
+  categories        CreatorCategory[]
+  rateCard          RateCardItem[]
+  portfolio         PortfolioItem[]
+  socialAccounts    SocialAccount[]
+  scores            ScoreResult[]
+  authenticityFlags AuthenticityFlag[]
+  embeddings        CreatorEmbedding[]
+
+  @@index([countryCode, stateCode, city])
+  @@index([isSearchable, currentScore])
+  @@index([tier])
+  @@index([totalFollowers])
+  @@index([engagementRateBp])
+  @@index([isVerified])
+  @@index([isOpenToCollaborations])
+}
+
+model CreatorLanguage {
+  id           String         @id @default(cuid())
+  creatorId    String
+  languageCode String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  language     Language       @relation(fields: [languageCode], references: [code])
+
+  @@unique([creatorId, languageCode])
+  @@index([languageCode])
+}
+
+model CreatorCategory {
+  id         String         @id @default(cuid())
+  creatorId  String
+  categoryId String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  creator    CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  category   Category       @relation(fields: [categoryId], references: [id])
+
+  @@unique([creatorId, categoryId])
+  @@index([categoryId])
+}
+
+enum Deliverable {
+  REEL
+  STORY
+  VIDEO
+  POST
+}
+
+/// Optional prices per deliverable (FR-2.1), in minor units of the currency.
+model RateCardItem {
+  id          String         @id @default(cuid())
+  creatorId   String
+  deliverable Deliverable
+  amountMinor Int
+  currency    String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, deliverable])
+}
+
+/// Past brand collaborations (FR-2.2).
+model PortfolioItem {
+  id             String         @id @default(cuid())
+  creatorId      String
+  url            String
+  brandName      String
+  collaboratedOn DateTime       @db.Date
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+}
+
+enum SocialAccountStatus {
+  ACTIVE
+  TOKEN_REVOKED // needs reconnecting
+  PRIVATE // account made private
+  DELETED // account deleted on the platform
+}
+
+/// A connected YouTube channel or Instagram account (FR-3). One claim per platform account.
+model SocialAccount {
+  id                    String              @id @default(cuid())
+  creatorId             String
+  platform              SocialPlatform
+  externalId            String
+  handle                String
+  displayName           String
+  /// FR-3.3: true only when ownership was proved through the platform's official login.
+  isVerified            Boolean             @default(false)
+  verifiedAt            DateTime?
+  /// Tokens encrypted with the token cipher (SR-6); null for public, unverified links.
+  accessTokenEncrypted  String?
+  refreshTokenEncrypted String?
+  tokenExpiresAt        DateTime?
+  status                SocialAccountStatus @default(ACTIVE)
+  /// YouTube can hide subscriber counts (UC-C2).
+  isFollowerCountHidden Boolean             @default(false)
+  lastRefreshedAt       DateTime?
+  lastRefreshError      String?
+  nextRefreshAt         DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  creator               CreatorProfile      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  snapshots             StatsSnapshot[]
+  audience              AudienceSegment[]
+  disputes              OwnershipDispute[]
+
+  @@unique([platform, externalId])
+  @@index([creatorId])
+  @@index([status, nextRefreshAt])
+}
+
+/// One day of public statistics for an account (FR-3.4); feeds growth charts and the score.
+model StatsSnapshot {
+  id              String        @id @default(cuid())
+  socialAccountId String
+  capturedOn      DateTime      @db.Date
+  followers       Int
+  mediaCount      Int
+  /// Totals over posts published in the 30 days before capture.
+  posts30d        Int
+  views30d        Int?
+  likes30d        Int
+  comments30d     Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([socialAccountId, capturedOn])
+}
+
+enum AudienceDimension {
+  AGE
+  GENDER
+  CITY
+}
+
+/// Aggregate audience share (PR-8), from Instagram insights. Deleted on disconnect (PRV-7).
+model AudienceSegment {
+  id              String            @id @default(cuid())
+  socialAccountId String
+  dimension       AudienceDimension
+  bucket          String
+  /// Share of the audience in thousandths (1000 = 100%).
+  sharePermille   Int
+  capturedOn      DateTime          @db.Date
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  socialAccount   SocialAccount     @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([socialAccountId, dimension, bucket])
+}
+
+/// A computed content score with its breakdown and weights version (FR-4.3).
+model ScoreResult {
+  id             String         @id @default(cuid())
+  creatorId      String
+  score          Int
+  /// Component scores 0–100 and the inputs used, for the transparent breakdown (FR-4.2).
+  components     Json
+  weightsVersion String
+  computedAt     DateTime
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, computedAt])
+}
+
+enum AuthenticityFlagType {
+  FOLLOWER_SPIKE
+  LOW_VIEWS_RATIO
+  ABNORMAL_ENGAGEMENT
+}
+
+enum AuthenticityFlagStatus {
+  OPEN
+  CLEARED
+  SUSPICIOUS
+}
+
+/// FR-4.5: signals that lower the score and go to the admin queue (UC-M2).
+model AuthenticityFlag {
+  id               String                 @id @default(cuid())
+  creatorId        String
+  type             AuthenticityFlagType
+  details          Json
+  status           AuthenticityFlagStatus @default(OPEN)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  creator          CreatorProfile         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([creatorId, type])
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+/// UC-C2/UC-C3 → UC-M3: someone tried to connect an account another creator has claimed.
+model OwnershipDispute {
+  id               String        @id @default(cuid())
+  socialAccountId  String
+  claimantUserId   String
+  /// Whether the claimant proved ownership through the official login.
+  isClaimVerified  Boolean
+  status           DisputeStatus @default(OPEN)
+  resolution       String?
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  socialAccount    SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  claimant         User          @relation(fields: [claimantUserId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([socialAccountId])
+  @@index([claimantUserId])
+}
+
+/// Accounts returned by an OAuth login, waiting for the creator to pick one (UC-C2:
+/// several channels on one Google account). Tokens encrypted; expires in 15 minutes.
+model PendingSocialConnection {
+  id                    String         @id @default(cuid())
+  userId                String
+  platform              SocialPlatform
+  accessTokenEncrypted  String
+  refreshTokenEncrypted String?
+  tokenExpiresAt        DateTime?
+  /// [{ externalId, handle, displayName }]
+  accounts              Json
+  expiresAt             DateTime
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Reserved for future semantic search. Empty: no AI features use it, and no data is sent to
+/// any AI service. The vector column and its HNSW index are created in raw SQL.
+model CreatorEmbedding {
+  id         String                       @id @default(cuid())
+  creatorId  String
+  model      String
+  version    String
+  embedding  Unsupported("vector(1024)")?
+  sourceText String
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
+  creator    CreatorProfile               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, model, version])
 }

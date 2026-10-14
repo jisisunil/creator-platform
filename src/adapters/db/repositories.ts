@@ -2,13 +2,16 @@ import { createAuditRepository } from './audit-repository';
 import { createAuthAccountRepository } from './auth-account-repository';
 import { createBrandRepository } from './brand-repository';
 import { createConsentRepository } from './consent-repository';
+import { createCreatorRepository } from './creator-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
 import { createReferenceRepository } from './reference-repository';
+import { createScoreRepository } from './score-repository';
 import { createSessionRepository } from './session-repository';
+import { createSocialAccountRepository } from './social-account-repository';
 import { createUserRepository } from './user-repository';
 
 /** Every repository, bound to one client (the root client or a transaction). */
@@ -25,6 +28,9 @@ export function createRepositories(db: DbClient) {
     emailOutbox: createEmailOutboxRepository(db),
     brands: createBrandRepository(db),
     health: createHealthRepository(db),
+    creators: createCreatorRepository(db),
+    socialAccounts: createSocialAccountRepository(db),
+    scores: createScoreRepository(db),
   };
 }
 

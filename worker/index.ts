@@ -25,7 +25,12 @@ async function main(): Promise<void> {
   await boss.start();
 
   for (const job of ALL_JOBS) {
-    await boss.createQueue(job.name);
+    await boss.createQueue(
+      job.name,
+      job.retry
+        ? { retryLimit: job.retry.limit, retryDelay: job.retry.delaySeconds, retryBackoff: true }
+        : {},
+    );
     await boss.work<object>(job.name, async (batch) => {
       for (const item of batch) {
         await runJob(job, item.data, container);

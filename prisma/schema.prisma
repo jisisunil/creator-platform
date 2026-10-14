@@ -182,6 +182,7 @@ model User {
   sentRequests             CollabRequest[]
   sentMessages             Message[]
   dealEvents               DealEvent[]
+  ratingsGiven             Rating[]
   reports                  Report[]
 
   @@index([status, createdAt])
@@ -1071,6 +1072,7 @@ model Deal {
   creator                CreatorProfile @relation(fields: [creatorId], references: [id])
   events                 DealEvent[]
   posts                  DealPost[]
+  ratings                Rating[]
 
   @@index([brandId, status])
   @@index([creatorId, status])
@@ -1136,4 +1138,34 @@ model DealPost {
   @@unique([dealId, platform, externalPostId])
   @@index([socialAccountId])
   @@index([status, statsFetchedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Ratings (phase e)
+// ---------------------------------------------------------------------------
+
+/// FR-10: one rating per completed deal per side. A brand rates the creator; a creator
+/// rates the brand. Shown once both have rated, or 14 days after completion.
+model Rating {
+  id            String     @id @default(cuid())
+  dealId        String
+  raterSide     CollabSide
+  /// Null once the rater's account is deleted; the rating stays, anonymous.
+  raterUserId   String?
+  /// Criterion → 1-5, validated by domain/ratings.ts.
+  scores        Json
+  /// Mean of the scores × 10 (43 = 4.3), for averages without floats.
+  averageTenths Int
+  comment       String?
+  visibleFrom   DateTime
+  /// Hidden by an admin after a report (FR-10.3, phase g).
+  isHidden      Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deal          Deal       @relation(fields: [dealId], references: [id])
+  rater         User?      @relation(fields: [raterUserId], references: [id], onDelete: SetNull)
+
+  @@unique([dealId, raterSide])
+  @@index([raterUserId])
+  @@index([raterSide, visibleFrom])
 }

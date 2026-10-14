@@ -13,6 +13,7 @@ import {
   postLinkSchema,
 } from '@/lib/validation/deal-schemas';
 import { parseForm } from '@/lib/validation/form-data';
+import { ratingFormSchema, reportRatingSchema, scoresFrom } from '@/lib/validation/rating-schemas';
 import {
   addPostLink,
   cancelDeal,
@@ -22,6 +23,7 @@ import {
   submitContent,
   updateDealTerms,
 } from '@/services/deals';
+import { reportRating, submitRating } from '@/services/ratings';
 
 const participantsOnly = () => requireActionSession({ roles: ['BRAND', 'CREATOR'] });
 const DEALS_PATH = '/[locale]/deals';
@@ -105,5 +107,29 @@ export async function cancelDealAction(_: ActionState, formData: FormData): Prom
     const input = parseForm(cancelDealSchema, formData);
     await cancelDeal(getContainer(), { userId: session.user.id, ...input });
     revalidatePath(DEALS_PATH, 'layout');
+  });
+}
+
+/** FR-10.1: rates the other side of a completed deal. */
+export async function submitRatingAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await participantsOnly();
+    const input = parseForm(ratingFormSchema, formData);
+    await submitRating(getContainer(), {
+      userId: session.user.id,
+      dealId: input.dealId,
+      scores: scoresFrom(input),
+      comment: input.comment,
+    });
+    revalidatePath(DEALS_PATH, 'layout');
+  });
+}
+
+/** FR-10.3: reports a rating as unfair. */
+export async function reportRatingAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await participantsOnly();
+    const input = parseForm(reportRatingSchema, formData);
+    await reportRating(getContainer(), { userId: session.user.id, ...input });
   });
 }

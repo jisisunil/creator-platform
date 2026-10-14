@@ -15,7 +15,8 @@ export type CollaborationTemplate =
   | 'dealCancelled'
   | 'paymentMarked'
   | 'dealDeadlinePassed'
-  | 'paymentOverdue';
+  | 'paymentOverdue'
+  | 'ratingRequested';
 
 export type NotificationEmail = {
   [Name in CollaborationTemplate]: {

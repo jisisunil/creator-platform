@@ -178,6 +178,9 @@
       "tryLater": "We couldn't check this post just now. Please try again in a little while.",
       "alreadyAdded": "This post is already on the deal.",
       "reasonRequired": "Tell the other side why (at least 5 characters)."
+    },
+    "rating": {
+      "allCriteria": "Give 1 to 5 stars for each question."
     }
   },
   "industries": {
@@ -491,6 +494,11 @@
       "subject": "Payment to {creatorName} is overdue",
       "body": "Hi {name},\nThe payment for \"{campaignName}\" with {creatorName} is overdue. Please pay as agreed and mark the deal as paid.",
       "action": "Open the deal"
+    },
+    "ratingRequested": {
+      "subject": "How did it go with {otherPartyName}?",
+      "body": "Hi {name},\nYour deal for \"{campaignName}\" is complete. Rate {otherPartyName} to help others choose who to work with. Ratings show once you have both rated, or after 14 days.",
+      "action": "Rate now"
     }
   },
   "platforms": {
@@ -667,7 +675,8 @@
       "F": "Women",
       "M": "Men",
       "U": "Other"
-    }
+    },
+    "ratingsTitle": "Ratings from brands"
   },
   "regions": {
     "IN": {
@@ -934,7 +943,8 @@
       "decline": "Decline",
       "changedMeanwhile": "The brand changed this request just now. Reload the page, check the new version and answer again.",
       "openChat": "Open chat",
-      "openDeal": "Open deal"
+      "openDeal": "Open deal",
+      "brandRatings": "Ratings from creators"
     },
     "block": {
       "confirm": "Block {name}? You won't get requests or messages from each other.",
@@ -1115,6 +1125,40 @@
       "costNote": "Costs use only deals with an agreed amount. Instagram doesn't share views, so views come from YouTube posts. Cancelled deals are left out.",
       "upgrade": "Campaign reports come with the Pro plan. You can still see each deal and its posts below.",
       "noDeals": "No accepted deals in this campaign yet."
+    }
+  },
+  "ratings": {
+    "title": "Ratings",
+    "thanks": "Thanks for your rating.",
+    "criteria": {
+      "contentQuality": "How good was {name}'s content?",
+      "onTime": "Did {name} deliver on time?",
+      "communication": "How was communication with {name}?",
+      "clearBrief": "Was {name}'s brief clear?",
+      "paidOnTime": "Did {name} pay on time?"
+    },
+    "criteriaShort": {
+      "contentQuality": "Content quality",
+      "onTime": "On time",
+      "communication": "Communication",
+      "clearBrief": "Clear brief",
+      "paidOnTime": "Paid on time"
+    },
+    "stars": "{count, plural, one {# star} other {# stars}}",
+    "comment": "Comment (optional)",
+    "commentHint": "Shown on their profile. No phone numbers, emails or links.",
+    "submit": "Submit rating",
+    "yourRating": "Your rating",
+    "hiddenUntil": "Shown once they rate you too, or on {date}.",
+    "theirRating": "{name}'s rating of you",
+    "theirsPending": "{name}'s rating shows once you have both rated, or 14 days after completion.",
+    "noRatingsYet": "No ratings yet.",
+    "average": "{stars} out of 5 from {count, plural, one {# rating} other {# ratings}}",
+    "starsShort": "{stars}/5",
+    "report": {
+      "reason": "Is this rating unfair? Tell us why",
+      "sent": "Thanks. Our team will review this rating.",
+      "submit": "Report rating"
     }
   }
 }

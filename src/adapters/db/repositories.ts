@@ -11,6 +11,7 @@ import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
+import { createRatingRepository } from './rating-repository';
 import { createReferenceRepository } from './reference-repository';
 import { createReportRepository } from './report-repository';
 import { createRequestRepository } from './request-repository';
@@ -44,6 +45,7 @@ export function createRepositories(db: DbClient) {
     chat: createChatRepository(db),
     reports: createReportRepository(db),
     deals: createDealRepository(db),
+    ratings: createRatingRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

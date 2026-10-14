@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/alert';
 import { isDomainError } from '@/domain/errors';
 import { getRequestInfo } from '@/lib/request-info';
 import { viewPublicProfile } from '@/services/discovery';
+import { getCreatorReputation } from '@/services/ratings';
 
 /** FR-2.4 / UC-D2: a creator's public profile; rate-limited per IP against scraping (SEC-3). */
 export default async function PublicCreatorPage({
@@ -35,5 +36,6 @@ export default async function PublicCreatorPage({
       </PageShell>
     );
   }
-  return <CreatorProfileView profile={profile} locale={locale} />;
+  const reputation = await getCreatorReputation(getContainer(), profile.id);
+  return <CreatorProfileView profile={profile} locale={locale} reputation={reputation} />;
 }

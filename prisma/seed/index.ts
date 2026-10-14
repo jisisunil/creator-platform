@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createDatabaseClient } from '@/adapters/db/client';
 import { getServerEnv } from '@/config/env';
 import { DEMO_ACCOUNTS, DEMO_PASSWORD, seedDemoAccounts } from './demo-accounts';
+import { seedDemoCollaborations } from './demo-collaborations';
 import { seedDemoCreators } from './demo-creators';
 import { seedReferenceData } from './reference-data';
 
@@ -25,6 +26,16 @@ async function main(): Promise<void> {
       creators > 0
         ? `Seeded ${creators} demo creators (demo-creator-01..60@example.test, same password).`
         : 'Demo creators already present.',
+    );
+    const hasCollaborations = await seedDemoCollaborations(db, {
+      tokenEncryptionKey: env.TOKEN_ENCRYPTION_KEY,
+      fileStorageDir: env.FILE_STORAGE_DIR,
+      appUrl: env.APP_URL,
+    });
+    console.log(
+      hasCollaborations
+        ? 'Seeded demo collaborations for the brand owner (with demo creators 03, 06 and 12).'
+        : 'Demo collaborations already present.',
     );
   } finally {
     await db.$disconnect();

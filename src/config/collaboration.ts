@@ -61,3 +61,12 @@ export const POST_STATS_REFRESH = {
   refreshForDays: 90,
   postsPerRun: 500,
 } as const;
+
+/** FR-10 ratings. */
+export const RATING_RULES = {
+  /** UC-R7: a rating shows this many days after completion even if the other side never rates. */
+  revealAfterDays: 14,
+  commentMax: 1000,
+  /** Recent comments shown on a profile. */
+  recentReviews: 5,
+} as const;

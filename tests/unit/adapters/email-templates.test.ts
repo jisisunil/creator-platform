@@ -54,6 +54,12 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },
+  ratingRequested: {
+    name: 'Asha',
+    otherPartyName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
   paymentOverdue: {
     name: 'Ravi',
     creatorName: 'Asha',

@@ -3,11 +3,13 @@ import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { ScoreBreakdown } from '@/components/creators/ScoreBreakdown';
 import { PageShell } from '@/components/layout/PageShell';
+import { ReputationSummary } from '@/components/ratings/RatingDisplay';
 import { Card, CardTitle } from '@/components/ui/card';
 import { CONTENT_LANGUAGES } from '@/config/languages';
 import { fileUrlFor } from '@/lib/file-url';
 import { basisPointsToPercent, formatCompactCount, formatMoney } from '@/lib/format';
 import type { PublicCreatorProfile } from '@/services/creators';
+import type { Reputation } from '@/services/ratings';
 
 const PERMILLE_PER_PERCENT = 10;
 
@@ -20,10 +22,13 @@ export async function CreatorProfileView({
   profile,
   locale,
   actions,
+  reputation,
 }: {
   profile: PublicCreatorProfile;
   locale: string;
   actions?: ReactNode;
+  /** FR-10.2: ratings from brands the creator worked with. */
+  reputation: Reputation;
 }) {
   const t = await getTranslations('publicProfile');
   const tCategories = await getTranslations('categories');
@@ -197,6 +202,9 @@ export async function CreatorProfileView({
           </ul>
         </Card>
       ) : null}
+      <Card>
+        <ReputationSummary reputation={reputation} title={t('ratingsTitle')} />
+      </Card>
     </PageShell>
   );
 }

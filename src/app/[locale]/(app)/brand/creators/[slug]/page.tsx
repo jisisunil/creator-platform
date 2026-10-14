@@ -10,6 +10,7 @@ import { isDomainError } from '@/domain/errors';
 import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { viewCreatorProfile } from '@/services/discovery';
+import { getCreatorReputation } from '@/services/ratings';
 import { listShortlists } from '@/services/shortlists';
 
 /**
@@ -60,6 +61,7 @@ export default async function BrandCreatorProfilePage({
     <CreatorProfileView
       profile={profile}
       locale={locale}
+      reputation={await getCreatorReputation(container, profile.id)}
       actions={
         <>
           <Card className="grid gap-3">

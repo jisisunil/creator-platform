@@ -16,14 +16,18 @@ import {
   SubmitContentForm,
 } from '@/components/deals/DealForms';
 import { PageShell } from '@/components/layout/PageShell';
+import { RatingDetails } from '@/components/ratings/RatingDisplay';
+import { RatingForm, ReportRatingForm } from '@/components/ratings/RatingForms';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
+import { RATING_CRITERIA } from '@/domain/ratings';
 import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { formatMoney } from '@/lib/format';
 import { type DealView, getDeal } from '@/services/deals';
+import { getDealRatings } from '@/services/ratings';
 
 const PAISE_PER_RUPEE = 100;
 
@@ -50,6 +54,8 @@ export default async function DealPage({
     if (isDomainError(error) && error.code === 'NOT_FOUND') notFound();
     throw error;
   }
+  const ratings = await getDealRatings(getContainer(), { userId: session.user.id, dealId: id });
+  const tRatings = await getTranslations('ratings');
   const money = (amountMinor: number) =>
     formatMoney(amountMinor, deal.currencyCode, locale, session.user.countryCode);
   const can = (action: DealView['allowedActions'][number]) => deal.allowedActions.includes(action);
@@ -173,6 +179,45 @@ export default async function DealPage({
         </ul>
         <p className="text-sm">{tRights(deal.usageRights)}</p>
       </Card>
+
+      {deal.status === 'COMPLETED' ? (
+        <Card className="grid gap-4">
+          <CardTitle>{tRatings('title')}</CardTitle>
+          {ratings.canRate ? (
+            <RatingForm
+              dealId={deal.id}
+              criteria={RATING_CRITERIA[deal.viewerSide]}
+              otherPartyName={deal.otherPartyName}
+            />
+          ) : null}
+          {ratings.mine ? (
+            <div className="grid gap-1">
+              <h3 className="text-sm font-medium">{tRatings('yourRating')}</h3>
+              <RatingDetails rating={ratings.mine} />
+              {ratings.revealAt ? (
+                <p className="text-muted-foreground text-xs">
+                  {tRatings('hiddenUntil', {
+                    date: format.dateTime(ratings.revealAt, { dateStyle: 'medium' }),
+                  })}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {ratings.theirs ? (
+            <div className="grid gap-2">
+              <h3 className="text-sm font-medium">
+                {tRatings('theirRating', { name: deal.otherPartyName })}
+              </h3>
+              <RatingDetails rating={ratings.theirs} />
+              <ReportRatingForm ratingId={ratings.theirs.id} />
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {tRatings('theirsPending', { name: deal.otherPartyName })}
+            </p>
+          )}
+        </Card>
+      ) : null}
 
       <DealHistory events={deal.events} />
 

@@ -62,7 +62,7 @@ export async function createDealFromRequest(
  * The deal and the user's side: the creator, or any member of the brand's team. Anyone
  * else gets "not found", and the attempt is logged (SR-5, SEC-2).
  */
-async function requireDealAccess(
+export async function requireDealParticipant(
   repos: Repositories,
   userId: string,
   dealId: string,
@@ -97,7 +97,7 @@ export async function getDeal(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<DealView> {
-  const { deal, side } = await requireDealAccess(ctx.repos, input.userId, input.dealId);
+  const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
   return {
     ...deal,
     viewerSide: side,
@@ -174,7 +174,7 @@ async function performAction(
   decide: (deal: DealRecord, side: CollabSide, now: Date) => ActionOutcome | Promise<ActionOutcome>,
 ): Promise<void> {
   const now = ctx.clock.now();
-  const { deal, side } = await requireDealAccess(ctx.repos, input.userId, input.dealId);
+  const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
   if (!isActionForSide(action, side)) throw notAllowed();
   const next = nextDealStatus(deal.status, action, side);
   if (!next) throw invalidState();
@@ -330,9 +330,32 @@ export async function confirmPaymentReceived(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'CONFIRM_RECEIVED', (_deal, _side, now) => ({
+  await performAction(ctx, input, 'CONFIRM_RECEIVED', (deal, side, now) => ({
     changes: { completedAt: now },
     event: { kind: 'PAYMENT_CONFIRMED' },
+    // FR-12.1 / FR-10.1: both sides are asked to rate each other.
+    alsoDo: async (repos) => {
+      await notifyOtherSide(ctx, deal, side, (recipient) => ({
+        template: 'ratingRequested',
+        payload: {
+          ...recipient,
+          otherPartyName: deal.creatorDisplayName,
+          campaignName: deal.campaignName,
+        },
+      }))(repos);
+      await notifyUsers(repos, ctx.appUrl, {
+        userIds: [deal.creatorUserId],
+        path: `/deals/${deal.id}`,
+        email: (recipient) => ({
+          template: 'ratingRequested',
+          payload: {
+            ...recipient,
+            otherPartyName: deal.brandName,
+            campaignName: deal.campaignName,
+          },
+        }),
+      });
+    },
   }));
 }
 

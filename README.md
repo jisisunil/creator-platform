@@ -9,9 +9,10 @@ search, shortlist, chat and track campaigns.
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/)
 
-> **Status:** Phases a–d are built: skeleton, accounts and security, creator profiles with
-> YouTube/Instagram and the content score, and brand search with shortlists, compare and saved
-> searches. Collaboration, plans, admin, hardening and infrastructure arrive in phases e–i.
+> **Status:** Phases a–e are built: skeleton, accounts and security, creator profiles with
+> YouTube/Instagram and the content score, brand search with shortlists, compare and saved
+> searches, and collaboration (requests, chat, deals, campaign reports, ratings). Plans and
+> notifications, admin, hardening and infrastructure arrive in phases f–i.
 
 ## Set up (local)
 
@@ -92,4 +93,9 @@ there is no separate broker.
   (`src/adapters/social/provider.ts`), register it in `src/adapters/social/registry.ts`, add the
   value to the `SocialPlatform` enum (migration) and enable it per country in `CountrySettings`.
 - **Real YouTube/Instagram data:** set `SOCIAL_PROVIDER_MODE=live` with the API keys in
-  `.env.example`. Mock mode (the default) needs no keys; demo creators are seeded.
+  `.env.example`. Mock mode (the default) needs no keys; demo creators are seeded. In mock
+  mode a post link for a deal looks like `https://mock.social/<account id>/<post name>`, where
+  the account id is the handle shown on the creator's connected accounts (without the `@`);
+  post names containing `deleted` or `private` simulate those cases.
+- **A social platform's posts (campaign reports):** the provider's `parsePostUrl` and
+  `fetchPostStats` must only accept posts on the creator's own account.

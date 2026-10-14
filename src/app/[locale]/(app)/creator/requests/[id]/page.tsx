@@ -2,6 +2,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { notFound } from 'next/navigation';
 import { getContainer } from '@/adapters/container';
 import { PageShell } from '@/components/layout/PageShell';
+import { ReputationSummary } from '@/components/ratings/RatingDisplay';
 import { RequestStatusBadge, RequestTerms } from '@/components/requests/RequestDisplay';
 import { BlockToggleForm, RespondToRequestForms } from '@/components/requests/RequestForms';
 import { Alert } from '@/components/ui/alert';
@@ -10,6 +11,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
 import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
+import { getBrandReputation } from '@/services/ratings';
 import { getRequest } from '@/services/requests';
 import { setBrandBlockedAction } from '../actions';
 
@@ -63,6 +65,12 @@ export default async function CreatorRequestPage({
             </a>
           </p>
         ) : null}
+        <div className="mt-3">
+          <ReputationSummary
+            reputation={await getBrandReputation(getContainer(), request.brandId)}
+            title={t('brandRatings')}
+          />
+        </div>
       </Card>
       {request.version > 1 && request.status === 'OPEN' ? (
         <Alert>{t('updatedByBrand')}</Alert>

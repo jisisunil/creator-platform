@@ -38,9 +38,11 @@ test.describe('plans and notifications', () => {
     browser,
   }) => {
     const demo = demoCreator();
+    // The demo creator is shared between runs: a unique campaign name finds this run's notice.
+    const campaignName = `E2E notification ${Date.now()}`;
     await signedInNewBrand(page, uniqueEmail('notify'));
     await page.goto(`/en/brand/requests/new?creator=${demo.slug}`);
-    await page.getByLabel('Campaign name').fill('E2E notification campaign');
+    await page.getByLabel('Campaign name').fill(campaignName);
     await page
       .getByLabel('Brief', { exact: true })
       .fill('One reel about our festive sweets box, warm family tone.');
@@ -55,7 +57,7 @@ test.describe('plans and notifications', () => {
     await creator.goto('/en/notifications');
     await expect(
       creator.getByRole('link', {
-        name: /sent you a collaboration request for "E2E notification campaign"/,
+        name: new RegExp(`sent you a collaboration request for "${campaignName}"`),
       }),
     ).toBeVisible();
 

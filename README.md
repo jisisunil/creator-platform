@@ -8,12 +8,13 @@ search, shortlist, chat and track campaigns.
 - Engineering rules: [CLAUDE.md](CLAUDE.md)
 - Requirement → code → test map: [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - Decisions: [docs/adr/](docs/adr/) · Open questions: [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md)
+- Privacy and operations: [data inventory](docs/data-inventory.md) · [incident response](docs/incident-response.md) · [backup and restore](docs/runbooks/backup-restore.md)
 
-> **Status:** Phases a–f are built: skeleton, accounts and security, creator profiles with
+> **Status:** Phases a–g are built: skeleton, accounts and security, creator profiles with
 > YouTube/Instagram and the content score, brand search with shortlists, compare and saved
-> searches, collaboration (requests, chat, deals, campaign reports, ratings), and plans with
-> trials, credit packs and notifications. Admin, hardening and infrastructure arrive in
-> phases g–i.
+> searches, collaboration (requests, chat, deals, campaign reports, ratings), plans with
+> trials, credit packs and notifications, and the admin console with moderation, privacy
+> rights, retention and monitoring. Hardening and infrastructure arrive in phases h–i.
 
 ## Set up (local)
 
@@ -24,7 +25,8 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 3. `docker compose up -d` starts PostgreSQL 16 with pgvector (plus a test database) and Mailpit
 4. `npm run db:migrate` applies migrations
 5. `npm run db:seed` loads reference data and fake demo accounts (logins printed; password
-   `Demo-Password-2026`; the admin sets up two-factor on first sign-in)
+   `Demo-Password-2026`; the admin sets up two-factor on first sign-in; `ops-admin@example.test`
+   has two-factor ready with the development-only secret `JBSWY3DPEHPK3PXP`)
 6. `npm run dev`, then open http://localhost:3000
 7. `npm run worker` (in a second terminal) runs background jobs, including sending email
 8. Read emails sent in development at http://localhost:8025 (Mailpit)

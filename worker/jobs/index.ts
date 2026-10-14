@@ -3,9 +3,14 @@ import { refreshDealPostsJob, sendDealRemindersJob } from './deals';
 import { dispatchEmailsJob } from './dispatch-emails';
 import { heartbeatJob } from './heartbeat';
 import { sendTrialRemindersJob } from './plans';
-import { finaliseDeletionsJob } from './privacy';
+import { checkDataRequestDeadlinesJob, runSecurityChecksJob } from './monitoring';
+import { finaliseDeletionsJob, handleInactiveAccountsJob } from './privacy';
 import { expireRequestsJob } from './requests';
-import { purgeExpiredSecurityDataJob, purgeUnverifiedAccountsJob } from './retention';
+import {
+  purgeExpiredSecurityDataJob,
+  purgeUnverifiedAccountsJob,
+  reduceOldSnapshotsJob,
+} from './retention';
 import { queueDueRefreshesJob, refreshSocialAccountJob } from './social-refresh';
 
 /** Every job the worker runs. Add new jobs here. */
@@ -21,4 +26,8 @@ export const ALL_JOBS: readonly JobDefinition[] = [
   refreshDealPostsJob,
   sendTrialRemindersJob,
   finaliseDeletionsJob,
+  handleInactiveAccountsJob,
+  reduceOldSnapshotsJob,
+  runSecurityChecksJob,
+  checkDataRequestDeadlinesJob,
 ];

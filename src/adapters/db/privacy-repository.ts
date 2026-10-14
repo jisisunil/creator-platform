@@ -123,6 +123,36 @@ export function createPrivacyRepository(db: DbClient) {
       });
     },
 
+    /**
+     * PR-9: active creators and brand members whose last sign-in (or sign-up, if they never
+     * signed in) is before `lastActiveBefore`. With `warnedBefore`, only those warned by then;
+     * without it, only those not yet warned.
+     */
+    async inactiveUsers(
+      lastActiveBefore: Date,
+      warning: { warnedBefore: Date } | 'not-warned',
+      limit: number,
+    ) {
+      return db.user.findMany({
+        where: {
+          status: 'ACTIVE',
+          role: { in: ['CREATOR', 'BRAND'] },
+          OR: [
+            { lastLoginAt: { lt: lastActiveBefore } },
+            { lastLoginAt: null, createdAt: { lt: lastActiveBefore } },
+          ],
+          inactivityWarnedAt: warning === 'not-warned' ? null : { lte: warning.warnedBefore },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: limit,
+        select: { id: true, name: true, email: true, locale: true },
+      });
+    },
+
+    async markInactivityWarned(userId: string, at: Date): Promise<void> {
+      await db.user.update({ where: { id: userId }, data: { inactivityWarnedAt: at } });
+    },
+
     async setUserStatus(userId: string, status: 'DELETION_PENDING' | 'ACTIVE'): Promise<void> {
       await db.user.update({ where: { id: userId }, data: { status } });
     },

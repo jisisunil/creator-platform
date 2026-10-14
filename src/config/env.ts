@@ -33,6 +33,8 @@ const serverEnvSchema = z
     EMAIL_FROM: z.string().min(3),
     /** Where brands ask to change plan or buy credit packs (no online payments yet). */
     SALES_EMAIL: z.email().default('sales@example.invalid'),
+    /** SR-14: where monitoring alerts are emailed (optional; alerts are always logged). */
+    ALERT_EMAIL: z.email().optional(),
 
     TURNSTILE_SECRET_KEY: z.string().optional(),
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),

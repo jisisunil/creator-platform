@@ -28,6 +28,8 @@ export interface EmailTemplates {
   dealPostAdded: { name: string; creatorName: string; campaignName: string; link: string };
   paymentDisputed: { name: string; creatorName: string; campaignName: string; link: string };
   accountWarning: { name: string; reason: string };
+  inactiveAccountWarning: { name: string; date: string; link: string };
+  opsAlert: { alert: string; details: string };
   accountDeletionScheduled: { name: string; date: string };
   disputeWon: { name: string; platform: string; handle: string; link: string };
   disputeLost: { name: string; platform: string; handle: string };
@@ -64,6 +66,7 @@ const ACTION_KEYS = {
   dealPostAdded: 'dealPostAdded.action',
   paymentDisputed: 'paymentDisputed.action',
   disputeWon: 'disputeWon.action',
+  inactiveAccountWarning: 'inactiveAccountWarning.action',
   trialEnding: 'trialEnding.action',
   trialEnded: 'trialEnded.action',
 } as const satisfies Partial<Record<EmailTemplateName, string>>;

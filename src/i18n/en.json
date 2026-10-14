@@ -626,6 +626,15 @@
     "accountDeletionScheduled": {
       "subject": "Your account is being deleted",
       "body": "Hi {name},\nYour account is closed and your data will be deleted on {date}. If you didn't ask for this, reply to this email straight away."
+    },
+    "inactiveAccountWarning": {
+      "subject": "Your account will be deleted on {date}",
+      "body": "Hi {name},\nYou haven't used your account for almost 3 years, so we'll delete it and its data on {date}, as our privacy notice says. To keep it, just sign in before then.",
+      "action": "Sign in to keep my account"
+    },
+    "opsAlert": {
+      "subject": "Monitoring alert: {alert}",
+      "body": "Alert: {alert}\n{details}\nCheck the audit log in the admin console."
     }
   },
   "platforms": {
@@ -1565,6 +1574,27 @@
       "rejectReason": "Why it can't be done",
       "reject": "Decline",
       "deletionAutomatic": "Finished automatically on the due date."
+    },
+    "audit": {
+      "title": "Audit log",
+      "category": "Category",
+      "any": "Any",
+      "action": "Action (starts with)",
+      "actor": "By (user id)",
+      "filter": "Filter",
+      "empty": "No events match.",
+      "time": "Time",
+      "subject": "About",
+      "ip": "IP",
+      "details": "Details",
+      "unknown": "Unknown",
+      "system": "System",
+      "view": "user",
+      "categories": {
+        "SECURITY": "Security",
+        "ADMIN": "Admin",
+        "DATA": "Data"
+      }
     }
   }
 }

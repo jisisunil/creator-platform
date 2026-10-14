@@ -4,6 +4,7 @@
  * SEC-11).
  */
 import type { PlatformMetrics, UserDetail, UserListItem } from '@/adapters/db/admin-repository';
+import type { AuditEventRecord } from '@/adapters/db/audit-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 import type { UserRole, UserStatus } from '@/domain/accounts';
@@ -13,10 +14,12 @@ import { requireAdmin } from '../security';
 import { requestCreatorRefresh } from '../social';
 
 export type { PlatformMetrics, UserDetail, UserListItem } from '@/adapters/db/admin-repository';
+export type { AuditEventRecord } from '@/adapters/db/audit-repository';
 
 const DAY_MS = 86_400_000;
 const METRICS_WINDOW_DAYS = 30;
 const USERS_PAGE_SIZE = 25;
+const AUDIT_PAGE_SIZE = 50;
 
 /** Records an admin action (FR-13.3). Metadata must not hold personal data beyond ids. */
 async function auditAdminAction(
@@ -212,4 +215,28 @@ export async function setFreeBeta(
       metadata: { isActive: input.isActive },
     });
   });
+}
+
+export type AuditCategory = 'SECURITY' | 'ADMIN' | 'DATA';
+
+/** FR-13.3 / SR-13: the audit log, newest first, filtered by category, action or actor. */
+export async function getAuditLog(
+  ctx: ServiceContext,
+  input: {
+    readonly adminUserId: string;
+    readonly filters: { category?: AuditCategory; action?: string; actorUserId?: string };
+    readonly page: number;
+  },
+): Promise<{ items: readonly AuditEventRecord[]; page: number; pageCount: number }> {
+  await requireAdmin(ctx.repos, input.adminUserId);
+  const page = Math.max(1, Math.floor(input.page));
+  const result = await ctx.repos.audit.list(input.filters, {
+    offset: (page - 1) * AUDIT_PAGE_SIZE,
+    limit: AUDIT_PAGE_SIZE,
+  });
+  return {
+    items: result.items,
+    page,
+    pageCount: Math.max(1, Math.ceil(result.total / AUDIT_PAGE_SIZE)),
+  };
 }

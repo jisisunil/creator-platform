@@ -170,6 +170,8 @@ model User {
   totpSecretEncrypted String?
   totpEnabledAt       DateTime?
   lastLoginAt         DateTime?
+  /// PR-9: when we warned that the account will be deleted for inactivity; cleared on sign-in.
+  inactivityWarnedAt  DateTime?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 
@@ -200,6 +202,7 @@ model User {
   @@index([role])
   @@index([countryCode])
   @@index([canonicalEmail])
+  @@index([status, lastLoginAt])
 }
 
 /// External sign-in identities (Google). Only ids are stored, no provider tokens.

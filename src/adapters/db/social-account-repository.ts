@@ -98,6 +98,22 @@ export function createSocialAccountRepository(db: DbClient) {
     findForRefresh: (id: string): Promise<SocialAccountForRefresh | null> =>
       db.socialAccount.findUnique({ where: { id }, select: FOR_REFRESH_SELECT }),
 
+    /**
+     * Data inventory: daily snapshots older than `before` are reduced to the first one of
+     * each month per account, enough for long-term growth charts. Returns rows removed.
+     */
+    async reduceSnapshotsBefore(before: Date): Promise<number> {
+      return db.$executeRaw`
+        DELETE FROM "StatsSnapshot"
+        WHERE "capturedOn" < ${before}
+          AND id NOT IN (
+            SELECT DISTINCT ON ("socialAccountId", date_trunc('month', "capturedOn")) id
+            FROM "StatsSnapshot"
+            WHERE "capturedOn" < ${before}
+            ORDER BY "socialAccountId", date_trunc('month', "capturedOn"), "capturedOn"
+          )`;
+    },
+
     /** The creator's working accounts on a platform (UC-R6 post ownership). */
     async listActiveIds(creatorId: string, platform: SocialPlatform): Promise<string[]> {
       const rows = await db.socialAccount.findMany({

@@ -85,6 +85,12 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     link: 'https://app.test/en/deals/d1',
   },
   accountDeletionScheduled: { name: 'Asha', date: '14 November 2026' },
+  inactiveAccountWarning: {
+    name: 'Asha',
+    date: '2029-11-14',
+    link: 'https://app.test/en/sign-in',
+  },
+  opsAlert: { alert: 'failed-login-spike', details: '120 failed sign-ins in 15 minutes' },
   accountWarning: { name: 'Ravi', reason: 'Asking creators to pay a fee' },
   disputeWon: {
     name: 'Asha',

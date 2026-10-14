@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  getAuditLog,
   getFreeBetaSetting,
   getPlatformMetrics,
   getUserDetail,
@@ -73,6 +74,7 @@ describe('admin console access (SR-5, SR-17, SEC-11)', () => {
         () => verifyUserEmail(ctx, { adminUserId: actor.id, userId: creator.id, request }),
         () => refreshCreatorNow(ctx, { adminUserId: actor.id, userId: creator.id, request }),
         () => getFreeBetaSetting(ctx, actor.id),
+        () => getAuditLog(ctx, { adminUserId: actor.id, filters: {}, page: 1 }),
         () => setFreeBeta(ctx, { adminUserId: actor.id, isActive: false, request }),
         () => changeBrandPlan(ctx, { adminUserId: actor.id, brandId, planCode: 'AGENCY' }),
         () => extendTrial(ctx, { adminUserId: actor.id, brandId, days: 30 }),

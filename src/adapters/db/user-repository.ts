@@ -74,7 +74,9 @@ export function createUserRepository(db: DbClient) {
       id: string,
       state: { failedLoginCount: number; lockedUntil: Date | null; lastLoginAt?: Date },
     ): Promise<void> {
-      await db.user.update({ where: { id }, data: state });
+      // Signing in is activity: any inactivity warning no longer applies (PR-9).
+      const activity = state.lastLoginAt ? { inactivityWarnedAt: null } : {};
+      await db.user.update({ where: { id }, data: { ...state, ...activity } });
     },
 
     /** Marks the email verified and activates a pending account. */

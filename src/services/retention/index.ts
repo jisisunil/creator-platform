@@ -7,6 +7,7 @@ import {
   EMAIL_OUTBOX_RETENTION_MS,
   NOTIFICATION_RETENTION_MS,
   RATE_LIMIT_RETENTION_MS,
+  SNAPSHOT_DAILY_DETAIL_MS,
 } from '@/config/retention';
 
 export interface RetentionDependencies {
@@ -43,4 +44,12 @@ export async function purgeExpiredSecurityData(
       ago(NOTIFICATION_RETENTION_MS),
     ),
   };
+}
+
+/** Data inventory: stats older than 2 years are kept as one snapshot per month. */
+export async function reduceOldSnapshots(
+  deps: RetentionDependencies,
+): Promise<{ snapshotsRemoved: number }> {
+  const cutoff = new Date(deps.clock.now().getTime() - SNAPSHOT_DAILY_DETAIL_MS);
+  return { snapshotsRemoved: await deps.repos.socialAccounts.reduceSnapshotsBefore(cutoff) };
 }

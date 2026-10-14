@@ -6,7 +6,11 @@
 import type { DataRequestRecord, DataRequestStatus } from '@/adapters/db/privacy-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { UserRecord } from '@/adapters/db/user-repository';
-import { DATA_REQUEST_DUE_MS } from '@/config/retention';
+import {
+  DATA_REQUEST_DUE_MS,
+  INACTIVE_ACCOUNT_MS,
+  INACTIVITY_WARNING_MS,
+} from '@/config/retention';
 import { isAccountClosed } from '@/domain/accounts';
 import { normaliseEmail } from '@/domain/email-address';
 import { conflict, invalidState, notAllowed, notFound, validationFailed } from '@/domain/errors';
@@ -398,4 +402,76 @@ export async function closeDataRequest(
       metadata: { requestId: dataRequest.id },
     });
   });
+}
+
+const INACTIVE_PER_RUN = 200;
+
+/**
+ * PR-9: daily job. Accounts unused for 3 years minus 30 days get a warning email; those
+ * still unused 30 days after the warning (and at least 3 years idle) are deleted the same
+ * way as a self-service deletion, at once. Signing in clears the warning.
+ */
+export async function handleInactiveAccounts(
+  deps: Pick<
+    ServiceContext,
+    'repos' | 'transaction' | 'clock' | 'fileStorage' | 'appUrl' | 'jobQueue'
+  >,
+): Promise<{ warned: number; deleted: number }> {
+  const now = deps.clock.now();
+  const toWarn = await deps.repos.privacy.inactiveUsers(
+    new Date(now.getTime() - INACTIVE_ACCOUNT_MS + INACTIVITY_WARNING_MS),
+    'not-warned',
+    INACTIVE_PER_RUN,
+  );
+  for (const user of toWarn) {
+    await deps.transaction(async (repos) => {
+      await repos.privacy.markInactivityWarned(user.id, now);
+      await queueEmail(repos, {
+        userId: user.id,
+        toAddress: user.email,
+        locale: user.locale,
+        template: 'inactiveAccountWarning',
+        payload: {
+          name: user.name,
+          date: new Date(now.getTime() + INACTIVITY_WARNING_MS).toISOString().slice(0, 10),
+          link: new URL(`/${user.locale}/sign-in`, deps.appUrl).toString(),
+        },
+      });
+    });
+  }
+
+  const toDelete = await deps.repos.privacy.inactiveUsers(
+    new Date(now.getTime() - INACTIVE_ACCOUNT_MS),
+    { warnedBefore: new Date(now.getTime() - INACTIVITY_WARNING_MS) },
+    INACTIVE_PER_RUN,
+  );
+  for (const user of toDelete) {
+    const { fileKeys } = await deps.transaction(async (repos) => {
+      await handOverBrandIfNeeded(repos, user.id);
+      const { owner } = await closingScope(repos, user.id);
+      if (owner) {
+        await repos.privacy.closeOpenRequests(owner, now);
+        await cancelDealsForClosedAccount(repos, { owner, appUrl: deps.appUrl, now });
+      }
+      await repos.privacy.createRequest({
+        userId: user.id,
+        type: 'DELETION',
+        status: 'COMPLETED',
+        details: 'Inactive for 3 years',
+        dueAt: now,
+        identityVerifiedAt: null,
+        completedAt: now,
+        createdAt: now,
+      });
+      await repos.audit.record({
+        category: 'DATA',
+        action: 'account.deleted-inactive',
+        subjectUserId: user.id,
+      });
+      return repos.privacy.anonymiseUser(user.id);
+    });
+    for (const key of fileKeys) await deps.fileStorage.delete(key);
+  }
+  if (toWarn.length + toDelete.length > 0) await requestEmailDispatch(deps.jobQueue);
+  return { warned: toWarn.length, deleted: toDelete.length };
 }

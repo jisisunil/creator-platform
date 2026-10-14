@@ -11,6 +11,10 @@ export const JOB_NAMES = {
   refreshDealPosts: 'deals.refresh-posts',
   sendTrialReminders: 'plans.trial-reminders',
   finaliseDeletions: 'privacy.finalise-deletions',
+  handleInactiveAccounts: 'privacy.inactive-accounts',
+  reduceOldSnapshots: 'retention.reduce-snapshots',
+  runSecurityChecks: 'monitoring.security-checks',
+  checkDataRequestDeadlines: 'monitoring.data-request-deadlines',
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];

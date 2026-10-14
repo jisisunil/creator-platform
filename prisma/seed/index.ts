@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     console.log(
       'Seeded reference data: countries, notices, languages, categories, plans, settings.',
     );
-    await seedDemoAccounts(db);
+    await seedDemoAccounts(db, env.TOKEN_ENCRYPTION_KEY);
     console.log(`Demo accounts (password: ${DEMO_PASSWORD}):`);
     for (const [role, email] of Object.entries(DEMO_ACCOUNTS)) console.log(`  ${role}: ${email}`);
     const creators = await seedDemoCreators(db, env.TOKEN_ENCRYPTION_KEY);

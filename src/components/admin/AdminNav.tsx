@@ -8,6 +8,7 @@ const SECTIONS = [
   ['flags', '/admin/flags'],
   ['disputes', '/admin/disputes'],
   ['dataRequests', '/admin/data-requests'],
+  ['audit', '/admin/audit'],
 ] as const;
 
 /** Links between the admin console's sections (FR-13). */

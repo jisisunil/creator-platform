@@ -27,8 +27,8 @@ const nextConfig: NextConfig = {
   // memory. Four keeps builds predictable on developer machines and CI runners.
   experimental: {
     cpus: 4,
-    // Profile photos are up to 2 MB (config/creators.ts); multipart overhead needs headroom.
-    serverActions: { bodySizeLimit: '3mb' },
+    // Chat attachments are up to 10 MB (config/collaboration.ts); multipart needs headroom.
+    serverActions: { bodySizeLimit: '11mb' },
   },
 };
 

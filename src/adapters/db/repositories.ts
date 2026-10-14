@@ -1,6 +1,7 @@
 import { createAuditRepository } from './audit-repository';
 import { createAuthAccountRepository } from './auth-account-repository';
 import { createBrandRepository } from './brand-repository';
+import { createChatRepository } from './chat-repository';
 import { createConsentRepository } from './consent-repository';
 import { createCreatorRepository } from './creator-repository';
 import { createDiscoveryRepository } from './discovery-repository';
@@ -10,6 +11,7 @@ import { createHealthRepository } from './health-repository';
 import { createOneTimeTokenRepository } from './one-time-token-repository';
 import { createRateLimitRepository } from './rate-limit-repository';
 import { createReferenceRepository } from './reference-repository';
+import { createReportRepository } from './report-repository';
 import { createRequestRepository } from './request-repository';
 import { createScoreRepository } from './score-repository';
 import { createSearchRepository } from './search-repository';
@@ -38,6 +40,8 @@ export function createRepositories(db: DbClient) {
     search: createSearchRepository(db),
     shortlists: createShortlistRepository(db),
     requests: createRequestRepository(db),
+    chat: createChatRepository(db),
+    reports: createReportRepository(db),
     discovery: createDiscoveryRepository(db),
   };
 }

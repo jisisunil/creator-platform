@@ -15,3 +15,12 @@ export function detectImageType(bytes: Uint8Array): ImageType | null {
   }
   return null;
 }
+
+export type AttachmentType = ImageType | 'application/pdf';
+
+/** SR-9: chat attachments are images or PDFs, judged by their bytes like photos. */
+export function detectAttachmentType(bytes: Uint8Array): AttachmentType | null {
+  const pdfSignature = [0x25, 0x50, 0x44, 0x46, 0x2d]; // "%PDF-"
+  if (pdfSignature.every((byte, index) => bytes[index] === byte)) return 'application/pdf';
+  return detectImageType(bytes);
+}

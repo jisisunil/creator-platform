@@ -1,8 +1,11 @@
 import { getTranslations } from 'next-intl/server';
+import { getContainer } from '@/adapters/container';
 import { signOutAction } from '@/app/[locale]/(auth)/actions';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getCurrentSession } from '@/lib/auth/current-session';
+import { countUnreadMessages } from '@/services/chat';
+import { countOpenRequests } from '@/services/requests';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 /** Top bar: home link, account links for the signed-in user, language choice. */
@@ -10,6 +13,13 @@ export async function SiteHeader() {
   const t = await getTranslations('nav');
   const session = await getCurrentSession();
   const isSignedIn = session !== null && session.isTwoFactorSatisfied;
+  const role = isSignedIn ? session.user.role : null;
+  const isParticipant = role === 'BRAND' || role === 'CREATOR';
+  // FR-8.3: unread counts in the navigation.
+  const unreadMessages =
+    isSignedIn && isParticipant ? await countUnreadMessages(getContainer(), session.user.id) : 0;
+  const openRequests =
+    isSignedIn && role === 'CREATOR' ? await countOpenRequests(getContainer(), session.user.id) : 0;
 
   return (
     <header className="border-b">
@@ -30,6 +40,10 @@ export async function SiteHeader() {
                   </Link>
                   <Link href="/creator/requests" className="underline-offset-4 hover:underline">
                     {t('requests')}
+                    <CountBadge
+                      count={openRequests}
+                      label={t('openRequests', { count: openRequests })}
+                    />
                   </Link>
                   <Link href="/creator/accounts" className="underline-offset-4 hover:underline">
                     {t('accounts')}
@@ -55,6 +69,15 @@ export async function SiteHeader() {
                   </Link>
                 </>
               ) : null}
+              {isParticipant ? (
+                <Link href="/messages" className="underline-offset-4 hover:underline">
+                  {t('messages')}
+                  <CountBadge
+                    count={unreadMessages}
+                    label={t('unreadMessages', { count: unreadMessages })}
+                  />
+                </Link>
+              ) : null}
               <Link href="/settings" className="underline-offset-4 hover:underline">
                 {t('settings')}
               </Link>
@@ -78,5 +101,16 @@ export async function SiteHeader() {
         </nav>
       </div>
     </header>
+  );
+}
+
+/** A small count after a navigation link; the label is read by screen readers. */
+function CountBadge({ count, label }: { count: number; label: string }) {
+  if (count === 0) return null;
+  return (
+    <span className="bg-primary text-primary-foreground ml-1 rounded-full px-1.5 py-0.5 text-xs">
+      <span aria-hidden="true">{count}</span>
+      <span className="sr-only">{label}</span>
+    </span>
   );
 }

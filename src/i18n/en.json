@@ -95,7 +95,10 @@
     "search": "Search",
     "shortlists": "Shortlists",
     "savedSearches": "Saved searches",
-    "requests": "Requests"
+    "requests": "Requests",
+    "messages": "Messages",
+    "unreadMessages": "{count, plural, one {# unread message} other {# unread messages}}",
+    "openRequests": "{count, plural, one {# request waiting} other {# requests waiting}}"
   },
   "fieldErrors": {
     "validation": {
@@ -156,6 +159,12 @@
       "invalidBudget": "Enter a whole rupee amount, or leave it blank.",
       "invalidDeadline": "Choose a date between tomorrow and one year from now.",
       "noDeliverables": "Ask for at least one reel, story, video or post."
+    },
+    "chat": {
+      "fileTooLarge": "Choose a file under 10 MB.",
+      "fileType": "Send a JPG, PNG or WebP image, or a PDF.",
+      "fileRejected": "This file can't be sent. Try a different one.",
+      "reasonTooShort": "Tell us a little more (at least 10 characters)."
     }
   },
   "industries": {
@@ -889,7 +898,8 @@
       "accept": "Accept",
       "declineReason": "Reason (optional, shared with the brand)",
       "decline": "Decline",
-      "changedMeanwhile": "The brand changed this request just now. Reload the page, check the new version and answer again."
+      "changedMeanwhile": "The brand changed this request just now. Reload the page, check the new version and answer again.",
+      "openChat": "Open chat"
     },
     "block": {
       "confirm": "Block {name}? You won't get requests or messages from each other.",
@@ -897,6 +907,43 @@
       "blockedNote": "You have blocked them. They can't send you requests or messages.",
       "block": "Block {name}",
       "unblock": "Unblock {name}"
+    }
+  },
+  "chat": {
+    "title": "Messages",
+    "intro": "Chats open when a creator accepts a request.",
+    "empty": "No chats yet. A chat starts when a creator accepts a collaboration request.",
+    "unread": "{count} new",
+    "lastActive": "last message {date}",
+    "noMessagesYet": "no messages yet",
+    "olderMessages": "Show older messages",
+    "newestMessages": "Back to the newest messages",
+    "startHint": "Say hello and agree the details: deliverables, dates and payment terms.",
+    "messagesLabel": "Messages",
+    "you": "You",
+    "deletedUser": "Deleted user",
+    "file": "{name} ({sizeKb} KB)",
+    "safetyNote": "This message contains {kinds}. For your safety, keep conversations and payments on the platform until terms are agreed.",
+    "flags": {
+      "EMAIL": "an email address",
+      "PHONE": "a phone number",
+      "LINK": "a link"
+    },
+    "seen": "Seen",
+    "closedBlocked": "Messages are switched off because one of you blocked the other.",
+    "closedUnavailable": "The other side's account is no longer active, so new messages can't be sent.",
+    "paymentNote": "Payment details can be shared here because the request was accepted. Never pay or share passwords or OTPs.",
+    "safetyTitle": "Safety",
+    "cannotSend": "You can't send messages in this chat any more.",
+    "message": "Message",
+    "attach": "Attach an image or PDF (optional)",
+    "attachHint": "JPG, PNG, WebP or PDF, up to 10 MB. Files are scanned before they are shared.",
+    "send": "Send",
+    "report": {
+      "reason": "Report {name}: what happened?",
+      "hint": "Our team reviews every report. They may read this chat to investigate.",
+      "sent": "Thanks. Our team will review this.",
+      "submit": "Send report"
     }
   }
 }

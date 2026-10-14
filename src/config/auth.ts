@@ -51,4 +51,7 @@ export const RATE_LIMITS = {
   publicProfilePerIp: { limit: 120, windowMs: HOUR_MS },
   /** SR-11 / SEC-6: collaboration requests per user (the plan limit applies as well). */
   requestsPerUser: { limit: 50, windowMs: DAY_MS },
+  /** SEC-6: chat messages (including attachments) and reports per user. */
+  messagesPerUser: { limit: 60, windowMs: 10 * MINUTE_MS },
+  reportsPerUser: { limit: 10, windowMs: DAY_MS },
 } as const satisfies Record<string, RateLimitRule>;

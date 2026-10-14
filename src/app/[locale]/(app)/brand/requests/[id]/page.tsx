@@ -8,6 +8,7 @@ import {
   EditRequestForm,
   WithdrawRequestButton,
 } from '@/components/requests/RequestForms';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
 import { Link } from '@/i18n/navigation';
@@ -64,6 +65,11 @@ export default async function BrandRequestPage({
       ) : null}
       {request.status === 'DECLINED' && request.declineReason ? (
         <p className="text-sm">{t('declinedBecause', { reason: request.declineReason })}</p>
+      ) : null}
+      {request.chatId ? (
+        <Button asChild className="w-fit">
+          <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
+        </Button>
       ) : null}
       <RequestTerms request={request} locale={locale} countryCode={session.user.countryCode} />
       {request.canEdit && formContext ? (

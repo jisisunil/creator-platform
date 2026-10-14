@@ -5,8 +5,10 @@ import { PageShell } from '@/components/layout/PageShell';
 import { RequestStatusBadge, RequestTerms } from '@/components/requests/RequestDisplay';
 import { BlockToggleForm, RespondToRequestForms } from '@/components/requests/RequestForms';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
+import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { getRequest } from '@/services/requests';
 import { setBrandBlockedAction } from '../actions';
@@ -64,6 +66,11 @@ export default async function CreatorRequestPage({
       </Card>
       {request.version > 1 && request.status === 'OPEN' ? (
         <Alert>{t('updatedByBrand')}</Alert>
+      ) : null}
+      {request.chatId ? (
+        <Button asChild className="w-fit">
+          <Link href={`/messages/${request.chatId}`}>{t('openChat')}</Link>
+        </Button>
       ) : null}
       <RequestTerms request={request} locale={locale} countryCode={session.user.countryCode} />
       {request.canRespond ? (

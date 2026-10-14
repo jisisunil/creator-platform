@@ -33,6 +33,7 @@ import {
   type UsageRights,
 } from '@/domain/requests';
 import { getLogger } from '@/lib/logger';
+import { openChatThread } from '../chat';
 import type { ServiceContext } from '../context';
 import { requireBrandMembership } from '../discovery';
 import { requestEmailDispatch } from '../email';
@@ -322,6 +323,7 @@ export async function respondToRequest(
       declineReason: isAccepted ? null : input.reason?.trim() || null,
     });
     if (!isClosed) throw conflict();
+    if (isAccepted) await openChatThread(repos, request, now);
     await notifyUsers(repos, ctx.appUrl, {
       userIds: recipients,
       path: `/brand/requests/${request.id}`,
@@ -352,6 +354,8 @@ export interface RequestView extends RequestRecord {
   readonly isBlockedByViewer: boolean;
   readonly canEdit: boolean;
   readonly canRespond: boolean;
+  /** The chat opened when the request was accepted. */
+  readonly chatId: string | null;
 }
 
 /**
@@ -392,6 +396,7 @@ export async function getRequest(
     ),
     canEdit: viewerSide === 'BRAND' && status === 'OPEN',
     canRespond: viewerSide === 'CREATOR' && status === 'OPEN',
+    chatId: await ctx.repos.chat.findThreadIdForRequest(request.id),
   };
 }
 

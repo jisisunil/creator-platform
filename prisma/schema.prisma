@@ -180,6 +180,8 @@ model User {
   sentInvites              BrandInvite[]
   emailOutbox              EmailOutbox[]
   sentRequests             CollabRequest[]
+  sentMessages             Message[]
+  reports                  Report[]
 
   @@index([status, createdAt])
   @@index([role])
@@ -379,6 +381,7 @@ model Brand {
   campaigns     Campaign[]
   requests      CollabRequest[]
   blocks        Block[]
+  chatThreads   ChatThread[]
 
   @@index([countryCode])
   @@index([planId])
@@ -477,6 +480,7 @@ model CreatorProfile {
   profileViews      ProfileView[]
   requests          CollabRequest[]
   blocks            Block[]
+  chatThreads       ChatThread[]
 
   @@index([countryCode, stateCode, city])
   @@index([isSearchable, currentScore])
@@ -880,6 +884,7 @@ model CollabRequest {
   creator       CreatorProfile      @relation(fields: [creatorId], references: [id])
   campaign      Campaign            @relation(fields: [campaignId], references: [id])
   sentBy        User?               @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
+  chatThread    ChatThread?
 
   @@index([brandId, createdAt])
   @@index([brandId, status])
@@ -907,4 +912,110 @@ model Block {
 
   @@unique([creatorId, brandId, blockedBy])
   @@index([brandId])
+}
+
+// ---------------------------------------------------------------------------
+// Chat and reports (phase e)
+// ---------------------------------------------------------------------------
+
+/// Which side of a collaboration a person acts for.
+enum CollabSide {
+  BRAND
+  CREATOR
+}
+
+/// Contact details found in an early chat message (FR-8.2).
+enum ContactFlag {
+  EMAIL
+  PHONE
+  LINK
+}
+
+/// One chat per accepted request (FR-8.1). Read positions are per side: a brand's team
+/// shares one inbox.
+model ChatThread {
+  id                String         @id @default(cuid())
+  requestId         String         @unique
+  brandId           String
+  creatorId         String
+  lastMessageAt     DateTime?
+  brandLastReadAt   DateTime?
+  creatorLastReadAt DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  request           CollabRequest  @relation(fields: [requestId], references: [id])
+  brand             Brand          @relation(fields: [brandId], references: [id])
+  creator           CreatorProfile @relation(fields: [creatorId], references: [id])
+  messages          Message[]
+
+  @@index([brandId, lastMessageAt])
+  @@index([creatorId, lastMessageAt])
+}
+
+model Message {
+  id           String        @id @default(cuid())
+  threadId     String
+  /// Null once the sender's account is deleted; shown as "Deleted user" (PRV-4).
+  senderUserId String?
+  senderSide   CollabSide
+  body         String
+  contactFlags ContactFlag[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  thread       ChatThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender       User?         @relation(fields: [senderUserId], references: [id], onDelete: SetNull)
+  attachment   Attachment?
+
+  @@index([threadId, createdAt])
+  @@index([senderUserId])
+}
+
+/// A scanned file sent in chat (SR-9): random storage key, served only via signed URLs.
+model Attachment {
+  id          String   @id @default(cuid())
+  messageId   String   @unique
+  storageKey  String   @unique
+  fileName    String
+  contentType String
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+enum ReportTarget {
+  BRAND // a brand reported by a creator
+  CREATOR // a creator reported by a brand
+  RATING // an unfair review (FR-10.3)
+  PAYMENT // "payment not received" (UC-R5)
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+/// Something sent to the admin moderation queue (FR-8.3, FR-13.1); handled in phase g.
+model Report {
+  id              String       @id @default(cuid())
+  reporterUserId  String?
+  targetType      ReportTarget
+  /// Brand, creator profile, rating or deal id, by targetType.
+  targetId        String
+  /// The chat the report is about, if any; admins open it only with a logged reason (SEC-11).
+  threadId        String?
+  reason          String
+  status          ReportStatus @default(OPEN)
+  resolution      String?
+  handledByUserId String?
+  handledAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  reporter        User?        @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reporterUserId])
+  @@index([targetType, targetId])
+  @@index([threadId])
 }

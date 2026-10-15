@@ -33,17 +33,18 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 
 ## Commands
 
-| Command                                          | What it does                                                                       |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `npm run dev`                                    | Start the web app with hot reload                                                  |
-| `npm run worker`                                 | Start the background job worker (pg-boss)                                          |
-| `npm run check`                                  | Lint, format check, typecheck, unit and integration tests. Run before every commit |
-| `npm run test:unit` / `npm run test:integration` | One test project only (integration needs Docker)                                   |
-| `npm run test:coverage`                          | Tests with the 80% line-coverage floor on `domain/` and `services/`                |
-| `npm run test:e2e`                               | Build, then run Playwright tests against the app and worker (desktop and 360px)    |
-| `npm run db:migrate`                             | Create/apply migrations in development                                             |
-| `npm run db:seed`                                | Load reference and demo data (refuses to run when `APP_ENV=production`)            |
-| `docker compose up -d`                           | Local PostgreSQL (pgvector) and Mailpit                                            |
+| Command                                          | What it does                                                                              |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `npm run dev`                                    | Start the web app with hot reload                                                         |
+| `npm run worker`                                 | Start the background job worker (pg-boss)                                                 |
+| `npm run check`                                  | Lint, format check, typecheck, unit and integration tests. Run before every commit        |
+| `npm run test:unit` / `npm run test:integration` | One test project only (integration needs Docker)                                          |
+| `npm run test:coverage`                          | Tests with the 80% line-coverage floor on `domain/` and `services/`                       |
+| `npm run test:e2e`                               | Build, then run Playwright tests against the app and worker (desktop and 360px)           |
+| `npm run db:migrate`                             | Create/apply migrations in development                                                    |
+| `npm run db:seed`                                | Load reference and demo data (refuses to run when `APP_ENV=production`)                   |
+| `docker compose up -d`                           | Local PostgreSQL (pgvector) and Mailpit                                                   |
+| `npm run perf:search -- 500000`                  | NFR-1 load test: fills a scratch database with fake creators and times searches (ADR-005) |
 
 ## Environment variables
 
@@ -89,6 +90,10 @@ tests/         unit, integration (real Postgres), security, e2e (Playwright), fa
 Dependencies point inward (`app → services → domain`), and ESLint enforces it. One web app and
 one worker process share PostgreSQL. pg-boss keeps its job queue in the `pgboss` schema, so
 there is no separate broker.
+
+Search stays fast at 500,000 creators because every sort has a matching index and totals
+stop at the last reachable page ("1,200+"); see ADR-005 before adding a filter or sort. The
+site is installable and shows an offline page (`public/sw.js`, production builds only).
 
 ## How to add…
 

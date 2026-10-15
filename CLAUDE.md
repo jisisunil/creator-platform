@@ -48,6 +48,7 @@ npm run check        # lint + typecheck + unit/integration tests (run before eve
 npm run test:e2e     # Playwright end-to-end tests
 npm run db:migrate   # create/apply migrations (dev)
 npm run db:seed      # load demo data
+npm run perf:search  # search load test on a scratch database (NFR-1)
 docker compose up    # PostgreSQL (pgvector), mail catcher, etc.
 ```
 

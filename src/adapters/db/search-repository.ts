@@ -1,4 +1,8 @@
-import { AUDIENCE_AGE_MIN_PERMILLE, AUDIENCE_GENDER_MIN_PERMILLE } from '@/config/search';
+import {
+  AUDIENCE_AGE_MIN_PERMILLE,
+  AUDIENCE_GENDER_MIN_PERMILLE,
+  SEARCH_COUNT_CAP,
+} from '@/config/search';
 import type { CreatorTier } from '@/config/score';
 import type { SearchFilters, SearchSort } from '@/domain/search';
 import type { Prisma } from '@/generated/prisma/client';
@@ -33,7 +37,8 @@ export function whereForFilters(filters: SearchFilters): Prisma.CreatorProfileWh
   ];
   if (filters.countryCode) and.push({ countryCode: filters.countryCode });
   if (filters.stateCode) and.push({ stateCode: filters.stateCode });
-  if (filters.city) and.push({ city: { equals: filters.city, mode: 'insensitive' } });
+  // city is citext, so plain equality ignores case and can use the location index.
+  if (filters.city) and.push({ city: filters.city });
   if (filters.query) {
     and.push({
       OR: [
@@ -101,13 +106,50 @@ export function whereForFilters(filters: SearchFilters): Prisma.CreatorProfileWh
   return { AND: and };
 }
 
-// Every sort ends with id so pages are stable when values tie.
+// Every sort ends with id so pages are stable when values tie. Each order matches one
+// "(countryCode, isSearchable, <column> DESC, id)" index exactly, so the first page is read
+// straight from the index instead of sorting every match (NFR-1, ADR-005). Searchable
+// creators always have a score; creators without 90 days of history have no growth and
+// come last (that index is DESC NULLS LAST, created in the migration).
 const ORDER_BY: Record<SearchSort, Prisma.CreatorProfileOrderByWithRelationInput[]> = {
-  score: [{ currentScore: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
+  score: [{ currentScore: 'desc' }, { id: 'asc' }],
   engagement: [{ engagementRateBp: 'desc' }, { id: 'asc' }],
   followers: [{ totalFollowers: 'desc' }, { id: 'asc' }],
   growth: [{ growth90dBp: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
 };
+
+/** A number of matching creators, counted up to SEARCH_COUNT_CAP. */
+export interface CreatorCount {
+  readonly total: number;
+  /** True when there are more than `total` matches (shown as "1,200+"). */
+  readonly isTotalCapped: boolean;
+}
+
+/**
+ * Ids of the creators matching `where`, in result order, up to one past SEARCH_COUNT_CAP.
+ * Ordering by the search sort lets PostgreSQL use the matching sort index and stop early on
+ * broad searches; Prisma orders any `take` query, and ordering by id instead made selective
+ * searches walk the whole table (NFR-1 load test, ADR-005).
+ */
+async function matchingIds(
+  db: DbClient,
+  where: Prisma.CreatorProfileWhereInput,
+  sort: SearchSort,
+): Promise<string[]> {
+  const rows = await db.creatorProfile.findMany({
+    where,
+    orderBy: ORDER_BY[sort],
+    take: SEARCH_COUNT_CAP + 1,
+    select: { id: true },
+  });
+  return rows.map((row) => row.id);
+}
+
+function countOf(ids: readonly string[]): CreatorCount {
+  return ids.length > SEARCH_COUNT_CAP
+    ? { total: SEARCH_COUNT_CAP, isTotalCapped: true }
+    : { total: ids.length, isTotalCapped: false };
+}
 
 const RESULT_SELECT = {
   id: true,
@@ -139,43 +181,44 @@ function toResult(row: ResultRow): CreatorSearchResult {
   };
 }
 
+async function findResultsByIds(
+  db: DbClient,
+  ids: readonly string[],
+): Promise<CreatorSearchResult[]> {
+  if (ids.length === 0) return [];
+  const rows = await db.creatorProfile.findMany({
+    where: { id: { in: [...ids] } },
+    select: RESULT_SELECT,
+  });
+  const byId = new Map(rows.map((row) => [row.id, toResult(row)]));
+  return ids.map((id) => byId.get(id)).filter((row): row is CreatorSearchResult => Boolean(row));
+}
+
 export type SearchRepository = ReturnType<typeof createSearchRepository>;
 
 /** Creator search for brands (FR-5). Reads only denormalised, indexed columns (ADR-005). */
 export function createSearchRepository(db: DbClient) {
   return {
+    /**
+     * One ordered pass finds every reachable match (the cap covers SEARCH_MAX_PAGE pages);
+     * the requested page is then loaded by primary key. Counting and paging separately cost
+     * seconds per search at 500k creators.
+     */
     async search(
       filters: SearchFilters,
       sort: SearchSort,
       page: { offset: number; limit: number },
-    ): Promise<{ items: CreatorSearchResult[]; total: number }> {
-      const where = whereForFilters(filters);
-      const [rows, total] = await Promise.all([
-        db.creatorProfile.findMany({
-          where,
-          orderBy: ORDER_BY[sort],
-          skip: page.offset,
-          take: page.limit,
-          select: RESULT_SELECT,
-        }),
-        db.creatorProfile.count({ where }),
-      ]);
-      return { items: rows.map(toResult), total };
+    ): Promise<{ items: CreatorSearchResult[] } & CreatorCount> {
+      const ids = await matchingIds(db, whereForFilters(filters), sort);
+      const pageIds = ids.slice(0, SEARCH_COUNT_CAP).slice(page.offset, page.offset + page.limit);
+      return { items: await findResultsByIds(db, pageIds), ...countOf(ids) };
     },
 
-    count: (filters: SearchFilters): Promise<number> =>
-      db.creatorProfile.count({ where: whereForFilters(filters) }),
+    count: async (filters: SearchFilters): Promise<CreatorCount> =>
+      countOf(await matchingIds(db, whereForFilters(filters), 'score')),
 
     /** Search-result cards for specific creators, in the order asked (compare, shortlists). */
-    async findResultsByIds(ids: readonly string[]): Promise<CreatorSearchResult[]> {
-      const rows = await db.creatorProfile.findMany({
-        where: { id: { in: [...ids] } },
-        select: RESULT_SELECT,
-      });
-      const byId = new Map(rows.map((row) => [row.id, toResult(row)]));
-      return ids
-        .map((id) => byId.get(id))
-        .filter((row): row is CreatorSearchResult => Boolean(row));
-    },
+    findResultsByIds: (ids: readonly string[]): Promise<CreatorSearchResult[]> =>
+      findResultsByIds(db, ids),
   };
 }

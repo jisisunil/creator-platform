@@ -34,6 +34,8 @@ export function buildContentSecurityPolicy(options: CspOptions): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
+    // The offline service worker (NFR-5); 'strict-dynamic' would otherwise block it.
+    "worker-src 'self'",
     `connect-src ${connectSources.join(' ')}`,
     `frame-src ${options.isCaptchaEnabled ? CAPTCHA_ORIGIN : "'none'"}`,
     "object-src 'none'",

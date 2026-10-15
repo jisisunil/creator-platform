@@ -902,6 +902,7 @@
         "growth": "सबसे तेज़ बढ़त"
       },
       "results": "{total, plural, =0 {कोई क्रिएटर नहीं मिला} one {# क्रिएटर} other {# क्रिएटर}}",
+      "resultsCapped": "{total, number}+ क्रिएटर",
       "noResults": "इन फ़िल्टर से कोई क्रिएटर नहीं मिला।",
       "tryInstead": "इसके बजाय आज़माएँ:",
       "widenings": {
@@ -917,6 +918,7 @@
         "dropTiers": "कोई भी आकार"
       },
       "wideningCount": "({count} क्रिएटर)",
+      "wideningCountCapped": "({count, number}+ क्रिएटर)",
       "previous": "पिछला",
       "next": "अगला",
       "pageOf": "पेज {page} / {pageCount}",
@@ -1596,5 +1598,9 @@
         "DATA": "डेटा"
       }
     }
+  },
+  "offline": {
+    "title": "आप ऑफ़लाइन हैं",
+    "body": "अपना इंटरनेट कनेक्शन जाँचें और फिर से कोशिश करें। नई जानकारी देखने के लिए पेजों को कनेक्शन चाहिए।"
   }
 }

@@ -68,7 +68,8 @@ export async function CreatorProfileView({
           <div className="grid gap-1">
             <p className="text-sm">
               {profile.isVerified ? (
-                <span className="mr-2 rounded bg-[#2a78d6] px-2 py-0.5 text-xs font-medium text-white">
+                // Darker than the score-bar blue: white text needs 4.5:1 contrast (NFR-9).
+                <span className="mr-2 rounded bg-[#1d5fb4] px-2 py-0.5 text-xs font-medium text-white">
                   ✓ {t('verified')}
                 </span>
               ) : null}

@@ -3,6 +3,11 @@
 /** UC-D1: results per page, and how deep paging may go (very broad searches). */
 export const SEARCH_PAGE_SIZE = 24;
 export const SEARCH_MAX_PAGE = 50;
+/**
+ * NFR-1: a search finds at most this many creators: every page a brand can reach. More
+ * matches show as "1,200+". Exact counts of broad searches cost seconds at 500k creators.
+ */
+export const SEARCH_COUNT_CAP = SEARCH_MAX_PAGE * SEARCH_PAGE_SIZE;
 
 /** FR-5.3: at most this many "widen your search" suggestions. */
 export const MAX_SEARCH_SUGGESTIONS = 3;

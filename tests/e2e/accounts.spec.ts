@@ -89,13 +89,36 @@ test.describe('accounts', () => {
 });
 
 test.describe('access control', () => {
-  for (const path of ['/en/dashboard', '/en/settings', '/en/brand/team']) {
+  const protectedPages = [
+    '/en/dashboard',
+    '/en/settings',
+    '/en/notifications',
+    '/en/messages',
+    '/en/deals',
+    '/en/brand/team',
+    '/en/brand/search',
+    '/en/brand/requests',
+    '/en/brand/plan',
+    '/en/creator/profile',
+    '/en/creator/requests',
+    '/en/admin',
+    '/en/admin/users',
+  ];
+  for (const path of protectedPages) {
     test(`SR-5 ${path} sends visitors to sign in`, async ({ page }) => {
       await page.goto(path);
 
       await expect(page).toHaveURL(/\/en\/sign-in$/);
     });
   }
+
+  test('SR-5 private downloads refuse visitors', async ({ request }) => {
+    expect((await request.get('/api/account/export')).status()).toBe(404);
+    expect((await request.get('/api/shortlists/any-id/csv')).status()).toBe(404);
+    expect((await request.get('/api/files?key=photos/x&expires=1&signature=nope')).status()).toBe(
+      403,
+    );
+  });
 });
 
 test.describe('admin two-factor', () => {

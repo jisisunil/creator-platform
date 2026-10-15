@@ -3,7 +3,9 @@
  * volume and admin actions outside working hours, and data requests close to their legal
  * deadline (PR-5). Alerts are logged at error level (for log-based alerting in production)
  * and emailed to the operations address when one is set. Error spikes are Sentry's job.
+ * Also watches YouTube/Instagram API quota use and stale creator data (NFR-3, NFR-13).
  */
+import { SOCIAL_REFRESH } from '@/config/creators';
 import { MONITORING } from '@/config/monitoring';
 import { isOutsideWorkingHours } from '@/domain/monitoring';
 import { getLogger } from '@/lib/logger';
@@ -90,6 +92,33 @@ export async function checkDataRequestDeadlines(deps: MonitoringDeps): Promise<{
   }
   if (dueSoon > 0) {
     alerts.push({ alert: 'data-requests-due-soon', details: `${dueSoon} due within 5 days` });
+  }
+  await raise(deps, alerts);
+  return { alerts: alerts.length };
+}
+
+/**
+ * NFR-13 / NFR-3: daily, alerts when platform API quota ran out for some accounts (time to
+ * ask for more quota or spread refreshes) or when creator stats are older than 48 hours.
+ */
+export async function checkSocialDataHealth(deps: MonitoringDeps): Promise<{ alerts: number }> {
+  const staleBefore = new Date(deps.clock.now().getTime() - SOCIAL_REFRESH.maxDataAgeMs);
+  const health = await deps.repos.socialAccounts.refreshHealth(staleBefore);
+  const alerts: Alert[] = [];
+  const quotaHits = Object.entries(health.quotaHitsByPlatform);
+  if (quotaHits.length > 0) {
+    alerts.push({
+      alert: 'api-quota-exceeded',
+      details: `Accounts waiting for API quota: ${quotaHits
+        .map(([platform, count]) => `${platform} ${count}`)
+        .join(', ')}`,
+    });
+  }
+  if (health.stale > 0) {
+    alerts.push({
+      alert: 'stale-social-data',
+      details: `${health.stale} active accounts not refreshed in 48 hours`,
+    });
   }
   await raise(deps, alerts);
   return { alerts: alerts.length };

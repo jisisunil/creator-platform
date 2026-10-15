@@ -260,3 +260,29 @@ Services: `src/services/{admin,moderation,privacy,monitoring}`, `retention` and 
 
 **Personal data added:** `ChatAccessGrant` (admin reason), `DataRequest`,
 `AuthenticityFlag.appealText`, `User.inactivityWarnedAt`. All covered by the data inventory.
+
+## Phase h — Hardening
+
+Security suites completed (`tests/security/cross-account-*.test.ts`, unauthenticated access
+in `e2e/accounts.spec.ts`); accessibility audit with axe in both Playwright projects (desktop
+and 360 px); 500k-creator search load test (`scripts/perf/search-load.ts`, ADR-005) and the
+search changes it required; offline page and installable icons; photo compression; API quota
+and stale-data alerts. Rows here supersede the Partial rows of earlier phases.
+
+| ID     | Status  | Code                                                                                                                                              | Tests                                                                                                           | Notes                                                         |
+| ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| NFR-1  | Done    | one index per sort, ids fetched once in result order, totals capped at 1,200 ("1,200+"), `city` as citext, audience/platform indexes              | `integration/discovery.test.ts`, `npm run perf:search -- 500000` (worst p95 491 ms at 500k)                     | Repeat with production-shaped data before growth (ADR-005)    |
+| NFR-3  | Done    | daily `monitoring.social-data-health` alerts when stats are older than 48 hours                                                                   | `integration/retention-monitoring.test.ts`                                                                      |                                                               |
+| NFR-4  | Partial | schema and queries measured at 10× year one (ADR-005)                                                                                             | perf script                                                                                                     | Scaling out (more web/worker instances, PgBouncer) in phase i |
+| NFR-5  | Done    | PNG and maskable icons in the manifest, Apple touch icon, `public/sw.js` offline page (`/[locale]/offline`), registered in production builds only | `e2e/home.spec.ts`, `unit/lib/csp.test.ts` (`worker-src`)                                                       | Only the offline pages are cached; signed-in pages never are  |
+| NFR-6  | Done    | photos shrunk to 320 px WebP with metadata removed (`lib/images.ts`); `next/image` lazy-loads; first-visit budget 400 KB compressed               | `integration/creators.test.ts`, `e2e/home.spec.ts`                                                              |                                                               |
+| NFR-9  | Done    | axe WCAG 2.1 A/AA audit of public, creator, brand and admin pages; contrast and definition-list fixes                                             | `e2e/accessibility.spec.ts`                                                                                     | axe-core is MPL-2.0, dev only (Q-36)                          |
+| NFR-12 | Done    | layered architecture, import boundaries, coverage floor                                                                                           | `npm run check`, `npm run test:coverage`                                                                        |                                                               |
+| NFR-13 | Done    | daily alert when YouTube/Instagram API quota ran out for any account, per platform; one container image, Postgres-only queue                      | `integration/retention-monitoring.test.ts`                                                                      | Hosting cost monitoring in phase i                            |
+| SR-5   | Done    | every resource that takes an id checks ownership; deny by default                                                                                 | `security/cross-account-{team,discovery,requests,chat,deals,ratings,remaining}.test.ts`, `admin-access.test.ts` |                                                               |
+| SR-18  | Partial | CI: lint, types, unit, integration, E2E incl. accessibility, `npm audit --omit=dev`                                                               | CI                                                                                                              | Deploy pipeline and image scanning in phase i                 |
+| SEC-2  | Done    | changing an id in a URL never reaches another account; unauthenticated pages redirect, APIs return 404/403                                        | `security/*.test.ts`, `e2e/accounts.spec.ts`                                                                    |                                                               |
+| SEC-7  | Partial | email verification, payment details only after acceptance, report button                                                                          | `integration/chat.test.ts`                                                                                      | "Business details for paid plans" undefined (Q-32)            |
+
+**Personal data:** none added. Profile photos now lose their metadata (including any GPS
+location) on upload.

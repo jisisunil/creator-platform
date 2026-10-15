@@ -1,4 +1,5 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import sharp from 'sharp';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   addPortfolioItem,
   getOwnProfile,
@@ -25,11 +26,16 @@ const details = {
   categorySlugs: ['food'],
 };
 
-// Smallest valid PNG header plus padding.
-const PNG = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  Buffer.alloc(64),
-]);
+// A large phone-style photo carrying EXIF metadata, made once for all tests.
+let PNG: Buffer;
+beforeAll(async () => {
+  PNG = await sharp({
+    create: { width: 1600, height: 1200, channels: 3, background: '#c05621' },
+  })
+    .withExif({ IFD0: { Artist: 'Asha', ImageDescription: 'Home, Chennai' } })
+    .png()
+    .toBuffer();
+});
 
 beforeEach(async () => {
   await resetDatabase(db);
@@ -117,6 +123,33 @@ describe('creator profile (FR-2, UC-C1, UC-C6)', () => {
     await expect(uploadProfilePhoto(ctx, user.id, script)).rejects.toMatchObject({
       fieldErrors: { photo: 'profile.photoType' },
     });
+  });
+
+  it('NFR-6 stores a small WebP photo without metadata', async () => {
+    const { user } = await creator();
+
+    await uploadProfilePhoto(ctx, user.id, PNG);
+
+    const key = (await getOwnProfile(ctx, user)).photoKey ?? '';
+    const stored = await ctx.fileStorage.get(key);
+    expect(stored?.contentType).toBe('image/webp');
+    const metadata = await sharp(stored?.bytes).metadata();
+    expect(metadata).toMatchObject({ format: 'webp', width: 320, height: 320 });
+    expect(metadata.exif).toBeUndefined();
+    expect(stored?.bytes.length).toBeLessThan(PNG.length);
+  });
+
+  it('SR-9 rejects a file that only looks like an image', async () => {
+    const { user } = await creator();
+    const pngHeaderOnly = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.alloc(64),
+    ]);
+
+    await expect(uploadProfilePhoto(ctx, user.id, pngHeaderOnly)).rejects.toMatchObject({
+      fieldErrors: { photo: 'profile.photoType' },
+    });
+    expect((await getOwnProfile(ctx, user)).photoKey).toBeNull();
   });
 
   it('SR-9 rejects files the malware scanner flags', async () => {

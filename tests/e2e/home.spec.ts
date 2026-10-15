@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+/** NFR-6: what a first visit may download, compressed (about 4 s on a slow 3G line). */
+const PAGE_WEIGHT_BUDGET_BYTES = 400 * 1024;
+
 test.describe('home page and app shell', () => {
   test('NFR-7 redirects to English and renders the home page', async ({ page }) => {
     await page.goto('/');
@@ -47,6 +50,40 @@ test.describe('home page and app shell', () => {
 
     expect(response?.status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('पेज नहीं मिला');
+  });
+
+  test('NFR-5 is installable: the manifest lists PNG and maskable icons', async ({ request }) => {
+    const manifest = await (await request.get('/manifest.webmanifest')).json();
+
+    const sizes = manifest.icons.map((icon: { sizes: string; purpose: string }) => icon.sizes);
+    expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
+    for (const icon of manifest.icons) {
+      expect((await request.get(icon.src)).status()).toBe(200);
+    }
+  });
+
+  test('NFR-5 shows an offline page when the network drops', async ({ page, context }) => {
+    await page.goto('/hi');
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto('/hi/sign-in');
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('आप ऑफ़लाइन हैं');
+    await context.setOffline(false);
+  });
+
+  test('NFR-6 the home page stays light on slow connections', async ({ page }) => {
+    let transferredBytes = 0;
+    page.on('requestfinished', async (request) => {
+      const sizes = await request.sizes();
+      transferredBytes += sizes.responseBodySize + sizes.responseHeadersSize;
+    });
+
+    await page.goto('/en');
+    await page.waitForLoadState('networkidle');
+
+    expect(transferredBytes).toBeLessThan(PAGE_WEIGHT_BUDGET_BYTES);
   });
 
   test('NFR-10 health endpoint reports the database is up', async ({ request }) => {

@@ -285,7 +285,11 @@ export default async function BrandSearchPage({
 
         <section aria-live="polite" className="grid content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-medium">{t('results', { total: results.total })}</p>
+            <p className="font-medium">
+              {results.isTotalCapped
+                ? t('resultsCapped', { total: results.total })
+                : t('results', { total: results.total })}
+            </p>
             <form
               id={COMPARE_FORM_ID}
               method="get"
@@ -315,7 +319,9 @@ export default async function BrandSearchPage({
                           {t(`widenings.${suggestion.kind}`)}
                         </Link>{' '}
                         <span className="text-muted-foreground">
-                          {t('wideningCount', { count: suggestion.total })}
+                          {suggestion.isTotalCapped
+                            ? t('wideningCountCapped', { count: suggestion.total })
+                            : t('wideningCount', { count: suggestion.total })}
                         </span>
                       </li>
                     ))}

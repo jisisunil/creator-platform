@@ -22,6 +22,12 @@ export const PROFILE_LIMITS = {
 export const PROFILE_PHOTO = {
   maxBytes: 2 * 1024 * 1024,
   allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'] as readonly string[],
+  /** Refuse decompression bombs: 40 megapixels is above any phone camera. */
+  maxInputPixels: 40_000_000,
+  /** Shown at most 96 CSS px; 320 px stays sharp on 3× phone screens. */
+  outputSizePx: 320,
+  outputQuality: 80,
+  outputContentType: 'image/webp',
 } as const;
 
 /** Signed file URLs expire after this long (SR-9). */
@@ -45,6 +51,8 @@ export const SOCIAL_REFRESH = {
   maxRecentPosts: 50,
   /** Refresh an access token this long before it expires. */
   tokenRefreshMarginMs: 10 * MINUTE_MS,
+  /** NFR-3: stats older than this break the promise; the daily health check alerts. */
+  maxDataAgeMs: 48 * HOUR_MS,
 } as const;
 
 /** UC-C2: accounts from one login wait this long for the creator to pick one. */

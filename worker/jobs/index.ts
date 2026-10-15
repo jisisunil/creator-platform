@@ -3,7 +3,11 @@ import { refreshDealPostsJob, sendDealRemindersJob } from './deals';
 import { dispatchEmailsJob } from './dispatch-emails';
 import { heartbeatJob } from './heartbeat';
 import { sendTrialRemindersJob } from './plans';
-import { checkDataRequestDeadlinesJob, runSecurityChecksJob } from './monitoring';
+import {
+  checkDataRequestDeadlinesJob,
+  checkSocialDataHealthJob,
+  runSecurityChecksJob,
+} from './monitoring';
 import { finaliseDeletionsJob, handleInactiveAccountsJob } from './privacy';
 import { expireRequestsJob } from './requests';
 import {
@@ -30,4 +34,5 @@ export const ALL_JOBS: readonly JobDefinition[] = [
   reduceOldSnapshotsJob,
   runSecurityChecksJob,
   checkDataRequestDeadlinesJob,
+  checkSocialDataHealthJob,
 ];

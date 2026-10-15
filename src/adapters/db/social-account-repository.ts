@@ -1,6 +1,11 @@
 import type { AccountHistory } from '@/domain/score';
 import type { Prisma } from '@/generated/prisma/client';
-import type { AudienceShare, PlatformAccount, SocialPlatform } from '../social/provider';
+import type {
+  AudienceShare,
+  PlatformAccount,
+  ProviderErrorKind,
+  SocialPlatform,
+} from '../social/provider';
 import type { DbClient } from './db-client';
 
 export type SocialAccountStatus = 'ACTIVE' | 'TOKEN_REVOKED' | 'PRIVATE' | 'DELETED';
@@ -46,6 +51,9 @@ export interface PendingConnection {
   readonly tokenExpiresAt: Date | null;
   readonly accounts: readonly PlatformAccount[];
 }
+
+/** What refreshAccount records in lastRefreshError when the platform's quota ran out. */
+const QUOTA_EXCEEDED_ERROR: ProviderErrorKind = 'QUOTA_EXCEEDED';
 
 const FOR_REFRESH_SELECT = {
   id: true,
@@ -141,6 +149,35 @@ export function createSocialAccountRepository(db: DbClient) {
         select: { id: true },
       });
       return rows.map((row) => row.id);
+    },
+
+    /**
+     * NFR-3 / NFR-13: active accounts whose last refresh hit the platform's API quota, per
+     * platform, and how many have data older than `staleBefore`.
+     */
+    async refreshHealth(
+      staleBefore: Date,
+    ): Promise<{ quotaHitsByPlatform: Partial<Record<SocialPlatform, number>>; stale: number }> {
+      const quotaRows = await db.socialAccount.groupBy({
+        by: ['platform'],
+        where: { status: 'ACTIVE', lastRefreshError: QUOTA_EXCEEDED_ERROR },
+        _count: { _all: true },
+      });
+      const stale = await db.socialAccount.count({
+        where: {
+          status: 'ACTIVE',
+          OR: [
+            { lastRefreshedAt: { lt: staleBefore } },
+            { lastRefreshedAt: null, createdAt: { lt: staleBefore } },
+          ],
+        },
+      });
+      return {
+        quotaHitsByPlatform: Object.fromEntries(
+          quotaRows.map((row) => [row.platform, row._count._all]),
+        ),
+        stale,
+      };
     },
 
     async updateTokens(

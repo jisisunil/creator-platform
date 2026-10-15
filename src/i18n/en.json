@@ -902,6 +902,7 @@
         "growth": "Fastest growth"
       },
       "results": "{total, plural, =0 {No creators match} one {# creator} other {# creators}}",
+      "resultsCapped": "{total, number}+ creators",
       "noResults": "No creators match these filters.",
       "tryInstead": "Try instead:",
       "widenings": {
@@ -917,6 +918,7 @@
         "dropTiers": "Any size"
       },
       "wideningCount": "({count} creators)",
+      "wideningCountCapped": "({count, number}+ creators)",
       "previous": "Previous",
       "next": "Next",
       "pageOf": "Page {page} of {pageCount}",
@@ -1596,5 +1598,9 @@
         "DATA": "Data"
       }
     }
+  },
+  "offline": {
+    "title": "You are offline",
+    "body": "Check your internet connection and try again. Pages you open need a connection to show up-to-date details."
   }
 }

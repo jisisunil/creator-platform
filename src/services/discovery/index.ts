@@ -1,7 +1,7 @@
 /** Discovery module: brand search, saved searches, profile views and compare (FR-5, FR-6.2, UC-D). */
 import type { BrandMembership } from '@/adapters/db/brand-repository';
 import type { Repositories } from '@/adapters/db/repositories';
-import type { CreatorSearchResult } from '@/adapters/db/search-repository';
+import type { CreatorCount, CreatorSearchResult } from '@/adapters/db/search-repository';
 import { CATEGORY_SLUGS_BY_COUNTRY } from '@/config/categories';
 import { CONTENT_LANGUAGES } from '@/config/languages';
 import { REGION_CODES_BY_COUNTRY } from '@/config/regions';
@@ -31,7 +31,7 @@ import {
 } from '@/domain/search';
 import type { RequestInfo, ServiceContext } from '../context';
 
-export type { CreatorSearchResult } from '@/adapters/db/search-repository';
+export type { CreatorCount, CreatorSearchResult } from '@/adapters/db/search-repository';
 import { getPublicProfile, type PublicCreatorProfile } from '../creators';
 import { consumeRateLimit } from '../security';
 
@@ -50,10 +50,12 @@ export async function requireBrandMembership(
 export interface SearchPage {
   readonly items: readonly CreatorSearchResult[];
   readonly total: number;
+  /** True when more than `total` creators match (the count stops at a cap, NFR-1). */
+  readonly isTotalCapped: boolean;
   readonly page: number;
   readonly pageCount: number;
   /** FR-5.3: when nothing matched, wider searches that would find creators. */
-  readonly suggestions: readonly { kind: WideningKind; filters: SearchFilters; total: number }[];
+  readonly suggestions: readonly ({ kind: WideningKind; filters: SearchFilters } & CreatorCount)[];
 }
 
 /**
@@ -74,17 +76,27 @@ export async function searchCreators(
     offset: (page - 1) * SEARCH_PAGE_SIZE,
     limit: SEARCH_PAGE_SIZE,
   });
-  const pageCount = Math.min(Math.ceil(result.total / SEARCH_PAGE_SIZE), SEARCH_MAX_PAGE);
+  // A capped total means more creators match than were counted: allow every page.
+  const pageCount = result.isTotalCapped
+    ? SEARCH_MAX_PAGE
+    : Math.min(Math.ceil(result.total / SEARCH_PAGE_SIZE), SEARCH_MAX_PAGE);
 
   const suggestions: SearchPage['suggestions'][number][] = [];
   if (result.total === 0) {
     for (const widening of wideningsFor(filters)) {
       if (suggestions.length >= MAX_SEARCH_SUGGESTIONS) break;
-      const total = await ctx.repos.search.count(widening.filters);
-      if (total > 0) suggestions.push({ ...widening, total });
+      const count = await ctx.repos.search.count(widening.filters);
+      if (count.total > 0) suggestions.push({ ...widening, ...count });
     }
   }
-  return { items: result.items, total: result.total, page, pageCount, suggestions };
+  return {
+    items: result.items,
+    total: result.total,
+    isTotalCapped: result.isTotalCapped,
+    page,
+    pageCount,
+    suggestions,
+  };
 }
 
 /**

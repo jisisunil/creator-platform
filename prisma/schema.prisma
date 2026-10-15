@@ -471,7 +471,8 @@ model CreatorProfile {
   bio                    String       @default("")
   /// Storage key of the profile photo (served through signed URLs, SR-9).
   photoKey               String?
-  city                   String       @default("")
+  // citext: the city filter is case-insensitive and still uses the location index (NFR-1).
+  city                   String       @default("") @db.Citext
   /// State/UT code from config/regions.ts.
   stateCode              String       @default("")
   countryCode            String
@@ -509,16 +510,18 @@ model CreatorProfile {
   deals             Deal[]
 
   @@index([countryCode, stateCode, city])
-  @@index([isSearchable, currentScore])
   @@index([tier])
   @@index([totalFollowers])
   @@index([engagementRateBp])
   @@index([isVerified])
   @@index([isOpenToCollaborations])
-  // Sort paths for search (FR-5.2, ADR-005): filter on isSearchable, order by the metric.
-  @@index([isSearchable, engagementRateBp])
-  @@index([isSearchable, totalFollowers])
-  @@index([isSearchable, growth90dBp])
+  // Sort paths for search (FR-5.2, NFR-1, ADR-005): each matches one search order exactly,
+  // so a results page is read from the index without sorting every match. The growth index
+  // is DESC NULLS LAST in the migration (Prisma cannot express the NULLS part).
+  @@index([countryCode, isSearchable, currentScore(sort: Desc), id])
+  @@index([countryCode, isSearchable, engagementRateBp(sort: Desc), id])
+  @@index([countryCode, isSearchable, totalFollowers(sort: Desc), id])
+  @@index([countryCode, isSearchable, growth90dBp(sort: Desc), id])
   // Text search on name and bio (FR-5.2); pg_trgm is enabled in the migration.
   @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "CreatorProfile_displayName_trgm_idx")
   @@index([bio(ops: raw("gin_trgm_ops"))], type: Gin, map: "CreatorProfile_bio_trgm_idx")
@@ -622,7 +625,9 @@ model SocialAccount {
   dealPosts             DealPost[]
 
   @@unique([platform, externalId])
-  @@index([creatorId])
+  // Leads with creatorId for the foreign key; platform and status let the search's platform
+  // filter (FR-5.1) answer from the index alone.
+  @@index([creatorId, platform, status])
   @@index([status, nextRefreshAt])
 }
 
@@ -665,6 +670,8 @@ model AudienceSegment {
   socialAccount   SocialAccount     @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
 
   @@unique([socialAccountId, dimension, bucket])
+  // Audience filters (FR-5.1): "mostly women" finds matching accounts by range scan (NFR-1).
+  @@index([dimension, bucket, sharePermille, socialAccountId])
 }
 
 /// A computed content score with its breakdown and weights version (FR-4.3).

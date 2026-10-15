@@ -14,6 +14,7 @@ import { missingProfileFields, type ProfileField, slugBaseFrom } from '@/domain/
 import { notAllowed, notFound, validationFailed } from '@/domain/errors';
 import { detectImageType } from '@/domain/file-types';
 import type { ScoreBreakdown } from '@/domain/score';
+import { compressProfilePhoto } from '@/lib/images';
 import type { ServiceContext } from '../context';
 import { completenessOf, recomputeCreatorScore } from '../scoring';
 
@@ -206,7 +207,8 @@ export async function removePortfolioItem(
 
 /**
  * FR-2.1 / SR-9: sets the profile photo. The real file type is read from its bytes (the
- * browser's claim is ignored), it is scanned for malware, and stored under a random key.
+ * browser's claim is ignored), it is scanned for malware, shrunk and stripped of metadata
+ * (NFR-6), and stored under a random key.
  */
 export async function uploadProfilePhoto(
   ctx: ServiceContext,
@@ -224,8 +226,13 @@ export async function uploadProfilePhoto(
   if ((await ctx.malwareScanner.scan(bytes)) !== 'CLEAN') {
     throw validationFailed({ photo: 'profile.photoRejected' });
   }
+  const compressed = await compressProfilePhoto(bytes);
+  if (!compressed) throw validationFailed({ photo: 'profile.photoType' });
   const key = `photos/${randomBytes(24).toString('base64url')}`;
-  await ctx.fileStorage.put(key, { bytes, contentType });
+  await ctx.fileStorage.put(key, {
+    bytes: compressed,
+    contentType: PROFILE_PHOTO.outputContentType,
+  });
   await ctx.repos.creators.setPhotoKey(profile.id, key);
   if (profile.photoKey) await ctx.fileStorage.delete(profile.photoKey);
   await recomputeCreatorScore(ctx, profile.id);

@@ -38,22 +38,26 @@ export async function ScoreBreakdown({
         {COMPONENTS.map((name) => {
           const value = components[name].score;
           return (
-            <div key={name} className="grid gap-1">
-              <div className="flex items-baseline justify-between gap-2 text-sm">
-                <dt className="font-medium">{t(`components.${name}`)}</dt>
-                <dd className="tabular-nums">{value}</dd>
-              </div>
-              <div
-                className="bg-muted h-2 overflow-hidden rounded-full"
-                role="meter"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={value}
-                aria-label={t(`components.${name}`)}
-              >
-                <div className="h-full rounded-full bg-[#2a78d6]" style={{ width: `${value}%` }} />
-              </div>
-              <p className="text-muted-foreground text-xs">{detail[name]}</p>
+            // dt and dd sit directly in the group div, as definition lists require (NFR-9).
+            <div key={name} className="grid grid-cols-[1fr_auto] items-baseline gap-x-2 gap-y-1">
+              <dt className="text-sm font-medium">{t(`components.${name}`)}</dt>
+              <dd className="text-sm tabular-nums">{value}</dd>
+              <dd className="col-span-2">
+                <div
+                  className="bg-muted h-2 overflow-hidden rounded-full"
+                  role="meter"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={value}
+                  aria-label={t(`components.${name}`)}
+                >
+                  <div
+                    className="h-full rounded-full bg-[#2a78d6]"
+                    style={{ width: `${value}%` }}
+                  />
+                </div>
+              </dd>
+              <dd className="text-muted-foreground col-span-2 text-xs">{detail[name]}</dd>
             </div>
           );
         })}

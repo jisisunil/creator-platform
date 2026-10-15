@@ -22,6 +22,12 @@ describe('buildContentSecurityPolicy (SR-8)', () => {
     expect(csp).toContain("form-action 'self'");
   });
 
+  it('NFR-5 lets only our own service worker run', () => {
+    const csp = buildContentSecurityPolicy({ nonce: 'n', isDevelopment: false, isHttps: true });
+
+    expect(csp).toContain("worker-src 'self'");
+  });
+
   it('permits the error-reporting origin for connections', () => {
     const csp = buildContentSecurityPolicy({
       nonce: 'n',

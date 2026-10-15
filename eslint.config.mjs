@@ -66,8 +66,8 @@ export default tseslint.config(
     ),
   },
   {
-    // The seed is a CLI that prints demo logins for the developer.
-    files: ['prisma/seed/**'],
+    // Command-line tools (the seed, perf scripts) print their results for the developer.
+    files: ['prisma/seed/**', 'scripts/**'],
     rules: { 'no-console': 'off' },
   },
   prettier,

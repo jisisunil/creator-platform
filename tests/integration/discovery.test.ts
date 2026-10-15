@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { SEARCH_COUNT_CAP, SEARCH_MAX_PAGE, SEARCH_PAGE_SIZE } from '@/config/search';
 import { parseSavedFilters } from '@/lib/validation/search-schemas';
 import { getCreatorAnalytics } from '@/services/creators';
 import {
@@ -160,8 +161,48 @@ describe('search (FR-5, UC-D1)', () => {
 
     expect(result.total).toBe(0);
     expect(result.suggestions).toEqual([
-      { kind: 'cityToState', filters: { stateCode: 'TN', countryCode: 'IN' }, total: 1 },
+      {
+        kind: 'cityToState',
+        filters: { stateCode: 'TN', countryCode: 'IN' },
+        total: 1,
+        isTotalCapped: false,
+      },
     ]);
+  });
+
+  it('NFR-1 stops counting at the last reachable page and still serves every page', async () => {
+    const brand = await createBrandOwner(ctx, db, 'owner@spiceco.in');
+    const overCap = SEARCH_COUNT_CAP + 1;
+    await db.$executeRaw`
+      INSERT INTO "User" (id, email, name, role, status, "countryCode", locale, "emailVerifiedAt", "updatedAt")
+      SELECT 'bulk-u' || g, 'bulk-' || g || '@example.test', 'Bulk ' || g, 'CREATOR', 'ACTIVE', 'IN', 'en', now(), now()
+      FROM generate_series(1, ${overCap}) AS g`;
+    await db.$executeRaw`
+      INSERT INTO "CreatorProfile" (id, "userId", slug, "displayName", city, "stateCode", "countryCode",
+        "isSearchable", "currentScore", "updatedAt")
+      SELECT 'bulk-c' || g, 'bulk-u' || g, 'bulk-' || g, 'Bulk ' || g, 'Chennai', 'TN', 'IN', true, g % 100, now()
+      FROM generate_series(1, ${overCap}) AS g`;
+
+    const first = await search(brand.id);
+    const last = await search(brand.id, {}, 'score', SEARCH_MAX_PAGE);
+
+    expect(first).toMatchObject({ total: SEARCH_COUNT_CAP, isTotalCapped: true });
+    expect(first.pageCount).toBe(SEARCH_MAX_PAGE);
+    expect(last.items).toHaveLength(SEARCH_PAGE_SIZE);
+    expect(new Set([...first.items, ...last.items].map((item) => item.id)).size).toBe(
+      2 * SEARCH_PAGE_SIZE,
+    );
+  });
+
+  it('NFR-1 gives the exact total below the cap', async () => {
+    const brand = await createBrandOwner(ctx, db, 'owner@spiceco.in');
+    await createSearchableCreator(ctx, db, { email: 'a@example.in' });
+
+    await expect(search(brand.id)).resolves.toMatchObject({
+      total: 1,
+      isTotalCapped: false,
+      pageCount: 1,
+    });
   });
 
   it('UC-D1 caps the page number', async () => {

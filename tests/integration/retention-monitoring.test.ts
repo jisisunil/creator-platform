@@ -1,7 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { signInWithPassword } from '@/services/accounts';
 import { getAuditLog } from '@/services/admin';
-import { checkDataRequestDeadlines, runSecurityChecks } from '@/services/monitoring';
+import {
+  checkDataRequestDeadlines,
+  checkSocialDataHealth,
+  runSecurityChecks,
+} from '@/services/monitoring';
 import { handleInactiveAccounts, requestCorrection } from '@/services/privacy';
 import { reduceOldSnapshots } from '@/services/retention';
 import { createVerifiedUser } from './accounts/fixtures';
@@ -154,6 +158,47 @@ describe('monitoring (SR-14)', () => {
       'data-requests-due-soon',
       'data-requests-overdue',
     ]);
+  });
+});
+
+describe('social data health (NFR-3, NFR-13)', () => {
+  const deps = () => ({ ...ctx, alertEmail: 'ops@platform.in' });
+  const hoursAgo = (hours: number) => new Date(ctx.clock.now().getTime() - hours * 3_600_000);
+
+  async function account() {
+    const { creatorId } = await createSearchableCreator(ctx, db, { email: 'c@example.in' });
+    return db.socialAccount.findFirstOrThrow({ where: { creatorId } });
+  }
+
+  it('NFR-3 stays quiet while every account was refreshed in the last 48 hours', async () => {
+    const { id } = await account();
+    await db.socialAccount.update({ where: { id }, data: { lastRefreshedAt: hoursAgo(30) } });
+
+    expect(await checkSocialDataHealth(deps())).toEqual({ alerts: 0 });
+  });
+
+  it('NFR-13 alerts when an account is waiting for platform API quota', async () => {
+    const { id } = await account();
+    await db.socialAccount.update({
+      where: { id },
+      data: { lastRefreshedAt: hoursAgo(30), lastRefreshError: 'QUOTA_EXCEEDED' },
+    });
+
+    expect(await checkSocialDataHealth(deps())).toEqual({ alerts: 1 });
+    const alert = await db.emailOutbox.findFirstOrThrow({ where: { template: 'opsAlert' } });
+    expect(alert.payload).toMatchObject({
+      alert: 'api-quota-exceeded',
+      details: 'Accounts waiting for API quota: YOUTUBE 1',
+    });
+  });
+
+  it('NFR-3 alerts when stats are older than 48 hours', async () => {
+    const { id } = await account();
+    await db.socialAccount.update({ where: { id }, data: { lastRefreshedAt: hoursAgo(49) } });
+
+    expect(await checkSocialDataHealth(deps())).toEqual({ alerts: 1 });
+    const alert = await db.emailOutbox.findFirstOrThrow({ where: { template: 'opsAlert' } });
+    expect(alert.payload).toMatchObject({ alert: 'stale-social-data' });
   });
 });
 

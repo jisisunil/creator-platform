@@ -64,3 +64,50 @@ Every case is well under the NFR-1 target (1 s at p95). The slowest are unfilter
 where the total count scans every searchable creator; at 10× volume (500k) that grows roughly
 linearly, so phase h repeats this at 500k and, if needed, caps or estimates the total
 ("10,000+ creators") instead of counting exactly.
+
+## Measured (2026-10-15, phase h): 500,000 creators
+
+`npm run perf:search -- 500000` fills a scratch database (`creator_platform_perf`) with
+500,000 fake creators (10× year one) and times the real search repository: one untimed
+warm-up, then 20 timed runs per search. Developer laptop, PostgreSQL 16 in Docker with
+default settings (128 MB `shared_buffers`).
+
+The first run **failed NFR-1** (worst p95 4.3 s). Causes and fixes:
+
+| Problem                                                                                               | Fix                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Sorting by score used `DESC NULLS LAST`, which no index matched, so every search sorted all 500k rows | One index per sort, `(countryCode, isSearchable, <metric> DESC, id)`, and an `ORDER BY` that matches it exactly               |
+| The exact total count visited every match (1.5–2 s for broad searches)                                | Count only what a brand can page through: 50 pages × 24 = 1,200; more shows as "1,200+"                                       |
+| Prisma adds `ORDER BY id` to any `take`, so a capped count walked the primary key                     | One query fetches the ids in result order (up to 1,201) for count and paging; the page's cards are then loaded by id          |
+| `city ILIKE …` could not use the location index                                                       | `city` is `citext`; equality ignores case and uses `(countryCode, stateCode, city)`                                           |
+| Audience and platform filters scanned 1M audience rows / fetched account rows                         | Indexes `AudienceSegment(dimension, bucket, sharePermille, socialAccountId)` and `SocialAccount(creatorId, platform, status)` |
+
+After the fixes (two runs, worst p95 428 ms and 491 ms):
+
+| Search                               | p50    | p95    |
+| ------------------------------------ | ------ | ------ |
+| No filters, sorted by score          | 35 ms  | 42 ms  |
+| Audience mostly women + Instagram    | 276 ms | 340 ms |
+| State + category                     | 324 ms | 491 ms |
+| Sort by growth, page 50              | 34 ms  | 45 ms  |
+| Text search in bio ("biryani")       | 92 ms  | 129 ms |
+| City + language                      | 68 ms  | 75 ms  |
+| Followers 10k–100k + engagement ≥ 3% | 36 ms  | 39 ms  |
+| Verified + open, sorted by followers | 36 ms  | 42 ms  |
+| Everything combined (no results)     | 74 ms  | 100 ms |
+
+**NFR-1 passes at 10× year-one volume** on laptop hardware. Without the warm-up, single
+cold-cache runs reached 1.8 s; a production server with `shared_buffers` sized to hold the
+`CreatorProfile` table and its indexes (~1.2 GB at 500k) avoids that. Phase i sizes the
+database from these numbers. Synthetic data correlates columns in ways real data won't, so
+repeat the test with production-shaped data before launch traffic grows.
+
+Two lessons for future schema changes:
+
+- Prisma cannot express `NULLS LAST` or expression indexes. Hand-edited index details in a
+  migration survive only if `prisma migrate diff` stays empty afterwards (it does for the
+  growth index). An index Prisma does not know about at all is dropped by the next
+  `migrate dev`: that already happened to the pgvector HNSW index in the phase d migration
+  (see OPEN-QUESTIONS Q-33).
+- Measure with the real repository code: the plan Prisma's SQL gets can differ from a
+  hand-written equivalent.

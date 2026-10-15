@@ -15,6 +15,7 @@ export const JOB_NAMES = {
   reduceOldSnapshots: 'retention.reduce-snapshots',
   runSecurityChecks: 'monitoring.security-checks',
   checkDataRequestDeadlines: 'monitoring.data-request-deadlines',
+  checkSocialDataHealth: 'monitoring.social-data-health',
 } as const;
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];

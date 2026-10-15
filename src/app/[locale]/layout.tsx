@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { SiteFooter } from '@/components/layout/SiteFooter';
+import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
@@ -22,6 +23,7 @@ export async function generateMetadata({
   return {
     title: { default: t('title'), template: `%s · ${t('title')}` },
     description: t('description'),
+    icons: { apple: '/icons/apple-touch-icon.png' },
   };
 }
 
@@ -56,6 +58,7 @@ export default async function LocaleLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
+          <ServiceWorkerRegistration />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@ import {
   databasePoolOptions,
   directDatabaseUrl,
   getServerEnv,
+  type ServerEnv,
   socialProviderSettings,
 } from '@/config/env';
 import type { ServiceContext } from '@/services/context';
@@ -25,7 +26,8 @@ import {
   disabledCaptchaVerifier,
 } from './security/captcha-verifier';
 import { createSocialProviderRegistry } from './social/registry';
-import { createLocalFileStorage } from './storage/file-storage';
+import { createLocalFileStorage, type FileStorage } from './storage/file-storage';
+import { createS3Client, createS3FileStorage } from './storage/s3-file-storage';
 
 /** Every concrete adapter, wired in one place (CLAUDE.md §4). */
 export interface Container extends ServiceContext {
@@ -33,6 +35,13 @@ export interface Container extends ServiceContext {
   readonly clock: Clock;
   readonly healthRepository: HealthRepository;
   readonly emailSender: EmailSender;
+}
+
+function fileStorageFor(env: ServerEnv): FileStorage {
+  if (env.FILE_STORAGE === 's3' && env.S3_BUCKET) {
+    return createS3FileStorage(createS3Client(env.AWS_REGION), env.S3_BUCKET);
+  }
+  return createLocalFileStorage(env.FILE_STORAGE_DIR);
 }
 
 function buildContainer(): Container {
@@ -58,7 +67,7 @@ function buildContainer(): Container {
     jobQueue: createPgBossJobQueue(directDatabaseUrl(env)),
     emailSender: createSmtpEmailSender(env.SMTP_URL, env.EMAIL_FROM),
     socialProviders: createSocialProviderRegistry(socialProviderSettings(env)),
-    fileStorage: createLocalFileStorage(env.FILE_STORAGE_DIR),
+    fileStorage: fileStorageFor(env),
     malwareScanner:
       env.MALWARE_SCANNER === 'clamav'
         ? createClamAvScanner(env.CLAMAV_HOST, env.CLAMAV_PORT)

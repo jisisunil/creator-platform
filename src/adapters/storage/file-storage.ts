@@ -8,8 +8,8 @@ export interface StoredFile {
 
 /**
  * Private file storage (SR-9): files live outside the web root under random keys and are
- * only served through signed, expiring URLs. Local disk in development; S3 (or similar,
- * in the India region) in phase i.
+ * only served through signed, expiring URLs. Local disk in development; an S3 bucket in
+ * Mumbai for staging and production (`s3-file-storage.ts`).
  */
 export interface FileStorage {
   put(key: string, file: StoredFile): Promise<void>;

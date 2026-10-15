@@ -6,8 +6,11 @@
 import type { PlatformMetrics, UserDetail, UserListItem } from '@/adapters/db/admin-repository';
 import type { AuditEventRecord } from '@/adapters/db/audit-repository';
 import type { Repositories } from '@/adapters/db/repositories';
+import { LAUNCH_COUNTRY_CODE } from '@/config/countries';
+import { DEFAULT_LOCALE } from '@/config/locales';
 import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 import type { UserRole, UserStatus } from '@/domain/accounts';
+import { normaliseEmail } from '@/domain/email-address';
 import { invalidState, notAllowed, notFound } from '@/domain/errors';
 import type { RequestInfo, ServiceContext } from '../context';
 import { requireAdmin } from '../security';
@@ -239,4 +242,35 @@ export async function getAuditLog(
     page,
     pageCount: Math.max(1, Math.ceil(result.total / AUDIT_PAGE_SIZE)),
   };
+}
+
+/**
+ * SR-4 / SR-17: creates an operator's admin account (admins never sign up). It has no
+ * password: the operator sets one through "Forgot password", and two-factor sign-in is
+ * required before the console opens. INVALID_STATE when the email is already registered.
+ */
+export async function createAdminAccount(
+  ctx: Pick<ServiceContext, 'transaction' | 'clock'>,
+  input: { email: string; name: string },
+): Promise<{ userId: string }> {
+  const email = normaliseEmail(input.email);
+  return ctx.transaction(async (repos) => {
+    if (await repos.users.findByEmail(email)) throw invalidState();
+    const user = await repos.users.create({
+      email,
+      passwordHash: null,
+      name: input.name.trim(),
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      emailVerifiedAt: ctx.clock.now(),
+      countryCode: LAUNCH_COUNTRY_CODE,
+      locale: DEFAULT_LOCALE,
+    });
+    await repos.audit.record({
+      category: 'ADMIN',
+      action: 'admin.created',
+      subjectUserId: user.id,
+    });
+    return { userId: user.id };
+  });
 }

@@ -46,7 +46,12 @@ const serverEnvSchema = z
     INSTAGRAM_APP_ID: z.string().optional(),
     INSTAGRAM_APP_SECRET: z.string().optional(),
 
+    /** Where uploads live: local disk (development) or an S3 bucket (staging, production). */
+    FILE_STORAGE: z.enum(['local', 's3']).default('local'),
     FILE_STORAGE_DIR: z.string().min(1).default('./storage'),
+    S3_BUCKET: z.string().min(3).optional(),
+    /** PR-12: AWS region for S3; Mumbai by default. */
+    AWS_REGION: z.string().min(1).default('ap-south-1'),
     MALWARE_SCANNER: z.enum(['clamav', 'disabled']).default('disabled'),
     CLAMAV_HOST: z.string().default('localhost'),
     CLAMAV_PORT: z.coerce.number().int().min(1).max(65_535).default(3310),
@@ -72,6 +77,16 @@ const serverEnvSchema = z
         code: 'custom',
         path: ['SALES_EMAIL'],
         message: 'set a real sales address outside development',
+      });
+    }
+    if (env.FILE_STORAGE === 's3' && !env.S3_BUCKET) {
+      context.addIssue({ code: 'custom', path: ['S3_BUCKET'], message: 'required for s3 storage' });
+    }
+    if (isLive && env.FILE_STORAGE !== 's3') {
+      context.addIssue({
+        code: 'custom',
+        path: ['FILE_STORAGE'],
+        message: 'staging and production keep uploads in S3, so servers stay replaceable',
       });
     }
     if (isLive && env.MALWARE_SCANNER === 'disabled') {

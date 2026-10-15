@@ -56,6 +56,8 @@ describe('parseServerEnv (SR-10)', () => {
     INSTAGRAM_APP_SECRET: 'ig-secret',
     MALWARE_SCANNER: 'clamav',
     SALES_EMAIL: 'sales@creators.example.in',
+    FILE_STORAGE: 's3',
+    S3_BUCKET: 'creator-platform-production-files',
   };
 
   it('accepts a complete production configuration', () => {
@@ -87,6 +89,15 @@ describe('parseServerEnv (SR-10)', () => {
     expect(() => parseServerEnv({ ...PRODUCTION, SALES_EMAIL: 'sales@example.invalid' })).toThrow(
       /SALES_EMAIL/,
     );
+  });
+
+  it('SR-9 keeps uploads in S3 in production, and S3 needs a bucket', () => {
+    expect(() => parseServerEnv({ ...PRODUCTION, FILE_STORAGE: 'local' })).toThrow(/FILE_STORAGE/);
+    expect(() => parseServerEnv({ ...VALID, FILE_STORAGE: 's3' })).toThrow(/S3_BUCKET/);
+  });
+
+  it('PR-12 defaults the AWS region to Mumbai', () => {
+    expect(parseServerEnv(VALID).AWS_REGION).toBe('ap-south-1');
   });
 
   it('needs both Google sign-in values or neither', () => {

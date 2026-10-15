@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  createAdminAccount,
   getPlatformMetrics,
   getUserDetail,
   refreshCreatorNow,
@@ -9,7 +10,7 @@ import {
   suspendUser,
   verifyUserEmail,
 } from '@/services/admin';
-import { signUpWithPassword } from '@/services/accounts';
+import { requestPasswordReset, signUpWithPassword } from '@/services/accounts';
 import { searchCreators } from '@/services/discovery';
 import { createAdmin } from './admin-fixtures';
 import { acceptedRequest } from './collaboration-fixtures';
@@ -184,5 +185,47 @@ describe('admin console (FR-13)', () => {
     expect(setting.value).toBe(false);
     expect(owner.id).toBeTruthy();
     expect(await db.auditEvent.count({ where: { action: 'setting.free-beta' } })).toBe(1);
+  });
+});
+
+describe('creating admin accounts (SR-4, phase i)', () => {
+  it('SR-4 creates a verified admin without a password, audited', async () => {
+    const { userId } = await createAdminAccount(ctx, {
+      email: ' Ops@Platform.in ',
+      name: ' Ops Person ',
+    });
+
+    const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+    expect(user).toMatchObject({
+      email: 'ops@platform.in',
+      name: 'Ops Person',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      passwordHash: null,
+    });
+    expect(user.emailVerifiedAt).not.toBeNull();
+    expect(
+      await db.auditEvent.count({ where: { action: 'admin.created', subjectUserId: userId } }),
+    ).toBe(1);
+  });
+
+  it('SR-4 the new admin sets a password through the reset email', async () => {
+    await createAdminAccount(ctx, { email: 'ops@platform.in', name: 'Ops Person' });
+
+    await requestPasswordReset(ctx, 'ops@platform.in', request);
+
+    expect(
+      await db.emailOutbox.count({
+        where: { toAddress: 'ops@platform.in', template: 'passwordReset' },
+      }),
+    ).toBe(1);
+  });
+
+  it('refuses an email that already has an account', async () => {
+    await createAdminAccount(ctx, { email: 'ops@platform.in', name: 'Ops Person' });
+
+    await expect(
+      createAdminAccount(ctx, { email: 'OPS@platform.in', name: 'Someone Else' }),
+    ).rejects.toMatchObject({ code: 'INVALID_STATE' });
   });
 });

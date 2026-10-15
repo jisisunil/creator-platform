@@ -69,8 +69,18 @@ All variables are documented in [.env.example](.env.example) and validated at st
 | `SALES_EMAIL`                                                 | staging/production | Shown on the plan page for plan changes and credit packs      |
 | `SOCIAL_PROVIDER_MODE`                                        | no (mock)          | `mock` (development) or `live` (official APIs)                |
 | `YOUTUBE_API_KEY`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | live mode          | YouTube Data API and Instagram API credentials                |
-| `FILE_STORAGE_DIR`                                            | no (./storage)     | Private uploads (photos, chat attachments)                    |
+| `FILE_STORAGE`                                                | no (local)         | `local` disk or `s3` (required in staging/production)         |
+| `FILE_STORAGE_DIR`                                            | no (./storage)     | Uploads folder when `FILE_STORAGE=local`                      |
+| `S3_BUCKET`, `AWS_REGION`                                     | with `s3`          | Uploads bucket; region defaults to Mumbai (`ap-south-1`)      |
 | `MALWARE_SCANNER`, `CLAMAV_HOST`, `CLAMAV_PORT`               | staging/production | Upload scanning with ClamAV                                   |
+
+## Hosting and deploys
+
+AWS Mumbai, defined with OpenTofu in [infra/](infra/) (ADR-009): one server per environment
+running web, worker, ClamAV and Caddy, RDS PostgreSQL, S3 for uploads, SES for email.
+After CI passes on `main`, GitHub Actions deploys one image to staging and then, after
+approval, to production. Setup, secrets, the first admin account, rollbacks and alarms:
+[docs/runbooks/deploy.md](docs/runbooks/deploy.md).
 
 ## Architecture
 

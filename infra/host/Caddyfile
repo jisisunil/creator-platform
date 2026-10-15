@@ -1,0 +1,6 @@
+# TLS certificates come from Let's Encrypt automatically once DNS points at the server.
+# The app sets HSTS and the other security headers itself (SR-7, SR-8).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}

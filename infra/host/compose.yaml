@@ -1,0 +1,95 @@
+# Production and staging services on the server (ADR-009). Shipped inside the app image and
+# run by deploy.sh, which writes .env (IMAGE, DOMAIN, LOG_GROUP, AWS_REGION), app.env and
+# migrate.env from Parameter Store and Secrets Manager. Never edit these files on the server.
+name: creator-platform
+
+x-logging: &logging
+  driver: awslogs
+  options:
+    awslogs-group: ${LOG_GROUP:?set by deploy.sh}
+    awslogs-region: ${AWS_REGION:?set by deploy.sh}
+    tag: '{{.Name}}'
+
+x-app: &app
+  image: ${IMAGE:?set by deploy.sh}
+  init: true
+  restart: unless-stopped
+  env_file: app.env
+  environment:
+    # Lets node-postgres verify the RDS certificate (sslmode=verify-full).
+    NODE_EXTRA_CA_CERTS: /certs/rds-global-bundle.pem
+  volumes:
+    - ./certs:/certs:ro
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  logging: *logging
+
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?set by deploy.sh}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    logging: *logging
+
+  web:
+    <<: *app
+    # next start writes its cache under .next/cache, and SWC (which compiles next.config.ts
+    # at startup) unpacks its native binary into ~/.cache, so that one mount allows exec.
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:mode=1777
+      - /home/app/.cache:exec,mode=1777
+    depends_on:
+      clamav:
+        condition: service_started
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    <<: *app
+    command: ['node_modules/.bin/tsx', 'worker/index.ts']
+    depends_on:
+      clamav:
+        condition: service_started
+
+  migrate:
+    <<: *app
+    profiles: [migrate]
+    restart: 'no'
+    env_file: migrate.env
+    command: ['node_modules/.bin/prisma', 'migrate', 'deploy']
+
+  # Countries, plans, privacy notices and default settings from src/config (upserts only).
+  reference-data:
+    <<: *app
+    profiles: [migrate]
+    restart: 'no'
+    command: ['node_modules/.bin/tsx', 'scripts/ops/load-reference-data.ts']
+
+  # SR-9: uploads are scanned before they are stored. Needs about 1.2 GB of memory.
+  clamav:
+    image: clamav/clamav:1.4.6
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  caddy-data:
+  caddy-config:

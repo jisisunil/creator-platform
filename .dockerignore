@@ -9,3 +9,11 @@ playwright-report
 test-results
 storage
 src/generated
+docs
+tests
+scripts/perf
+infra
+!infra/host
+.github
+*.md
+!README.md

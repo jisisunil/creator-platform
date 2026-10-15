@@ -34,3 +34,9 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 node_modules
+
+# OpenTofu: provider caches, state and filled-in variables stay local (lock files are committed)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars

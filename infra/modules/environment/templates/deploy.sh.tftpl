@@ -1,0 +1,69 @@
+#!/bin/bash
+# Deploys one app image to this server (ADR-009). Run by CI through SSM Run Command:
+#   /opt/creator-platform/deploy.sh <ecr-image-uri@sha256:digest>
+# Order: config → pull → migrations → containers → health check. A failed step stops the
+# deploy and leaves the running containers untouched (except after migrations, which are
+# written to be backward compatible: CLAUDE.md §9 two-step changes).
+set -euo pipefail
+
+IMAGE="$${1:?usage: deploy.sh <image>}"
+APP_DIR=/opt/creator-platform
+PARAMETER_PATH="/creator-platform/${environment}/"
+REGION="${region}"
+PLACEHOLDER="${placeholder}"
+cd "$APP_DIR"
+umask 077
+
+log() { echo "[deploy $(date -u +%FT%TZ)] $*"; }
+
+log "reading configuration from $PARAMETER_PATH"
+aws ssm get-parameters-by-path --region "$REGION" --path "$PARAMETER_PATH" --recursive \
+  --with-decryption --query 'Parameters[].[Name,Value]' --output text > parameters.tsv
+if grep -q "$PLACEHOLDER" parameters.tsv; then
+  log "refusing to deploy: these parameters still hold the placeholder:"
+  grep "$PLACEHOLDER" parameters.tsv | cut -f1 >&2
+  rm -f parameters.tsv
+  exit 1
+fi
+# "unset" marks an optional value deliberately left empty (e.g. SENTRY_DSN).
+awk -F'\t' -v prefix="$PARAMETER_PATH" '$2 != "unset" { sub(prefix, "", $1); print $1 "=" $2 }' \
+  parameters.tsv > app.env.new
+rm -f parameters.tsv
+
+secret=$(aws secretsmanager get-secret-value --region "$REGION" \
+  --secret-id "${database_secret_arn}" --query SecretString --output text)
+# URL-encoded: RDS-generated passwords contain punctuation.
+db_user=$(jq -r '.username | @uri' <<< "$secret")
+db_password=$(jq -r '.password | @uri' <<< "$secret")
+db_base="postgresql://$db_user:$db_password@${database_host}:${database_port}/${database_name}"
+# The app verifies the server certificate (NODE_EXTRA_CA_CERTS in compose.yaml); Prisma's
+# migration engine only supports encrypting, inside the private network.
+echo "DATABASE_URL=$db_base?sslmode=verify-full" >> app.env.new
+echo "DATABASE_URL=$db_base?sslmode=require" > migrate.env
+mv app.env.new app.env
+
+log "pulling $IMAGE"
+aws ecr get-login-password --region "$REGION" \
+  | docker login --username AWS --password-stdin "$${IMAGE%%/*}" > /dev/null
+docker pull --quiet "$IMAGE"
+# The image carries its own compose file and Caddyfile, so they always match the code.
+container=$(docker create "$IMAGE")
+docker cp "$container:/app/deploy/." "$APP_DIR/"
+docker rm "$container" > /dev/null
+
+cat > .env <<ENV
+IMAGE=$IMAGE
+DOMAIN=${domain}
+LOG_GROUP=${log_group}
+AWS_REGION=$REGION
+ENV
+
+log "applying database migrations and reference data"
+docker compose run --rm migrate
+docker compose run --rm reference-data
+
+log "starting containers"
+docker compose up -d --remove-orphans --wait --wait-timeout 300
+
+docker image prune -af --filter "until=168h" > /dev/null
+log "deployed $IMAGE"

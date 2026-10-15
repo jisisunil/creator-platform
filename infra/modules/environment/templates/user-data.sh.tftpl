@@ -1,0 +1,34 @@
+#!/bin/bash
+# First boot of the app server (ADR-009): Docker, Compose, the RDS certificate bundle and
+# the deploy script. The app itself arrives with the first deploy from CI.
+set -euo pipefail
+
+dnf install -y docker jq
+systemctl enable --now docker
+
+# Docker Compose plugin, pinned and checksum-verified.
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+  "https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-x86_64"
+echo "${compose_sha256}  /usr/local/lib/docker/cli-plugins/docker-compose" | sha256sum -c -
+chmod 755 /usr/local/lib/docker/cli-plugins/docker-compose
+
+# 2 GB of swap absorbs short memory peaks (ClamAV signature reloads).
+if [ ! -f /swapfile ]; then
+  dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
+mkdir -p /opt/creator-platform/certs
+chmod 700 /opt/creator-platform
+curl -fsSL -o /opt/creator-platform/certs/rds-global-bundle.pem \
+  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+chmod 644 /opt/creator-platform/certs/rds-global-bundle.pem
+
+cat > /opt/creator-platform/deploy.sh <<'DEPLOY'
+${deploy_script}
+DEPLOY
+chmod 700 /opt/creator-platform/deploy.sh

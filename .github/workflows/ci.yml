@@ -77,6 +77,23 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  infra:
+    name: Infrastructure (OpenTofu format and validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.10.7
+      - run: tofu fmt -check -recursive infra
+      - name: Validate each stack (no cloud access needed)
+        run: |
+          for stack in infra/bootstrap infra/environments/staging infra/environments/production; do
+            tofu -chdir="$stack" init -backend=false -input=false
+            tofu -chdir="$stack" validate
+          done
+
   security-scan:
     name: Dependency and container scan
     runs-on: ubuntu-latest

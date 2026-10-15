@@ -1,0 +1,15 @@
+# Copy to production.tfvars (git-ignored) and fill in. No secrets here: those go to
+# Parameter Store (docs/runbooks/deploy.md).
+domain             = "app.example.in"
+email_domain       = "example.in"
+alert_email        = "ops@example.in"
+ecr_repository_arn = "arn:aws:ecr:ap-south-1:123456789012:repository/creator-platform"
+
+app_config = {
+  EMAIL_FROM                     = "Creator Platform <no-reply@example.in>"
+  SALES_EMAIL                    = "sales@example.in"
+  ALERT_EMAIL                    = "ops@example.in"
+  AUTH_GOOGLE_ID                 = "1234567890-abc.apps.googleusercontent.com"
+  INSTAGRAM_APP_ID               = "1234567890"
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAAA..."
+}

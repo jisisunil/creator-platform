@@ -1,0 +1,98 @@
+name: Deploy
+
+# After CI passes on main: build the image once, deploy it to staging, then deploy the same
+# image to production once the "production" environment's reviewers approve (ADR-009).
+# Rolling back = re-running this workflow's production job from an earlier run.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write # OIDC: AWS roles are assumed per job; no AWS keys are stored in GitHub
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  build:
+    name: Build and push the image
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image: ${{ steps.push.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_BUILD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: login
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build, scan and push
+        id: push
+        env:
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          TAG: ${{ github.event.workflow_run.head_sha }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+        run: |
+          # Tags are immutable: a re-run of the same commit reuses the image already pushed.
+          if digest=$(aws ecr describe-images --repository-name "${REPOSITORY##*/}"               --image-ids imageTag="$TAG" --query 'imageDetails[0].imageDigest' --output text 2> /dev/null); then
+            echo "image=$REPOSITORY@$digest" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          docker build --build-arg NEXT_PUBLIC_SENTRY_DSN -t "$REPOSITORY:$TAG" .
+          docker push "$REPOSITORY:$TAG"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REPOSITORY:$TAG")
+          echo "image=$digest" >> "$GITHUB_OUTPUT"
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: build
+    # Staging may be destroyed between releases to save money (ADR-009); then it's skipped.
+    if: vars.STAGING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: infra/scripts/run-deploy.sh staging "$IMAGE"
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}
+
+  deploy-production:
+    name: Deploy to production
+    needs: [build, deploy-staging]
+    # Runs after a successful staging deploy, or straight after the build when staging is off.
+    if: >-
+      always() && needs.build.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.deploy-staging.result)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: infra/scripts/run-deploy.sh production "$IMAGE"
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}

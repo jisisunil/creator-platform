@@ -23,8 +23,11 @@ export default function proxy(request: NextRequest): NextResponse {
     nonce,
     isDevelopment: process.env.NODE_ENV === 'development',
     isHttps: process.env.APP_URL?.startsWith('https://') ?? false,
+    // Fixed at build time, like the browser's Sentry DSN it must match.
     errorReportingOrigin: originOfDsn(process.env.NEXT_PUBLIC_SENTRY_DSN),
-    isCaptchaEnabled: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    // Next.js freezes NEXT_PUBLIC_* values at build time, which would bake "no CAPTCHA" into
+    // the image. The secret key is read at runtime, and env validation requires both keys.
+    isCaptchaEnabled: Boolean(process.env.TURNSTILE_SECRET_KEY),
   });
 
   const headers = new Headers(request.headers);

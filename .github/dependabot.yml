@@ -1,4 +1,7 @@
 # SR-16: automated dependency updates; critical fixes within 7 days.
+# Small updates arrive grouped in one weekly PR (less noise, fewer CI runs). Security fixes
+# still come straight away as their own PRs. Major upgrades come one by one, each needing
+# its own review.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -6,11 +9,27 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Type definitions must match the Node.js we run (24 LTS, see .nvmrc and Dockerfile).
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Production stays on the Node.js long-term-support line; odd releases are short-lived.
+      - dependency-name: node
+        update-types: [version-update:semver-major]

@@ -21,7 +21,8 @@ export default defineConfig({
   retries: isCi ? 1 : 0,
   // Sign-up and sign-in hash passwords with Argon2, which is slow by design.
   expect: { timeout: 15_000 },
-  reporter: isCi ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // In CI, each failure also becomes a GitHub annotation, readable without the full log.
+  reporter: isCi ? [['list'], ['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',

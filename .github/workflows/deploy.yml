@@ -30,7 +30,7 @@ jobs:
     outputs:
       image: ${{ steps.push.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: aws-actions/configure-aws-credentials@v4
@@ -65,7 +65,7 @@ jobs:
     timeout-minutes: 20
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: aws-actions/configure-aws-credentials@v4
@@ -87,7 +87,7 @@ jobs:
     timeout-minutes: 20
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: aws-actions/configure-aws-credentials@v4

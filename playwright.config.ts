@@ -9,6 +9,9 @@ const serverEnv = {
   TRUSTED_PROXY_HOPS: '1',
   APP_URL: `http://localhost:${PORT}`,
   BREACHED_PASSWORD_CHECK: 'offline',
+  // The worker's "worker started" line (info level) tells Playwright it is ready. CI sets
+  // LOG_LEVEL=warn for the unit tests, which hid it and timed out every E2E run.
+  LOG_LEVEL: 'info',
 };
 
 export default defineConfig({

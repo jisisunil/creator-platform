@@ -15,7 +15,7 @@ locals {
     CLAMAV_HOST             = "clamav"
     SOCIAL_PROVIDER_MODE    = "live"
     BREACHED_PASSWORD_CHECK = "hibp"
-    # db.t4g.micro allows ~80 connections: web 10 + worker 10 + pg-boss, with room for admin.
+    # PostgreSQL allows 60 connections (compose.yaml): web 10 + worker 10 + pg-boss + admin.
     DATABASE_POOL_MAX = "10"
   }
 }

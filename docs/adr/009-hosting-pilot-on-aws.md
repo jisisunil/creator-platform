@@ -1,6 +1,6 @@
 # ADR-009: Pilot hosting on AWS Mumbai with OpenTofu
 
-**Status:** accepted · 2026-10-15
+**Status:** accepted · 2026-10-15 · database part replaced by ADR-010 (database on the server, ~$30/month)
 
 ## Context
 

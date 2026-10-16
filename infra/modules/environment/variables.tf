@@ -39,27 +39,15 @@ variable "vpc_cidr" {
 }
 
 variable "server_instance_type" {
-  description = "Runs web, worker, ClamAV and Caddy; ClamAV alone needs ~1.2 GB, so 4 GB minimum."
+  description = "Runs web, worker, PostgreSQL, ClamAV and Caddy; ClamAV alone needs ~1.2 GB, so 4 GB minimum."
   type        = string
   default     = "t3a.medium"
 }
 
-variable "database_instance_class" {
-  description = "RDS instance size. db.t4g.micro fits the pilot (ADR-009); see ADR-005 for sizing."
-  type        = string
-  default     = "db.t4g.micro"
-}
-
-variable "database_storage_gb" {
-  description = "Initial database storage; grows automatically up to database_max_storage_gb."
+variable "data_volume_gb" {
+  description = "Database disk size. It can grow later (resize in AWS, then xfs_growfs /data)."
   type        = number
   default     = 20
-}
-
-variable "database_max_storage_gb" {
-  description = "Upper bound for storage autoscaling."
-  type        = number
-  default     = 100
 }
 
 variable "app_config" {

@@ -1,5 +1,5 @@
-# SR-14 / NFR-10 / NFR-13: alarms for the app's own alerts and errors, the database, the
-# server and the monthly bill, all emailed to the operations address through one SNS topic.
+# SR-14 / NFR-10 / NFR-13: alarms for the app's own alerts and errors, backups, the database
+# disk, the server and the monthly bill, all emailed to the operations address through one SNS topic.
 
 # Not encrypted: CloudWatch alarms cannot publish to a topic encrypted with the AWS-managed
 # key, and messages carry alarm names and metrics, never personal data.
@@ -30,7 +30,7 @@ resource "aws_cloudwatch_log_metric_filter" "app" {
   pattern        = each.value
   metric_transformation {
     name          = each.key
-    namespace     = "CreatorPlatform/${var.environment}"
+    namespace     = local.metric_namespace
     value         = "1"
     default_value = "0"
   }
@@ -39,7 +39,7 @@ resource "aws_cloudwatch_log_metric_filter" "app" {
 resource "aws_cloudwatch_metric_alarm" "app_alert" {
   alarm_name          = "${local.name}-app-alert"
   alarm_description   = "The app raised a monitoring alert; details are in the alert email and the logs."
-  namespace           = "CreatorPlatform/${var.environment}"
+  namespace           = local.metric_namespace
   metric_name         = "AppAlerts"
   statistic           = "Sum"
   period              = 300
@@ -54,7 +54,7 @@ resource "aws_cloudwatch_metric_alarm" "app_alert" {
 resource "aws_cloudwatch_metric_alarm" "app_errors" {
   alarm_name          = "${local.name}-app-errors"
   alarm_description   = "10 or more errors logged in 5 minutes; check the logs and Sentry."
-  namespace           = "CreatorPlatform/${var.environment}"
+  namespace           = local.metric_namespace
   metric_name         = "AppErrors"
   statistic           = "Sum"
   period              = 300
@@ -110,41 +110,33 @@ resource "aws_cloudwatch_metric_alarm" "server_cpu_credits" {
   alarm_actions       = local.alarm_actions
 }
 
-locals {
-  database_alarms = {
-    cpu = {
-      metric      = "CPUUtilization"
-      threshold   = 80
-      comparison  = "GreaterThanThreshold"
-      description = "Database CPU above 80% for 15 minutes (NFR-1 at risk)."
-    }
-    storage = {
-      metric      = "FreeStorageSpace"
-      threshold   = 2 * 1024 * 1024 * 1024
-      comparison  = "LessThanThreshold"
-      description = "Less than 2 GB of database storage left (autoscaling may have hit its limit)."
-    }
-    memory = {
-      metric      = "FreeableMemory"
-      threshold   = 64 * 1024 * 1024
-      comparison  = "LessThanThreshold"
-      description = "Database memory nearly exhausted; consider the next instance size (ADR-005)."
-    }
-  }
+# SR-15: backup.sh reports a success every hour. Two missed hours (or failures) alarm. Before
+# the first deploy there is no database yet, so this alarm starts in ALARM; that is expected.
+resource "aws_cloudwatch_metric_alarm" "backup_missed" {
+  alarm_name          = "${local.name}-backup-missed"
+  alarm_description   = "No successful database backup for 2 hours; check backup.sh on the server (journalctl -u creator-platform-backup)."
+  namespace           = local.metric_namespace
+  metric_name         = "BackupSucceeded"
+  statistic           = "Sum"
+  period              = 3600
+  evaluation_periods  = 2
+  threshold           = 1
+  comparison_operator = "LessThanThreshold"
+  treat_missing_data  = "breaching"
+  alarm_actions       = local.alarm_actions
 }
 
-resource "aws_cloudwatch_metric_alarm" "database" {
-  for_each            = local.database_alarms
-  alarm_name          = "${local.name}-database-${each.key}"
-  alarm_description   = each.value.description
-  namespace           = "AWS/RDS"
-  metric_name         = each.value.metric
-  dimensions          = { DBInstanceIdentifier = aws_db_instance.main.identifier }
-  statistic           = "Average"
-  period              = 300
-  evaluation_periods  = 3
-  threshold           = each.value.threshold
-  comparison_operator = each.value.comparison
+resource "aws_cloudwatch_metric_alarm" "data_disk" {
+  alarm_name          = "${local.name}-data-disk"
+  alarm_description   = "The database disk is over 80% full; grow it (docs/runbooks/deploy.md)."
+  namespace           = local.metric_namespace
+  metric_name         = "DataDiskUsedPercent"
+  statistic           = "Maximum"
+  period              = 3600
+  evaluation_periods  = 1
+  threshold           = 80
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
   alarm_actions       = local.alarm_actions
 }
 

@@ -1,9 +1,9 @@
 #!/bin/bash
-# First boot of the app server (ADR-009): Docker, Compose, the RDS certificate bundle and
-# the deploy script. The app itself arrives with the first deploy from CI.
+# First boot of the app server (ADR-009, ADR-010): Docker, Compose, the database disk, the
+# deploy script and the hourly backup timer. The app itself arrives with the first deploy.
 set -euo pipefail
 
-dnf install -y docker jq
+dnf install -y docker
 systemctl enable --now docker
 
 # Docker Compose plugin, pinned and checksum-verified.
@@ -22,13 +22,66 @@ if [ ! -f /swapfile ]; then
   echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
-mkdir -p /opt/creator-platform/certs
+# The database disk is attached just after the server starts; wait for it. It is formatted
+# only when empty, so a replacement server picks up the existing data.
+data_disk=/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${data_volume_serial}
+for _ in $(seq 1 60); do
+  [ -e "$data_disk" ] && break
+  sleep 5
+done
+[ -e "$data_disk" ] || { echo "data disk $data_disk never appeared" >&2; exit 1; }
+if ! blkid "$data_disk" > /dev/null 2>&1; then
+  mkfs.xfs "$data_disk"
+fi
+mkdir -p /data
+if ! grep -q " /data " /etc/fstab; then
+  echo "UUID=$(blkid -s UUID -o value "$data_disk") /data xfs defaults,nofail 0 2" >> /etc/fstab
+fi
+mount -a
+
+# PostgreSQL's data and password live on the database disk. The password is created here,
+# once, and never leaves the server (the postgres image runs as uid 999).
+mkdir -p /data/postgres /data/secrets
+chmod 700 /data/secrets
+if [ ! -s /data/secrets/postgres-password ]; then
+  openssl rand -hex 32 > /data/secrets/postgres-password
+fi
+chown 999:999 /data/postgres /data/secrets/postgres-password
+chmod 400 /data/secrets/postgres-password
+
+mkdir -p /opt/creator-platform
 chmod 700 /opt/creator-platform
-curl -fsSL -o /opt/creator-platform/certs/rds-global-bundle.pem \
-  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-chmod 644 /opt/creator-platform/certs/rds-global-bundle.pem
 
 cat > /opt/creator-platform/deploy.sh <<'DEPLOY'
 ${deploy_script}
 DEPLOY
 chmod 700 /opt/creator-platform/deploy.sh
+
+cat > /opt/creator-platform/backup.sh <<'BACKUP'
+${backup_script}
+BACKUP
+chmod 700 /opt/creator-platform/backup.sh
+
+# Hourly at a quarter past, so it never coincides with the 02:00 IST social refresh start.
+cat > /etc/systemd/system/creator-platform-backup.service <<'UNIT'
+[Unit]
+Description=Back up the creator-platform database to S3
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/creator-platform/backup.sh
+UNIT
+cat > /etc/systemd/system/creator-platform-backup.timer <<'UNIT'
+[Unit]
+Description=Hourly creator-platform database backup
+
+[Timer]
+OnCalendar=*-*-* *:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now creator-platform-backup.timer

@@ -1,0 +1,32 @@
+#!/bin/bash
+# SR-15: hourly database backup to S3 (ADR-010). Streams pg_dump straight to the bucket;
+# the 21:15 UTC run (02:45 IST, the quietest hour) is also kept as the daily copy. Reports
+# success and disk use to CloudWatch, which alarms on a missed backup or a filling disk.
+set -euo pipefail
+
+REGION="${region}"
+BUCKET="${bucket}"
+NAMESPACE="${metric_namespace}"
+cd /opt/creator-platform
+
+metric() {
+  aws cloudwatch put-metric-data --region "$REGION" --namespace "$NAMESPACE" \
+    --metric-name "$1" --unit "$2" --value "$3"
+}
+
+# Disk use is reported even when the backup fails, so a full disk is still seen.
+metric DataDiskUsedPercent Percent "$(df --output=pcent /data | tail -1 | tr -dc 0-9)"
+
+stamp=$(date -u +%Y-%m-%dT%H%MZ)
+key="hourly/creator_platform-$stamp.dump"
+docker compose exec -T postgres sh -c 'pg_dump --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --format=custom' \
+  | aws s3 cp - "s3://$BUCKET/$key" --region "$REGION" --only-show-errors
+
+# Hourly copies expire after 2 days, daily ones after 30 (S3 lifecycle in database.tf).
+if [ "$(date -u +%H)" = "21" ]; then
+  aws s3 cp "s3://$BUCKET/$key" "s3://$BUCKET/daily/creator_platform-$stamp.dump" \
+    --region "$REGION" --only-show-errors
+fi
+
+metric BackupSucceeded Count 1
+echo "backed up to s3://$BUCKET/$key"

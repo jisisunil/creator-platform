@@ -77,7 +77,8 @@ All variables are documented in [.env.example](.env.example) and validated at st
 ## Hosting and deploys
 
 AWS Mumbai, defined with OpenTofu in [infra/](infra/) (ADR-009): one server per environment
-running web, worker, ClamAV and Caddy, RDS PostgreSQL, S3 for uploads, SES for email.
+running web, worker, ClamAV, Caddy and PostgreSQL (hourly backups to S3), S3 for uploads, SES
+for email; about $30/month (ADR-010).
 After CI passes on `main`, GitHub Actions deploys one image to staging and then, after
 approval, to production. Setup, secrets, the first admin account, rollbacks and alarms:
 [docs/runbooks/deploy.md](docs/runbooks/deploy.md).

@@ -1,67 +1,132 @@
-# SR-15 / NFR-11: managed PostgreSQL with 30 days of point-in-time recovery. PR-12: Mumbai.
-# SR-17: private subnets only. The master password is created by RDS in Secrets Manager and
-# never enters OpenTofu state.
+# The pilot's PostgreSQL runs on the app server (ADR-010) with its data on this separate,
+# encrypted disk, so the server can be replaced without touching the data. Backups go to S3
+# every hour (backup.sh); this disk is not the backup.
 
-resource "aws_db_subnet_group" "main" {
-  name       = local.name
-  subnet_ids = aws_subnet.private[*].id
-}
+resource "aws_ebs_volume" "data" {
+  availability_zone = local.zone
+  size              = var.data_volume_gb
+  type              = "gp3"
+  encrypted         = true
+  tags              = { Name = "${local.name}-data" }
 
-resource "aws_db_parameter_group" "main" {
-  name   = local.name
-  family = "postgres16"
-
-  parameter {
-    name  = "rds.force_ssl"
-    value = "1"
-  }
-  # Queries slower than 1 s are logged, so NFR-1 regressions show up in CloudWatch.
-  parameter {
-    name  = "log_min_duration_statement"
-    value = "1000"
+  # An apply must never delete the database. (OpenTofu needs a literal here, so staging is
+  # protected too; its teardown removes the volume by hand, docs/runbooks/deploy.md.)
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
-resource "aws_db_instance" "main" {
-  identifier     = local.name
-  engine         = "postgres"
-  engine_version = "16"
-  instance_class = var.database_instance_class
-
-  allocated_storage     = var.database_storage_gb
-  max_allocated_storage = var.database_max_storage_gb
-  storage_type          = "gp3"
-  storage_encrypted     = true
-
-  db_name                     = "creator_platform"
-  username                    = "creator_admin"
-  manage_master_user_password = true
-
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [aws_security_group.database.id]
-  publicly_accessible    = false
-  parameter_group_name   = aws_db_parameter_group.main.name
-
-  backup_retention_period = 30
-  # 03:00-03:30 India time, outside working hours; the daily social refresh starts at 02:00.
-  backup_window              = "21:30-22:00"
-  maintenance_window         = "sun:22:30-sun:23:30"
-  copy_tags_to_snapshot      = true
-  auto_minor_version_upgrade = true
-
-  deletion_protection       = local.is_production
-  skip_final_snapshot       = !local.is_production
-  final_snapshot_identifier = "${local.name}-final"
-
-  performance_insights_enabled          = true
-  performance_insights_retention_period = 7
-  enabled_cloudwatch_logs_exports       = ["postgresql"]
+resource "aws_volume_attachment" "data" {
+  # Seen inside the server as an NVMe disk; user-data finds it by volume id.
+  device_name = "/dev/sdf"
+  volume_id   = aws_ebs_volume.data.id
+  instance_id = aws_instance.server.id
 }
 
-# RDS rotates managed passwords weekly by default. The app reads its connection string at
-# deploy time, so a rotation would break new connections until the next deploy. Rotation is
-# therefore manual: rotate in Secrets Manager, then redeploy (docs/runbooks/deploy.md).
-resource "aws_secretsmanager_secret_rotation" "database" {
-  secret_id        = aws_db_instance.main.master_user_secret[0].secret_arn
-  rotation_enabled = false
+# --- Backups (SR-15): hourly dumps kept 2 days, one a day kept 30 days ---
+
+resource "aws_s3_bucket" "backups" {
+  bucket = "${local.name}-backups-${data.aws_caller_identity.current.account_id}"
+}
+
+resource "aws_s3_bucket_ownership_controls" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backups" {
+  bucket                  = aws_s3_bucket.backups.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# AES-256 with S3-managed keys, like the uploads bucket (Q-39).
+# trivy:ignore:AVD-AWS-0132
+resource "aws_s3_bucket_server_side_encryption_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# Versioning keeps an overwritten or deleted backup for 7 days (a mistaken or malicious
+# delete is recoverable); after that, deleted personal data is really gone (PR-9).
+resource "aws_s3_bucket_versioning" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    id     = "hourly"
+    status = "Enabled"
+    filter {
+      prefix = "hourly/"
+    }
+    expiration {
+      days = 2
+    }
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+  }
+
+  rule {
+    id     = "daily"
+    status = "Enabled"
+    filter {
+      prefix = "daily/"
+    }
+    expiration {
+      days = 30
+    }
+    noncurrent_version_expiration {
+      noncurrent_days = 7
+    }
+  }
+
+  rule {
+    id     = "clean-up"
+    status = "Enabled"
+    filter {}
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+    expiration {
+      expired_object_delete_marker = true
+    }
+  }
+}
+
+data "aws_iam_policy_document" "backups_bucket" {
+  statement {
+    sid       = "DenyInsecureTransport"
+    effect    = "Deny"
+    actions   = ["s3:*"]
+    resources = [aws_s3_bucket.backups.arn, "${aws_s3_bucket.backups.arn}/*"]
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  policy = data.aws_iam_policy_document.backups_bucket.json
 }

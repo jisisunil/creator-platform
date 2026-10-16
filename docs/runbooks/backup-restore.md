@@ -4,11 +4,13 @@
 region (PR-12); a restore test every quarter. Uploaded files (photos, chat attachments) are
 backed up with object-storage versioning.
 
-**How (ADR-009):** RDS PostgreSQL in Mumbai with automated backups kept 30 days and
-point-in-time recovery to any second in that window (backup window 03:00–03:30 IST).
-Production has deletion protection and keeps a final snapshot if the instance is ever
-deleted. The S3 uploads bucket is versioned: replaced or deleted files stay recoverable for
-30 days, then go (deleted personal data must not live on).
+**How (ADR-010):** `backup.sh` on the server dumps the database (`pg_dump`, custom format)
+to the private S3 backups bucket every hour at :15. Hourly dumps are kept 2 days; the 02:45
+IST dump is also copied to `daily/` and kept 30 days. So at most about an hour of data can be
+lost. A missed backup alarms after 2 hours. The server can write backups but not delete
+them; an overwritten or deleted dump stays recoverable for 7 days (bucket versioning). The
+S3 uploads bucket is versioned: replaced or deleted files stay recoverable for 30 days, then
+go (deleted personal data must not live on).
 
 ## What must be restorable
 
@@ -28,26 +30,39 @@ createdb creator_platform_restore
 pg_restore --no-owner --dbname=creator_platform_restore creator_platform_YYYY-MM-DD.dump
 ```
 
-## Restore production to a point in time
+## Restore production from a backup
 
-1. In RDS, **Restore to point in time** for `creator-platform-production`, choosing the time
-   just before the incident, into a new instance (same subnet group, security group and
-   parameter group). The original stays untouched.
-2. Check the restored copy (counts, latest records) as in the drill below.
-3. Switch over: rename the broken instance (e.g. `creator-platform-production-broken`), then
-   rename the restored one to `creator-platform-production`. Its endpoint name is derived
-   from the identifier, so the app's connection string stays valid. Hand it to OpenTofu:
-   `tofu state rm module.environment.aws_db_instance.main`, then
-   `tofu import module.environment.aws_db_instance.main creator-platform-production`, then
-   `tofu apply`: it switches the copy back to an RDS-managed password (a new secret), so
-   redeploy straight after. Keep the broken instance until you're sure, then delete it.
-4. Follow "After a restore" below.
+On the server (`aws ssm start-session --target <instance id>`, `sudo -i`,
+`cd /opt/creator-platform`):
+
+1. Pick the dump: `aws s3 ls s3://<backups bucket>/hourly/` (or `daily/` for older ones),
+   the last one taken before the incident. Download it to `/data/restore.dump`.
+2. Stop the app so nothing writes meanwhile: `docker compose stop web worker`.
+3. Restore into a fresh database and check it before switching:
+
+   ```sh
+   docker compose exec -T postgres createdb --username creator creator_platform_restored
+   docker compose exec -T postgres pg_restore --username creator --no-owner      --dbname creator_platform_restored < /data/restore.dump
+   ```
+
+4. Swap the databases (keep the old one until you're sure):
+
+   ```sh
+   docker compose exec -T postgres psql --username creator --dbname postgres -c      'ALTER DATABASE creator_platform RENAME TO creator_platform_broken' -c      'ALTER DATABASE creator_platform_restored RENAME TO creator_platform'
+   ```
+
+5. Redeploy the current image (it applies any newer migrations), then follow "After a
+   restore" below. Delete `/data/restore.dump` and, later, `creator_platform_broken`.
+
+If the database disk itself is lost: create a new environment disk (`tofu apply` after
+removing the old volume from state), let the first boot start an empty database, deploy,
+then restore as above.
 
 ## Quarterly restore test
 
 `infra/scripts/restore-drill.sh production` does steps 1–3 and 6 automatically (restores
-the latest point in time to `creator-platform-production-restore-drill`, runs the checks from
-the app server, prints the time taken and deletes the copy). Steps 4 and 5 remain manual.
+the newest hourly dump into a temporary `restore_drill` database next to the live one, runs
+the checks, prints the time taken and drops it). Steps 4 and 5 remain manual.
 
 1. Restore the latest backup into a separate, private database (never production).
 2. Run `npx prisma migrate status` against it: all migrations applied.

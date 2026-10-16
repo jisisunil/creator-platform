@@ -1,7 +1,8 @@
 # Hosting and deploys (ADR-009)
 
 AWS Mumbai (`ap-south-1`), defined with OpenTofu in `infra/`. One server per environment runs
-Caddy, web, worker and ClamAV with Docker Compose; RDS PostgreSQL holds the data; S3 holds
+Caddy, web, worker, ClamAV and PostgreSQL with Docker Compose (the database on its own
+encrypted disk, backed up hourly to S3, ADR-010); S3 holds
 uploads; SES sends email. Deploys run from GitHub Actions; nobody needs SSH.
 
 ```
@@ -59,7 +60,8 @@ Then, from the outputs:
 2. **Email:** add the `email_dkim_records` CNAMEs. In SES, request production access (new
    accounts can only email verified addresses). Create SMTP credentials in SES (they are an
    IAM user's keys; the console shows them once).
-3. **Alarms:** confirm the subscription email AWS sends to `alert_email`.
+3. **Alarms:** confirm the subscription email AWS sends to `alert_email`. The `backup-missed` alarm stays
+   on until the first deploy has started the database; that's expected.
 4. **Cost tag:** in Billing → Cost allocation tags, activate `Environment` (once per account)
    so each environment's budget only counts its own resources.
 5. **Secrets:** set every name in `secret_parameters_to_set`:
@@ -108,29 +110,34 @@ authenticator app (admins always need 2FA).
 
 - **Logs:** CloudWatch Logs, group `/creator-platform/<environment>`, one stream per
   container. Kept 30 days.
+- **Backups:** hourly to the `backups_bucket` (kept 2 days; the 02:45 IST one kept 30 days).
+  Restores and the quarterly drill: `docs/runbooks/backup-restore.md`.
 - **Shell on the server:** `aws ssm start-session --target <instance id>`; every session is
   logged in Systems Manager. Never edit files in `/opt/creator-platform`: deploys replace them.
 - **Change a secret:** `put …` as above, then redeploy (re-run the latest Deploy job).
-- **Rotate the database password:** Secrets Manager → `rds!db-…` secret → Rotate secret now,
-  then redeploy straight away (new connections fail until then). Automatic rotation is off on
-  purpose (ADR-009).
-- **Bigger server or database:** change `server_instance_type` / `database_instance_class` in
-  the environment and `tofu apply`. A database resize restarts it (a few minutes, plan it).
-- **Staging off:** `tofu destroy -var-file=staging.tfvars` and set `STAGING_ENABLED=false`.
-  Staging's database has no deletion protection; it holds only test data (SR-17).
+- **Database shell:** `docker compose exec postgres psql --username creator creator_platform`
+  (on the server, in `/opt/creator-platform`). Read-only queries only; changes go through
+  migrations.
+- **Bigger server:** change `server_instance_type` in the environment and `tofu apply`
+  (the server restarts; a few minutes of downtime, plan it). **Bigger database disk:**
+  raise `data_volume_gb`, `tofu apply`, then on the server `xfs_growfs /data`.
+- **Staging off:** the database disk is protected against deletion, so remove it from
+  OpenTofu first: `tofu state rm module.environment.aws_ebs_volume.data module.environment.aws_volume_attachment.data`,
+  then `tofu destroy -var-file=staging.tfvars`, delete the `creator-platform-staging-data`
+  volume in the EC2 console, and set `STAGING_ENABLED=false`. Staging holds only test data (SR-17).
 - **New server image (Amazon Linux update):** `tofu apply -replace=module.environment.aws_instance.server`,
-  then redeploy. The server is disposable: everything it needs comes from the image, the
-  parameters and the database.
+  then redeploy. The new server mounts the same database disk; everything else comes from
+  the image and the parameters. Expect a few minutes of downtime.
 
 ## Alarms and what to do
 
-| Alarm                 | Meaning                                    | First step                                                     |
-| --------------------- | ------------------------------------------ | -------------------------------------------------------------- |
-| `app-alert`           | The app's monitoring raised an alert       | Read the alert email from the app; `docs/incident-response.md` |
-| `app-errors`          | 10+ errors in 5 minutes                    | CloudWatch Logs, filter `level = "error"`; Sentry              |
-| `server-recover`      | AWS hardware failure; recovery in progress | Wait 10 minutes, check the site                                |
-| `server-unhealthy`    | The operating system stopped responding    | AWS reboots it; if it repeats, check memory in the logs        |
-| `server-cpu-credits`  | The server is about to be throttled        | Check what's busy; consider a bigger instance                  |
-| `database-cpu/memory` | The database is overloaded                 | Performance Insights; ADR-005 for sizing                       |
-| `database-storage`    | Less than 2 GB free                        | Raise `database_max_storage_gb`                                |
-| Budget email          | Spend over 80% / forecast over 100%        | Cost Explorer by service; NFR-13                               |
+| Alarm                | Meaning                                    | First step                                                                                            |
+| -------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `app-alert`          | The app's monitoring raised an alert       | Read the alert email from the app; `docs/incident-response.md`                                        |
+| `app-errors`         | 10+ errors in 5 minutes                    | CloudWatch Logs, filter `level = "error"`; Sentry                                                     |
+| `server-recover`     | AWS hardware failure; recovery in progress | Wait 10 minutes, check the site                                                                       |
+| `server-unhealthy`   | The operating system stopped responding    | AWS reboots it; if it repeats, check memory in the logs                                               |
+| `server-cpu-credits` | The server is about to be throttled        | Check what's busy; consider a bigger instance                                                         |
+| `backup-missed`      | No database backup for 2 hours             | On the server: `journalctl -u creator-platform-backup`; run `/opt/creator-platform/backup.sh` by hand |
+| `data-disk`          | Database disk over 80% full                | Raise `data_volume_gb`, `tofu apply`, `xfs_growfs /data`                                              |
+| Budget email         | Spend over 80% / forecast over 100%        | Cost Explorer by service; NFR-13                                                                      |

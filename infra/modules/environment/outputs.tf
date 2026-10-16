@@ -13,9 +13,9 @@ output "deploy_target_tag" {
   value       = aws_instance.server.tags["Deploy"]
 }
 
-output "database_endpoint" {
-  description = "Private database address (reachable from the server only)."
-  value       = aws_db_instance.main.address
+output "backups_bucket" {
+  description = "S3 bucket with the hourly and daily database backups."
+  value       = aws_s3_bucket.backups.bucket
 }
 
 output "files_bucket" {

@@ -57,7 +57,7 @@ module "environment" {
   domain             = var.domain
   email_domain       = var.email_domain
   alert_email        = var.alert_email
-  monthly_budget_usd = 70
+  monthly_budget_usd = 40
   ecr_repository_arn = var.ecr_repository_arn
   vpc_cidr           = "10.20.0.0/16"
   app_config         = var.app_config

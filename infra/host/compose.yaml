@@ -1,4 +1,4 @@
-# Production and staging services on the server (ADR-009). Shipped inside the app image and
+# Production and staging services on the server (ADR-009, ADR-010). Shipped inside the app image and
 # run by deploy.sh, which writes .env (IMAGE, DOMAIN, LOG_GROUP, AWS_REGION), app.env and
 # migrate.env from Parameter Store and Secrets Manager. Never edit these files on the server.
 name: creator-platform
@@ -15,11 +15,6 @@ x-app: &app
   init: true
   restart: unless-stopped
   env_file: app.env
-  environment:
-    # Lets node-postgres verify the RDS certificate (sslmode=verify-full).
-    NODE_EXTRA_CA_CERTS: /certs/rds-global-bundle.pem
-  volumes:
-    - ./certs:/certs:ro
   read_only: true
   tmpfs:
     - /tmp
@@ -54,6 +49,8 @@ services:
       - /app/.next/cache:mode=1777
       - /home/app/.cache:exec,mode=1777
     depends_on:
+      postgres:
+        condition: service_healthy
       clamav:
         condition: service_started
     healthcheck:
@@ -67,6 +64,8 @@ services:
     <<: *app
     command: ['node_modules/.bin/tsx', 'worker/index.ts']
     depends_on:
+      postgres:
+        condition: service_healthy
       clamav:
         condition: service_started
 
@@ -83,6 +82,42 @@ services:
     profiles: [migrate]
     restart: 'no'
     command: ['node_modules/.bin/tsx', 'scripts/ops/load-reference-data.ts']
+
+  # The pilot's database (ADR-010): data and password on the server's encrypted database
+  # disk (/data), reachable only on this network, backed up hourly to S3 (backup.sh).
+  # Memory settings leave room for ClamAV and the app on a 4 GB server.
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg16
+    restart: unless-stopped
+    shm_size: 256mb
+    environment:
+      POSTGRES_USER: creator
+      POSTGRES_DB: creator_platform
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-password
+    volumes:
+      - /data/postgres:/var/lib/postgresql/data
+      - /data/secrets/postgres-password:/run/secrets/postgres-password:ro
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=60
+      # Slow queries go to the logs, so NFR-1 regressions show up in CloudWatch.
+      - -c
+      - log_min_duration_statement=1000
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready --username creator --dbname creator_platform']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
 
   # SR-9: uploads are scanned before they are stored. Needs about 1.2 GB of memory.
   clamav:

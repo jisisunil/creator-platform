@@ -3,7 +3,8 @@
 #   /opt/creator-platform/deploy.sh <ecr-image-uri@sha256:digest>
 # Order: config → pull → migrations → containers → health check. A failed step stops the
 # deploy and leaves the running containers untouched (except after migrations, which are
-# written to be backward compatible: CLAUDE.md §9 two-step changes).
+# written to be backward compatible: CLAUDE.md §9 two-step changes). The hourly backup runs
+# independently (backup.sh).
 set -euo pipefail
 
 IMAGE="$${1:?usage: deploy.sh <image>}"
@@ -30,16 +31,12 @@ awk -F'\t' -v prefix="$PARAMETER_PATH" '$2 != "unset" { sub(prefix, "", $1); pri
   parameters.tsv > app.env.new
 rm -f parameters.tsv
 
-secret=$(aws secretsmanager get-secret-value --region "$REGION" \
-  --secret-id "${database_secret_arn}" --query SecretString --output text)
-# URL-encoded: RDS-generated passwords contain punctuation.
-db_user=$(jq -r '.username | @uri' <<< "$secret")
-db_password=$(jq -r '.password | @uri' <<< "$secret")
-db_base="postgresql://$db_user:$db_password@${database_host}:${database_port}/${database_name}"
-# The app verifies the server certificate (NODE_EXTRA_CA_CERTS in compose.yaml); Prisma's
-# migration engine only supports encrypting, inside the private network.
-echo "DATABASE_URL=$db_base?sslmode=verify-full" >> app.env.new
-echo "DATABASE_URL=$db_base?sslmode=require" > migrate.env
+# PostgreSQL runs next to the app on the containers' private network (ADR-010). Its password
+# was created on this server's database disk at first boot (hex, so no URL encoding).
+db_password=$(cat /data/secrets/postgres-password)
+database_url="postgresql://creator:$db_password@postgres:5432/creator_platform"
+echo "DATABASE_URL=$database_url" >> app.env.new
+echo "DATABASE_URL=$database_url" > migrate.env
 mv app.env.new app.env
 
 log "pulling $IMAGE"
@@ -57,6 +54,9 @@ DOMAIN=${domain}
 LOG_GROUP=${log_group}
 AWS_REGION=$REGION
 ENV
+
+log "starting the database"
+docker compose up -d --wait postgres
 
 log "applying database migrations and reference data"
 docker compose run --rm migrate

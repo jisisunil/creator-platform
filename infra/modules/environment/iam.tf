@@ -40,10 +40,32 @@ data "aws_iam_policy_document" "server" {
     resources = ["arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${trimsuffix(local.parameter_path, "/")}"]
   }
 
+  # backup.sh writes dumps; restores and the drill read them back. No delete: expiry is
+  # the bucket's lifecycle rules, so a compromised server can't erase the backups.
   statement {
-    sid       = "DatabasePassword"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_db_instance.main.master_user_secret[0].secret_arn]
+    sid     = "DatabaseBackups"
+    actions = ["s3:PutObject", "s3:GetObject"]
+    # trivy:ignore:AVD-AWS-0057 Objects in the backup bucket only.
+    resources = ["${aws_s3_bucket.backups.arn}/*"]
+  }
+
+  statement {
+    sid       = "ListDatabaseBackups"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.backups.arn]
+  }
+
+  statement {
+    sid     = "BackupMetrics"
+    actions = ["cloudwatch:PutMetricData"]
+    # trivy:ignore:AVD-AWS-0057 PutMetricData has no resource-level permissions; the
+    # condition limits it to this environment's namespace.
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = [local.metric_namespace]
+    }
   }
 
   statement {

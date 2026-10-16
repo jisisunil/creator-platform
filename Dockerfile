@@ -1,6 +1,6 @@
 # One image for every process (see infra/host/compose.yaml, copied to /app/deploy):
 #   web: next start · worker: tsx worker/index.ts · migrate: prisma migrate deploy · ops: scripts/ops
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 RUN npm install -g npm@11.19.0
 # Placeholders so `prisma generate` and `next build` can run; neither connects. Real values
@@ -17,7 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # The build cache (~180 MB) is only useful for the next build, never at runtime.
 RUN npm run build && rm -rf .next/cache && npm prune --omit=dev --ignore-scripts
 
-FROM node:24-alpine AS runtime
+FROM node:25-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 RUN addgroup -S app && adduser -S app -G app

@@ -20,7 +20,9 @@ RUN npm run build && rm -rf .next/cache && npm prune --omit=dev --ignore-scripts
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-RUN addgroup -S app && adduser -S app -G app
+# npm and corepack come with the base image but nothing runs them in production; removing
+# them drops their bundled dependencies (and known vulnerabilities) from the image.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack     && addgroup -S app && adduser -S app -G app
 # Only what the app, worker and operations commands need: no tests, docs or dev dependencies.
 COPY --from=build --chown=app:app /app/package.json /app/next.config.ts /app/tsconfig.json /app/prisma.config.ts ./
 COPY --from=build --chown=app:app /app/node_modules ./node_modules

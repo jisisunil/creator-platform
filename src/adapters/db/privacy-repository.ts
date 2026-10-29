@@ -242,6 +242,8 @@ export function createPrivacyRepository(db: DbClient) {
                   handle: true,
                   displayName: true,
                   isVerified: true,
+                  isSelfReported: true,
+                  selfReportedFollowers: true,
                   status: true,
                   createdAt: true,
                   snapshots: {

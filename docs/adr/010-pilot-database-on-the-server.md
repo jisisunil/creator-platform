@@ -22,7 +22,8 @@ The pilot's data is small (thousands of rows), and the 4 GB server has room.
 
 ## Consequences
 
-- About **$30/month** for production (server ~$25, disks ~$5, IP ~$4, S3/logs ~$1); about
+- About **$30/month** for production (server ~$25, disks ~$5, IP ~$4, S3/logs ~$1), plus
+  ~$1.50 for the outside uptime check added later (`uptime.tf`); about
   $20 with a 1-year Savings Plan. New AWS accounts' credits cover the first months.
 - Recovery point: up to 1 hour of data can be lost (RDS: seconds). Recovery time: minutes
   to restore a dump. Accepted for the pilot (Q-42).

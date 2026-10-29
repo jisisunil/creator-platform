@@ -7,8 +7,13 @@ import { FormStatus } from '@/components/forms/FormStatus';
 import { SubmitButton } from '@/components/forms/SubmitButton';
 import { useValidatedForm } from '@/components/forms/use-validated-form';
 import { IDLE } from '@/lib/action-state';
-import { channelLinkSchema } from '@/lib/validation/creator-schemas';
-import { chooseAccountAction, disconnectAccountAction, linkChannelAction } from '../actions';
+import { channelLinkSchema, selfReportedAccountSchema } from '@/lib/validation/creator-schemas';
+import {
+  addSelfReportedInstagramAction,
+  chooseAccountAction,
+  disconnectAccountAction,
+  linkChannelAction,
+} from '../actions';
 
 /** FR-3.1: link a YouTube channel by URL (unverified until Google sign-in). */
 export function LinkChannelForm() {
@@ -28,6 +33,34 @@ export function LinkChannelForm() {
         error={fieldErrors.channelUrlOrId}
       />
       <SubmitButton variant="outline">{t('link')}</SubmitButton>
+    </form>
+  );
+}
+
+/** Q-43: add an Instagram handle by hand while the official login is unavailable. */
+export function SelfReportedInstagramForm() {
+  const t = useTranslations('creator.accounts');
+  const { state, formAction, onSubmit, fieldErrors } = useValidatedForm(
+    selfReportedAccountSchema,
+    addSelfReportedInstagramAction,
+  );
+  return (
+    <form action={formAction} onSubmit={onSubmit} noValidate className="grid gap-3">
+      <FormStatus state={state} />
+      <FormField
+        name="handle"
+        label={t('selfReportedHandle')}
+        placeholder="@yourname"
+        error={fieldErrors.handle}
+      />
+      <FormField
+        name="declaredFollowers"
+        label={t('selfReportedFollowers')}
+        hint={t('selfReportedFollowersHint')}
+        inputMode="numeric"
+        error={fieldErrors.declaredFollowers}
+      />
+      <SubmitButton variant="outline">{t('selfReportedAdd')}</SubmitButton>
     </form>
   );
 }

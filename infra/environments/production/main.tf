@@ -25,6 +25,16 @@ provider "aws" {
   }
 }
 
+# Only for the uptime alarm: Route 53 publishes health-check metrics in us-east-1 alone.
+# No personal data is stored there.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+  default_tags {
+    tags = { Project = "creator-platform", Environment = "production", ManagedBy = "opentofu" }
+  }
+}
+
 variable "domain" {
   description = "Public host name, e.g. app.example.in."
   type        = string
@@ -52,6 +62,10 @@ variable "app_config" {
 
 module "environment" {
   source = "../../modules/environment"
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
 
   environment        = "production"
   domain             = var.domain

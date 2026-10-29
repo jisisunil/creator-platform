@@ -56,13 +56,15 @@ export async function recomputeCreatorScore(
     await repos.scores.raiseFlags(creatorId, breakdown.components.authenticity.flags);
 
     const activeAccounts = profile.accounts.filter((account) => account.status === 'ACTIVE');
-    const lastRefreshes = activeAccounts
+    // Self-reported accounts (Q-43) keep a creator findable but carry no measured data.
+    const measuredAccounts = activeAccounts.filter((account) => !account.isSelfReported);
+    const lastRefreshes = measuredAccounts
       .map((account) => account.lastRefreshedAt?.getTime() ?? 0)
       .filter((time) => time > 0);
     await repos.creators.updateDerived(creatorId, {
       isSearchable: activeAccounts.length > 0 && profile.displayName.trim().length > 0,
       isVerified: activeAccounts.some((account) => account.isVerified),
-      tier: activeAccounts.length > 0 ? breakdown.tier : null,
+      tier: measuredAccounts.length > 0 ? breakdown.tier : null,
       totalFollowers: breakdown.totalFollowers,
       engagementRateBp: breakdown.engagementRateBp,
       growth90dBp:

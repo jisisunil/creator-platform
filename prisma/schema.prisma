@@ -613,6 +613,11 @@ model SocialAccount {
   status                SocialAccountStatus @default(ACTIVE)
   /// YouTube can hide subscriber counts (UC-C2).
   isFollowerCountHidden Boolean             @default(false)
+  /// Self-reported Instagram while Meta's app review is pending (Q-17, Q-43): a handle the
+  /// creator typed in, never verified, never refreshed, and not used for score or filters.
+  isSelfReported        Boolean             @default(false)
+  /// Follower count the creator declared for a self-reported account; shown as declared only.
+  selfReportedFollowers Int?
   lastRefreshedAt       DateTime?
   lastRefreshError      String?
   nextRefreshAt         DateTime?

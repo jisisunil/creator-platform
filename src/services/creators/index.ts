@@ -13,6 +13,7 @@ import { containsProfanity, findContactDetails } from '@/domain/content-safety';
 import { missingProfileFields, type ProfileField, slugBaseFrom } from '@/domain/creators';
 import { notAllowed, notFound, validationFailed } from '@/domain/errors';
 import { detectImageType } from '@/domain/file-types';
+import { instagramProfileUrl } from '@/domain/social-handles';
 import type { ScoreBreakdown } from '@/domain/score';
 import { compressProfilePhoto } from '@/lib/images';
 import type { ServiceContext } from '../context';
@@ -262,6 +263,11 @@ export interface PublicCreatorProfile {
     readonly platform: 'YOUTUBE' | 'INSTAGRAM';
     readonly handle: string;
     readonly isVerified: boolean;
+    /** Q-43: typed in by the creator; brands see it labelled and can check the link. */
+    readonly isSelfReported: boolean;
+    readonly declaredFollowers: number | null;
+    /** Public profile link, given for self-reported accounts so brands can check them. */
+    readonly profileUrl: string | null;
   }[];
   readonly score: {
     readonly value: number;
@@ -309,7 +315,17 @@ export async function getPublicProfile(
     portfolio: profile.portfolio,
     accounts: profile.accounts
       .filter((account) => account.status === 'ACTIVE')
-      .map(({ platform, handle, isVerified }) => ({ platform, handle, isVerified })),
+      .map((account) => ({
+        platform: account.platform,
+        handle: account.handle,
+        isVerified: account.isVerified,
+        isSelfReported: account.isSelfReported,
+        declaredFollowers: account.isSelfReported ? account.selfReportedFollowers : null,
+        profileUrl:
+          account.isSelfReported && account.platform === 'INSTAGRAM'
+            ? instagramProfileUrl(account.handle)
+            : null,
+      })),
     score: score
       ? { value: score.score, breakdown: score.components, weightsVersion: score.weightsVersion }
       : null,

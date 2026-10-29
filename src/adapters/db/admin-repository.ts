@@ -12,6 +12,16 @@ export interface PlatformMetrics {
   readonly openReports: number;
   readonly openFlags: number;
   readonly openDisputes: number;
+  /** Success metrics: verified, findable creators (all time). */
+  readonly verifiedCreators: number;
+  /** Brands with a member who signed in during the window. */
+  readonly activeBrands: number;
+  /** Outcomes of the requests sent during the window. */
+  readonly requestOutcomes: {
+    readonly accepted: number;
+    readonly declined: number;
+    readonly expired: number;
+  };
 }
 
 export interface UserListItem {
@@ -70,6 +80,9 @@ export function createAdminRepository(db: DbClient) {
         openReports,
         openFlags,
         openDisputes,
+        verifiedCreators,
+        activeBrands,
+        outcomes,
       ] = await Promise.all([
         db.user.count({ where: { ...people, createdAt: { gte: since } } }),
         db.user.count({ where: { ...people, lastLoginAt: { gte: since } } }),
@@ -80,7 +93,20 @@ export function createAdminRepository(db: DbClient) {
         db.report.count({ where: { status: 'OPEN' } }),
         db.authenticityFlag.count({ where: { status: 'OPEN' } }),
         db.ownershipDispute.count({ where: { status: 'OPEN' } }),
+        db.creatorProfile.count({
+          where: { isVerified: true, isSearchable: true, user: { status: 'ACTIVE' } },
+        }),
+        db.brand.count({
+          where: { members: { some: { user: { lastLoginAt: { gte: since } } } } },
+        }),
+        db.collabRequest.groupBy({
+          by: ['status'],
+          where: { createdAt: { gte: since }, status: { in: ['ACCEPTED', 'DECLINED', 'EXPIRED'] } },
+          _count: { _all: true },
+        }),
       ]);
+      const outcome = (status: 'ACCEPTED' | 'DECLINED' | 'EXPIRED') =>
+        outcomes.find((row) => row.status === status)?._count._all ?? 0;
       return {
         signUps,
         activeUsers,
@@ -91,6 +117,13 @@ export function createAdminRepository(db: DbClient) {
         openReports,
         openFlags,
         openDisputes,
+        verifiedCreators,
+        activeBrands,
+        requestOutcomes: {
+          accepted: outcome('ACCEPTED'),
+          declined: outcome('DECLINED'),
+          expired: outcome('EXPIRED'),
+        },
       };
     },
 

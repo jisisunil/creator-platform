@@ -26,6 +26,9 @@ export interface ConnectedAccountSummary {
   readonly status: 'ACTIVE' | 'TOKEN_REVOKED' | 'PRIVATE' | 'DELETED';
   readonly lastRefreshedAt: Date | null;
   readonly isFollowerCountHidden: boolean;
+  /** Q-43: typed in by the creator; never verified or refreshed. */
+  readonly isSelfReported: boolean;
+  readonly selfReportedFollowers: number | null;
 }
 
 /** Everything the creator's own profile editor and dashboard show. */
@@ -80,6 +83,8 @@ const PROFILE_INCLUDE = {
       status: true,
       lastRefreshedAt: true,
       isFollowerCountHidden: true,
+      isSelfReported: true,
+      selfReportedFollowers: true,
     },
     orderBy: { createdAt: 'asc' as const },
   },

@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { CLIENT_MESSAGE_NAMESPACES, pickMessages } from '@/i18n/client-messages';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -44,6 +45,8 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'common' });
+  // Only what client components need goes to the browser (src/i18n/client-messages.ts).
+  const clientMessages = pickMessages(await getMessages({ locale }), CLIENT_MESSAGE_NAMESPACES);
 
   return (
     <html lang={locale}>
@@ -54,7 +57,7 @@ export default async function LocaleLayout({
         >
           {t('skipToContent')}
         </a>
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}>
           <SiteHeader />
           {children}
           <SiteFooter />

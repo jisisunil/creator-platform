@@ -60,7 +60,8 @@ Then, from the outputs:
 2. **Email:** add the `email_dkim_records` CNAMEs. In SES, request production access (new
    accounts can only email verified addresses). Create SMTP credentials in SES (they are an
    IAM user's keys; the console shows them once).
-3. **Alarms:** confirm the subscription email AWS sends to `alert_email`. The `backup-missed` alarm stays
+3. **Alarms:** confirm the two subscription emails AWS sends to `alert_email` (alarms from
+   Mumbai, and the uptime alarm from us-east-1). The `backup-missed` alarm stays
    on until the first deploy has started the database; that's expected.
 4. **Cost tag:** in Billing → Cost allocation tags, activate `Environment` (once per account)
    so each environment's budget only counts its own resources.
@@ -131,13 +132,14 @@ authenticator app (admins always need 2FA).
 
 ## Alarms and what to do
 
-| Alarm                | Meaning                                    | First step                                                                                            |
-| -------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `app-alert`          | The app's monitoring raised an alert       | Read the alert email from the app; `docs/incident-response.md`                                        |
-| `app-errors`         | 10+ errors in 5 minutes                    | CloudWatch Logs, filter `level = "error"`; Sentry                                                     |
-| `server-recover`     | AWS hardware failure; recovery in progress | Wait 10 minutes, check the site                                                                       |
-| `server-unhealthy`   | The operating system stopped responding    | AWS reboots it; if it repeats, check memory in the logs                                               |
-| `server-cpu-credits` | The server is about to be throttled        | Check what's busy; consider a bigger instance                                                         |
-| `backup-missed`      | No database backup for 2 hours             | On the server: `journalctl -u creator-platform-backup`; run `/opt/creator-platform/backup.sh` by hand |
-| `data-disk`          | Database disk over 80% full                | Raise `data_volume_gb`, `tofu apply`, `xfs_growfs /data`                                              |
-| Budget email         | Spend over 80% / forecast over 100%        | Cost Explorer by service; NFR-13                                                                      |
+| Alarm                | Meaning                                                                                 | First step                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `site-down`          | `https://<domain>/api/health` failed for 2 minutes (checked from several AWS locations) | Check the server and its containers (`docker compose ps`); `server-*` alarms; then CloudWatch Logs    |
+| `app-alert`          | The app's monitoring raised an alert                                                    | Read the alert email from the app; `docs/incident-response.md`                                        |
+| `app-errors`         | 10+ errors in 5 minutes                                                                 | CloudWatch Logs, filter `level = "error"`; Sentry                                                     |
+| `server-recover`     | AWS hardware failure; recovery in progress                                              | Wait 10 minutes, check the site                                                                       |
+| `server-unhealthy`   | The operating system stopped responding                                                 | AWS reboots it; if it repeats, check memory in the logs                                               |
+| `server-cpu-credits` | The server is about to be throttled                                                     | Check what's busy; consider a bigger instance                                                         |
+| `backup-missed`      | No database backup for 2 hours                                                          | On the server: `journalctl -u creator-platform-backup`; run `/opt/creator-platform/backup.sh` by hand |
+| `data-disk`          | Database disk over 80% full                                                             | Raise `data_volume_gb`, `tofu apply`, `xfs_growfs /data`                                              |
+| Budget email         | Spend over 80% / forecast over 100%                                                     | Cost Explorer by service; NFR-13                                                                      |

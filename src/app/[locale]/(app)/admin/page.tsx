@@ -4,6 +4,7 @@ import { FreeBetaForm } from '@/components/admin/AdminForms';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card, CardTitle } from '@/components/ui/card';
+import { SUCCESS_TARGETS } from '@/config/success-metrics';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { formatCount } from '@/lib/format';
 import { getFreeBetaSetting, getPlatformMetrics } from '@/services/admin';
@@ -35,6 +36,20 @@ export default async function AdminOverviewPage({
     ['openFlags', metrics.openFlags],
     ['openDisputes', metrics.openDisputes],
   ] as const;
+  // The spec's phase 2 gate: live figure next to its target.
+  const goals = [
+    ['verifiedCreators', count(metrics.verifiedCreators), count(SUCCESS_TARGETS.verifiedCreators)],
+    ['activeBrands', count(metrics.activeBrands), count(SUCCESS_TARGETS.activeBrands)],
+    ['requestsSent', count(metrics.requestsSent), count(SUCCESS_TARGETS.requestsSent)],
+    [
+      'acceptanceRate',
+      metrics.acceptanceRatePercent === null
+        ? t('goals.noOutcomesYet')
+        : t('goals.percent', { value: metrics.acceptanceRatePercent }),
+      t('goals.percent', { value: SUCCESS_TARGETS.acceptanceRatePercent }),
+    ],
+    ['dealsCompleted', count(metrics.dealsCompleted), count(SUCCESS_TARGETS.dealsCompleted)],
+  ] as const;
 
   return (
     <PageShell title={t('title')} intro={<AdminNav />} wide>
@@ -45,6 +60,21 @@ export default async function AdminOverviewPage({
             <div key={key}>
               <dt className="text-muted-foreground text-sm">{t(`metrics.${key}`)}</dt>
               <dd className="text-2xl font-semibold">{count(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      </Card>
+      <Card className="grid gap-3">
+        <CardTitle>{t('goalsTitle')}</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          {t('goalsIntro', { days: metrics.windowDays })}
+        </p>
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {goals.map(([key, value, target]) => (
+            <div key={key}>
+              <dt className="text-muted-foreground text-sm">{t(`goals.${key}`)}</dt>
+              <dd className="text-2xl font-semibold">{value}</dd>
+              <dd className="text-muted-foreground text-xs">{t('goals.target', { target })}</dd>
             </div>
           ))}
         </dl>

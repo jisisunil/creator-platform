@@ -57,3 +57,13 @@ export const SOCIAL_REFRESH = {
 
 /** UC-C2: accounts from one login wait this long for the creator to pick one. */
 export const PENDING_SOCIAL_CONNECTION_TTL_MS = 15 * MINUTE_MS;
+
+/**
+ * Q-17 / Q-43: platforms where a creator may add a self-reported handle while the official
+ * login is unavailable (Meta's app review, X-01). Empty this list once Instagram is approved;
+ * existing self-reported accounts stay until their owner connects officially.
+ */
+export const SELF_REPORTED_PLATFORMS: readonly ('YOUTUBE' | 'INSTAGRAM')[] = ['INSTAGRAM'];
+
+/** The largest follower count a creator may declare for a self-reported account. */
+export const SELF_REPORTED_MAX_FOLLOWERS = 100_000_000;

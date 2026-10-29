@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROFILE_LIMITS } from '@/config/creators';
+import { PROFILE_LIMITS, SELF_REPORTED_MAX_FOLLOWERS } from '@/config/creators';
 
 /**
  * Creator and social-account form schemas, shared by the browser and server actions.
@@ -88,6 +88,23 @@ export const availabilitySchema = z.object({
 /** FR-3.1 YouTube link by URL or id. */
 export const channelLinkSchema = z.object({
   channelUrlOrId: z.string().trim().min(1, 'validation.required').max(200, 'validation.tooLong'),
+});
+
+/**
+ * Q-43 self-reported Instagram: the handle (or profile link) and an optional declared
+ * follower count. The service checks the handle's format and the range.
+ */
+export const selfReportedAccountSchema = z.object({
+  handle: z.string().trim().min(1, 'validation.required').max(200, 'validation.tooLong'),
+  declaredFollowers: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+    z.coerce
+      .number('validation.outOfRange')
+      .int('validation.outOfRange')
+      .min(0, 'validation.outOfRange')
+      .max(SELF_REPORTED_MAX_FOLLOWERS, 'validation.outOfRange')
+      .nullable(),
+  ),
 });
 
 /** UC-C2 channel choice. */

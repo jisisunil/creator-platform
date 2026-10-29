@@ -107,14 +107,33 @@ export async function CreatorProfileView({
           </div>
           <div>
             <dt className="text-muted-foreground">{t('accounts')}</dt>
-            <dd>
-              {profile.accounts
-                .map(
-                  (account) =>
-                    `${tPlatforms(account.platform)} ${account.handle}${account.isVerified ? ' ✓' : ''}`,
-                )
-                .join(', ') || '–'}
-            </dd>
+            {profile.accounts.length === 0 ? <dd>–</dd> : null}
+            {profile.accounts.map((account) => (
+              <dd key={`${account.platform}-${account.handle}`}>
+                {account.profileUrl ? (
+                  <a
+                    href={account.profileUrl}
+                    rel="noopener noreferrer nofollow"
+                    target="_blank"
+                    className="underline"
+                  >
+                    {tPlatforms(account.platform)} {account.handle}
+                  </a>
+                ) : (
+                  `${tPlatforms(account.platform)} ${account.handle}${account.isVerified ? ' ✓' : ''}`
+                )}
+                {account.isSelfReported ? (
+                  <span className="text-muted-foreground text-xs">
+                    {' '}
+                    {account.declaredFollowers === null
+                      ? t('selfReported')
+                      : t('selfReportedWithFollowers', {
+                          followers: formatCompactCount(account.declaredFollowers, locale, country),
+                        })}
+                  </span>
+                ) : null}
+              </dd>
+            ))}
           </div>
         </dl>
       </Card>

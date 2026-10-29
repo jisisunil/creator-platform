@@ -11,6 +11,7 @@ import { DEFAULT_LOCALE } from '@/config/locales';
 import { PLATFORM_SETTING_DEFAULTS } from '@/config/platform-settings';
 import type { UserRole, UserStatus } from '@/domain/accounts';
 import { normaliseEmail } from '@/domain/email-address';
+import { acceptanceRatePercent } from '@/domain/metrics';
 import { invalidState, notAllowed, notFound } from '@/domain/errors';
 import type { RequestInfo, ServiceContext } from '../context';
 import { requireAdmin } from '../security';
@@ -45,14 +46,24 @@ async function auditAdminAction(
   });
 }
 
-/** FR-13.4: sign-ups, active users, requests and completed deals in the last 30 days. */
+/**
+ * FR-13.4: sign-ups, active users, requests and completed deals in the last 30 days, plus
+ * the spec's phase 2 success metrics (verified creators, active brands, acceptance rate).
+ */
 export async function getPlatformMetrics(
   ctx: ServiceContext,
   adminUserId: string,
-): Promise<PlatformMetrics & { readonly windowDays: number }> {
+): Promise<
+  PlatformMetrics & { readonly windowDays: number; readonly acceptanceRatePercent: number | null }
+> {
   await requireAdmin(ctx.repos, adminUserId);
   const since = new Date(ctx.clock.now().getTime() - METRICS_WINDOW_DAYS * DAY_MS);
-  return { ...(await ctx.repos.admin.metricsSince(since)), windowDays: METRICS_WINDOW_DAYS };
+  const metrics = await ctx.repos.admin.metricsSince(since);
+  return {
+    ...metrics,
+    windowDays: METRICS_WINDOW_DAYS,
+    acceptanceRatePercent: acceptanceRatePercent(metrics.requestOutcomes),
+  };
 }
 
 export interface UserSearch {

@@ -114,7 +114,8 @@
       "mustAccept": "You need to agree to continue.",
       "under18": "You must be 18 or older to use the platform. We haven't saved anything.",
       "invalidChoice": "Choose one of the options.",
-      "codeFormat": "Enter the 6-digit code."
+      "codeFormat": "Enter the 6-digit code.",
+      "outOfRange": "Enter a whole number in the allowed range."
     },
     "password": {
       "tooShort": "Use at least 10 characters.",
@@ -154,7 +155,10 @@
       "appealTooShort": "Explain in at least 20 characters."
     },
     "social": {
-      "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname."
+      "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname.",
+      "handleInvalid": "Enter an Instagram handle like @yourname, or your profile link.",
+      "alreadyHasAccount": "You already have an Instagram account on your profile.",
+      "handleAlreadyListed": "This handle is already listed by another creator. If it is yours, connect with Instagram login, or report it."
     },
     "search": {
       "tooMany": "You've saved the maximum number of searches. Delete one first.",
@@ -746,11 +750,20 @@
         "personal-account": "This is a personal Instagram account. Switch it to a Creator or Business account in the Instagram app (Settings → Account type), then try again.",
         "no-accounts": "That login doesn't have a channel or account we can connect.",
         "expired": "That connection attempt expired. Please try again.",
-        "failed": "We couldn't connect the account. Please try again in a few minutes."
+        "failed": "We couldn't connect the account. Please try again in a few minutes.",
+        "self-reported": "Your Instagram handle is listed as self-reported."
       },
       "chooseTitle": "Choose a channel",
       "chooseIntro": "Your Google account manages several channels. Which one do you want to connect?",
-      "choose": "Connect this channel"
+      "choose": "Connect this channel",
+      "selfReportedLabel": "self-reported, not verified",
+      "selfReportedExplained": "Brands see this handle marked \"self-reported\" with a link to your profile. It does not count towards your score. Connect with Instagram login when available to verify it.",
+      "selfReportedTitle": "Add your Instagram handle",
+      "selfReportedHint": "Instagram login is not available yet. Until it is, you can list your handle: brands see it marked \"self-reported, not verified\" and can open your profile to check.",
+      "selfReportedHandle": "Instagram handle or profile link",
+      "selfReportedFollowers": "Followers (optional)",
+      "selfReportedFollowersHint": "Shown to brands as a number you declared, not a verified figure.",
+      "selfReportedAdd": "Add handle"
     },
     "analytics": {
       "title": "Analytics",
@@ -827,7 +840,9 @@
       "M": "Men",
       "U": "Other"
     },
-    "ratingsTitle": "Ratings from brands"
+    "ratingsTitle": "Ratings from brands",
+    "selfReported": "(self-reported, not verified)",
+    "selfReportedWithFollowers": "(self-reported, not verified · {followers} followers declared)"
   },
   "regions": {
     "IN": {
@@ -1423,7 +1438,19 @@
       "betaOff": "Off: new brands start on a 14-day trial (one per company).",
       "endBeta": "End the free beta for new brands",
       "startBeta": "Turn the free beta back on",
-      "endBetaConfirm": "New brands will start on a 14-day trial instead of the free beta. Brands already on the free beta keep it. Continue?"
+      "endBetaConfirm": "New brands will start on a 14-day trial instead of the free beta. Brands already on the free beta keep it. Continue?",
+      "goalsTitle": "Pilot goals (phase 2)",
+      "goalsIntro": "Live figures against the targets in the plan. Verified creators is the current total; the others cover the last {days} days.",
+      "goals": {
+        "verifiedCreators": "Verified creators",
+        "activeBrands": "Active brands",
+        "requestsSent": "Requests sent",
+        "acceptanceRate": "Request acceptance rate",
+        "dealsCompleted": "Deals completed",
+        "target": "Target: {target}",
+        "percent": "{value}%",
+        "noOutcomesYet": "No answers yet"
+      }
     },
     "users": {
       "title": "Users",

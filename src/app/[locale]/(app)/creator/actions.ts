@@ -16,6 +16,7 @@ import {
   portfolioItemSchema,
   profileDetailsSchema,
   rateCardSchema,
+  selfReportedAccountSchema,
 } from '@/lib/validation/creator-schemas';
 import { parseForm } from '@/lib/validation/form-data';
 import { appealFlag } from '@/services/moderation';
@@ -28,6 +29,7 @@ import {
   uploadProfilePhoto,
 } from '@/services/creators';
 import {
+  addSelfReportedAccount,
   choosePendingAccount,
   type ConnectionOutcome,
   connectPublicChannel,
@@ -141,6 +143,25 @@ export async function linkChannelAction(_: ActionState, formData: FormData): Pro
       channelUrlOrId,
     });
     redirect(accountsUrl(locale, outcome));
+  });
+}
+
+/** Q-43: adds a self-reported Instagram handle (unverified, shown as such). */
+export async function addSelfReportedInstagramAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const locale = await getLocale();
+  return runAction(async () => {
+    const session = await creatorOnly();
+    const input = parseForm(selfReportedAccountSchema, formData);
+    await addSelfReportedAccount(getContainer(), {
+      userId: session.user.id,
+      platform: 'INSTAGRAM',
+      handle: input.handle,
+      declaredFollowers: input.declaredFollowers,
+    });
+    redirect(`/${locale}/creator/accounts?result=self-reported`);
   });
 }
 

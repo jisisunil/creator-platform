@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { getOwnProfile } from '@/services/creators';
-import { DisconnectButton, LinkChannelForm } from './AccountForms';
+import { SELF_REPORTED_PLATFORMS } from '@/config/creators';
+import { DisconnectButton, LinkChannelForm, SelfReportedInstagramForm } from './AccountForms';
 
 const RESULTS = [
   'connected',
@@ -15,6 +16,7 @@ const RESULTS = [
   'no-accounts',
   'expired',
   'failed',
+  'self-reported',
 ] as const;
 type Result = (typeof RESULTS)[number];
 
@@ -35,11 +37,19 @@ export default async function CreatorAccountsPage({
   const tPlatforms = await getTranslations('platforms');
   const format = await getFormatter();
   const shownResult = RESULTS.find((candidate): candidate is Result => candidate === result);
+  // Q-43: offered only while allowed, and only to creators with no Instagram account yet.
+  const canSelfReportInstagram =
+    SELF_REPORTED_PLATFORMS.includes('INSTAGRAM') &&
+    !profile.accounts.some((account) => account.platform === 'INSTAGRAM');
 
   return (
     <PageShell title={t('title')} intro={t('intro')}>
       {shownResult ? (
-        <Alert variant={shownResult === 'connected' ? 'success' : 'default'}>
+        <Alert
+          variant={
+            shownResult === 'connected' || shownResult === 'self-reported' ? 'success' : 'default'
+          }
+        >
           {t(`results.${shownResult}`)}
         </Alert>
       ) : null}
@@ -55,20 +65,34 @@ export default async function CreatorAccountsPage({
                   <p className="font-medium">
                     {tPlatforms(account.platform)} · {account.handle}{' '}
                     <span className="text-muted-foreground text-xs font-normal">
-                      ({account.isVerified ? t('verified') : t('unverified')})
+                      (
+                      {account.isSelfReported
+                        ? t('selfReportedLabel')
+                        : account.isVerified
+                          ? t('verified')
+                          : t('unverified')}
+                      )
                     </span>
                   </p>
-                  <p className="text-muted-foreground text-sm">{t(`status.${account.status}`)}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {account.lastRefreshedAt
-                      ? t('lastUpdated', {
-                          date: format.dateTime(account.lastRefreshedAt, {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          }),
-                        })
-                      : t('neverUpdated')}
-                  </p>
+                  {account.isSelfReported ? (
+                    <p className="text-muted-foreground text-xs">{t('selfReportedExplained')}</p>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground text-sm">
+                        {t(`status.${account.status}`)}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {account.lastRefreshedAt
+                          ? t('lastUpdated', {
+                              date: format.dateTime(account.lastRefreshedAt, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              }),
+                            })
+                          : t('neverUpdated')}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <DisconnectButton accountId={account.id} />
               </li>
@@ -93,6 +117,16 @@ export default async function CreatorAccountsPage({
           </form>
         </div>
       </Card>
+
+      {canSelfReportInstagram ? (
+        <Card>
+          <CardTitle>{t('selfReportedTitle')}</CardTitle>
+          <CardDescription>{t('selfReportedHint')}</CardDescription>
+          <div className="mt-4">
+            <SelfReportedInstagramForm />
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <CardTitle>{t('linkTitle')}</CardTitle>

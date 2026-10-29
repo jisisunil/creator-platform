@@ -18,6 +18,8 @@ import { notifyUsers } from '../notifications';
 import { recomputeCreatorScore } from '../scoring';
 import { recordSecurityEvent } from '../security';
 
+export { addSelfReportedAccount } from './self-reported';
+
 const logger = getLogger('social');
 
 export type ConnectionOutcome =
@@ -74,9 +76,19 @@ async function attachAccount(
       }
     : null;
 
+  let supersededCreatorIds: readonly string[] = [];
   const outcome = await ctx.transaction(async (repos): Promise<ConnectionOutcome> => {
     const creatorId = await requireCreatorProfileId(repos, input.userId);
     const claim = await repos.socialAccounts.findClaim(input.platform, input.account.externalId);
+    // Q-43: an official login replaces self-reported listings of this handle, the creator's
+    // own and anyone else's (the real owner wins over someone who typed their handle in).
+    if (encrypted) {
+      supersededCreatorIds = await repos.socialAccounts.deleteSelfReportedSupersededBy({
+        platform: input.platform,
+        creatorId,
+        handle: input.account.handle,
+      });
+    }
 
     if (claim && claim.creatorId !== creatorId) {
       await repos.socialAccounts.createDispute({
@@ -118,6 +130,7 @@ async function attachAccount(
   });
 
   if (outcome.kind === 'connected') await requestRefresh(ctx, outcome.accountId);
+  for (const creatorId of supersededCreatorIds) await recomputeCreatorScore(ctx, creatorId);
   return outcome;
 }
 

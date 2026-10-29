@@ -39,6 +39,21 @@ test.describe('creators', () => {
     await expect(page.getByText('Remove phone numbers, emails and links.')).toBeVisible();
   });
 
+  test('Q-43 a creator lists an Instagram handle as self-reported', async ({ page }) => {
+    await signedInNewCreator(page, uniqueEmail('selfreported'));
+    const handle = `e2e.${Date.now().toString(36)}`;
+    await page.goto('/en/creator/accounts');
+
+    await page.getByLabel('Instagram handle or profile link').fill(`@${handle}`);
+    await page.getByLabel('Followers (optional)').fill('12000');
+    await page.getByRole('button', { name: 'Add handle' }).click();
+
+    await expect(page.getByText('Your Instagram handle is listed as self-reported.')).toBeVisible();
+    await expect(page.getByText(`Instagram · @${handle}`)).toBeVisible();
+    await expect(page.getByText('(self-reported, not verified)')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add handle' })).toHaveCount(0);
+  });
+
   test('UC-C5 disconnecting an account removes it', async ({ page }) => {
     await signedInNewCreator(page, uniqueEmail('disconnect'));
     await page.goto('/en/creator/accounts');

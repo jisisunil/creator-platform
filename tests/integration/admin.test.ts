@@ -53,6 +53,26 @@ describe('admin console (FR-13)', () => {
     });
   });
 
+  it('shows the phase 2 success metrics: verified creators, active brands, acceptance', async () => {
+    const admin = await createAdmin(ctx);
+    expect(await getPlatformMetrics(ctx, admin.id)).toMatchObject({
+      verifiedCreators: 0,
+      activeBrands: 0,
+      acceptanceRatePercent: null,
+    });
+    const { brand } = await acceptedRequest(ctx, db);
+    await db.user.update({ where: { id: brand.id }, data: { lastLoginAt: ctx.clock.now() } });
+
+    const metrics = await getPlatformMetrics(ctx, admin.id);
+
+    expect(metrics).toMatchObject({
+      verifiedCreators: 1,
+      activeBrands: 1,
+      requestOutcomes: { accepted: 1, declined: 0, expired: 0 },
+      acceptanceRatePercent: 100,
+    });
+  });
+
   it('FR-13.1 finds users by name or email and filters by role', async () => {
     const admin = await createAdmin(ctx);
     await createBrandOwner(ctx, db, 'owner@spiceco.in');

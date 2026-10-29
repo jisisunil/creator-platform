@@ -32,6 +32,9 @@ export interface NewSocialAccount {
   readonly accessTokenEncrypted: string | null;
   readonly refreshTokenEncrypted: string | null;
   readonly tokenExpiresAt: Date | null;
+  /** Q-43: a handle the creator typed in; never verified or refreshed. */
+  readonly isSelfReported?: boolean;
+  readonly selfReportedFollowers?: number | null;
 }
 
 export interface SnapshotValues {
@@ -103,8 +106,42 @@ export function createSocialAccountRepository(db: DbClient) {
       });
     },
 
+    /** Null for self-reported accounts: there is nothing to fetch for them (Q-43). */
     findForRefresh: (id: string): Promise<SocialAccountForRefresh | null> =>
-      db.socialAccount.findUnique({ where: { id }, select: FOR_REFRESH_SELECT }),
+      db.socialAccount.findFirst({
+        where: { id, isSelfReported: false },
+        select: FOR_REFRESH_SELECT,
+      }),
+
+    /** Accounts on a platform with this handle (any creator), ignoring case and the "@". */
+    findByHandle: (platform: SocialPlatform, username: string) =>
+      db.socialAccount.findMany({
+        where: { platform, handle: { equals: `@${username}`, mode: 'insensitive' } },
+        select: { id: true, creatorId: true, isSelfReported: true },
+      }),
+
+    /**
+     * Q-43: removes self-reported accounts the official login supersedes: the connecting
+     * creator's own on that platform, and anyone else's that claimed the same handle.
+     * Returns the creators affected, so their scores can be recomputed.
+     */
+    async deleteSelfReportedSupersededBy(input: {
+      platform: SocialPlatform;
+      creatorId: string;
+      handle: string;
+    }): Promise<string[]> {
+      const where = {
+        platform: input.platform,
+        isSelfReported: true,
+        OR: [
+          { creatorId: input.creatorId },
+          { handle: { equals: input.handle, mode: 'insensitive' as const } },
+        ],
+      };
+      const rows = await db.socialAccount.findMany({ where, select: { creatorId: true } });
+      await db.socialAccount.deleteMany({ where });
+      return [...new Set(rows.map((row) => row.creatorId))];
+    },
 
     /**
      * Data inventory: daily snapshots older than `before` are reduced to the first one of
@@ -125,7 +162,7 @@ export function createSocialAccountRepository(db: DbClient) {
     /** The creator's working accounts on a platform (UC-R6 post ownership). */
     async listActiveIds(creatorId: string, platform: SocialPlatform): Promise<string[]> {
       const rows = await db.socialAccount.findMany({
-        where: { creatorId, platform, status: 'ACTIVE' },
+        where: { creatorId, platform, status: 'ACTIVE', isSelfReported: false },
         orderBy: { createdAt: 'asc' },
         select: { id: true },
       });
@@ -141,6 +178,7 @@ export function createSocialAccountRepository(db: DbClient) {
       const rows = await db.socialAccount.findMany({
         where: {
           status: 'ACTIVE',
+          isSelfReported: false,
           OR: [{ lastRefreshedAt: null }, { lastRefreshedAt: { lt: refreshedBefore } }],
           AND: [{ OR: [{ nextRefreshAt: null }, { nextRefreshAt: { lte: now } }] }],
         },
@@ -163,9 +201,11 @@ export function createSocialAccountRepository(db: DbClient) {
         where: { status: 'ACTIVE', lastRefreshError: QUOTA_EXCEEDED_ERROR },
         _count: { _all: true },
       });
+      // Self-reported accounts are never refreshed, so they are never "stale" (Q-43).
       const stale = await db.socialAccount.count({
         where: {
           status: 'ACTIVE',
+          isSelfReported: false,
           OR: [
             { lastRefreshedAt: { lt: staleBefore } },
             { lastRefreshedAt: null, createdAt: { lt: staleBefore } },

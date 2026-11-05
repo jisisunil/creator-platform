@@ -1,44 +1,28 @@
 /** Deals module: status flow, payment terms, posts, reminders and summaries (FR-9, UC-R4 to UC-R6). */
-import type {
-  DealChanges,
-  DealEventKind,
-  DealEventRecord,
-  DealRecord,
-  DealSummary,
-} from '@/adapters/db/deal-repository';
+import type { DealEventRecord, DealRecord, DealSummary } from '@/adapters/db/deal-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { RequestRecord } from '@/adapters/db/request-repository';
 import { type SocialPlatform, SocialProviderError } from '@/adapters/social/provider';
-import { COLLABORATION_PAGE_SIZE, DEAL_LIMITS, POST_STATS_REFRESH } from '@/config/collaboration';
+import { COLLABORATION_PAGE_SIZE, DEAL_LIMITS } from '@/config/collaboration';
 import type { CollabSide } from '@/domain/chat';
-import {
-  allowedDealActions,
-  type DealAction,
-  isActionForSide,
-  isDeadlineReminderDue,
-  isPaymentReminderDue,
-  nextDealStatus,
-  paymentDueAt,
-  splitPayment,
-} from '@/domain/deals';
-import { invalidState, notAllowed, notFound, validationFailed } from '@/domain/errors';
-import { getLogger } from '@/lib/logger';
+import { allowedDealActions, type DealAction, paymentDueAt, splitPayment } from '@/domain/deals';
+import { validationFailed } from '@/domain/errors';
 import type { ServiceContext } from '../context';
-import { requestEmailDispatch } from '../email';
+import { notifyUsers } from '../notifications';
+import { findCreatorPost } from '../social';
 import {
-  brandContactIds,
-  type NotificationEmail,
-  notifyUsers,
-  type Recipient,
-} from '../notifications';
-import { recordSecurityEvent } from '../security';
-import { fetchPostStatsFor, findCreatorPost } from '../social';
+  notifyOtherSide,
+  otherSideContacts,
+  performAction,
+  requireDealParticipant,
+} from './deal-actions';
 
 export type { DealEventRecord, DealPostRecord, DealSummary } from '@/adapters/db/deal-repository';
+export { requireDealParticipant } from './deal-actions';
+export { refreshDealPosts, sendDealReminders } from './deal-jobs';
 
 const PAISE_PER_RUPEE = 100;
 const DAY_MS = 86_400_000;
-const logger = getLogger('deals');
 /** Shown as the cancellation reason when a deal ends because an account was deleted. */
 const ACCOUNT_DELETED_REASON = 'Account deleted';
 
@@ -58,29 +42,6 @@ export async function createDealFromRequest(
     deadline: request.deadline,
     createdAt: now,
   });
-}
-
-/**
- * The deal and the user's side: the creator, or any member of the brand's team. Anyone
- * else gets "not found", and the attempt is logged (SR-5, SEC-2).
- */
-export async function requireDealParticipant(
-  repos: Repositories,
-  userId: string,
-  dealId: string,
-): Promise<{ deal: DealRecord; side: CollabSide }> {
-  const deal = await repos.deals.findById(dealId);
-  if (deal?.creatorUserId === userId) return { deal, side: 'CREATOR' };
-  if (deal) {
-    const membership = await repos.brands.findMembership(userId);
-    if (membership?.brandId === deal.brandId) return { deal, side: 'BRAND' };
-  }
-  await recordSecurityEvent(repos, {
-    action: 'access.denied',
-    actorUserId: userId,
-    metadata: { resource: 'deal' },
-  });
-  throw notFound();
 }
 
 export interface DealView extends DealRecord {
@@ -143,76 +104,6 @@ export async function listDeals(
     items: result.items,
     page,
     pageCount: Math.max(1, Math.ceil(result.total / COLLABORATION_PAGE_SIZE)),
-  };
-}
-
-/** The people on the other side of a deal who should hear about a change. */
-async function otherSideContacts(
-  repos: Repositories,
-  deal: DealRecord,
-  side: CollabSide,
-): Promise<string[]> {
-  return side === 'BRAND'
-    ? [deal.creatorUserId]
-    : brandContactIds(repos, deal.brandId, deal.sentByUserId);
-}
-
-interface ActionOutcome {
-  readonly changes?: DealChanges;
-  readonly event: { readonly kind: DealEventKind; readonly note?: string | null };
-  /** Extra work in the same transaction (reports, emails). */
-  readonly alsoDo?: (repos: Repositories) => Promise<void>;
-}
-
-/**
- * Runs one deal action: checks the side and the order (UC-R4: out-of-order updates are
- * rejected), then changes the status only if nobody changed it meanwhile, and records the
- * event, all in one transaction.
- */
-async function performAction(
-  ctx: ServiceContext,
-  input: { readonly userId: string; readonly dealId: string },
-  action: DealAction,
-  decide: (deal: DealRecord, side: CollabSide, now: Date) => ActionOutcome | Promise<ActionOutcome>,
-): Promise<void> {
-  const now = ctx.clock.now();
-  const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
-  if (!isActionForSide(action, side)) throw notAllowed();
-  const next = nextDealStatus(deal.status, action, side);
-  if (!next) throw invalidState();
-  const outcome = await decide(deal, side, now);
-  await ctx.transaction(async (repos) => {
-    if (!(await repos.deals.transition(deal.id, deal.status, next, outcome.changes))) {
-      throw invalidState();
-    }
-    await repos.deals.addEvent({
-      dealId: deal.id,
-      kind: outcome.event.kind,
-      actorUserId: input.userId,
-      actorSide: side,
-      note: outcome.event.note ?? null,
-      createdAt: now,
-    });
-    await outcome.alsoDo?.(repos);
-  });
-  await requestEmailDispatch(ctx.jobQueue);
-  logger.info({ action: `deal.${action.toLowerCase()}`, dealId: deal.id }, 'deal updated');
-}
-
-/** Emails the other side about a deal change. */
-function notifyOtherSide(
-  ctx: ServiceContext,
-  deal: DealRecord,
-  side: CollabSide,
-  email: (recipient: Recipient) => NotificationEmail,
-) {
-  return async (repos: Repositories) => {
-    await notifyUsers(repos, ctx.appUrl, {
-      now: ctx.clock.now(),
-      userIds: await otherSideContacts(repos, deal, side),
-      path: `/deals/${deal.id}`,
-      email,
-    });
   };
 }
 
@@ -431,130 +322,6 @@ export async function cancelDeal(
       },
     })),
   }));
-}
-
-/**
- * UC-R4 / UC-R5: daily job. Past-deadline deals with nothing posted remind both sides
- * once; overdue payments remind the brand every week until marked paid.
- */
-export async function sendDealReminders(
-  deps: Pick<ServiceContext, 'repos' | 'transaction' | 'clock' | 'jobQueue' | 'appUrl'>,
-): Promise<{ deadlineReminders: number; paymentReminders: number }> {
-  const now = deps.clock.now();
-  const postedBefore = new Date(now.getTime() - DEAL_LIMITS.paymentGraceDays * DAY_MS);
-  const deals = await deps.repos.deals.remindableDeals(
-    now,
-    postedBefore,
-    DEAL_LIMITS.remindersPerRun,
-  );
-  const days = {
-    graceDays: DEAL_LIMITS.paymentGraceDays,
-    repeatDays: DEAL_LIMITS.paymentReminderRepeatDays,
-  };
-  let deadlineReminders = 0;
-  let paymentReminders = 0;
-  for (const deal of deals) {
-    if (isDeadlineReminderDue(deal, now)) {
-      await deps.transaction(async (repos) => {
-        await repos.deals.markReminderSent(deal.id, 'deadlineReminderSentAt', now);
-        await repos.deals.addEvent({
-          dealId: deal.id,
-          kind: 'DEADLINE_REMINDER',
-          actorUserId: null,
-          actorSide: null,
-          createdAt: now,
-        });
-        await notifyUsers(repos, deps.appUrl, {
-          now,
-          userIds: [
-            deal.creatorUserId,
-            ...(await brandContactIds(repos, deal.brandId, deal.sentByUserId)),
-          ],
-          path: `/deals/${deal.id}`,
-          email: (recipient) => ({
-            template: 'dealDeadlinePassed',
-            payload: { ...recipient, campaignName: deal.campaignName },
-          }),
-        });
-      });
-      deadlineReminders += 1;
-    } else if (isPaymentReminderDue(deal, now, days)) {
-      await deps.transaction(async (repos) => {
-        await repos.deals.markReminderSent(deal.id, 'paymentReminderSentAt', now);
-        await repos.deals.addEvent({
-          dealId: deal.id,
-          kind: 'PAYMENT_REMINDER',
-          actorUserId: null,
-          actorSide: null,
-          createdAt: now,
-        });
-        await notifyUsers(repos, deps.appUrl, {
-          now,
-          userIds: await brandContactIds(repos, deal.brandId, deal.sentByUserId),
-          path: `/deals/${deal.id}`,
-          email: (recipient) => ({
-            template: 'paymentOverdue',
-            payload: {
-              ...recipient,
-              creatorName: deal.creatorDisplayName,
-              campaignName: deal.campaignName,
-            },
-          }),
-        });
-      });
-      paymentReminders += 1;
-    }
-  }
-  if (deadlineReminders + paymentReminders > 0) await requestEmailDispatch(deps.jobQueue);
-  return { deadlineReminders, paymentReminders };
-}
-
-/**
- * UC-R6: daily job refreshing post stats for 90 days after posting. Deleted or private
- * posts keep their last stats and are marked; temporary failures retry tomorrow.
- */
-export async function refreshDealPosts(
-  ctx: ServiceContext,
-): Promise<{ refreshed: number; deleted: number; private: number; failed: number }> {
-  const now = ctx.clock.now();
-  const posts = await ctx.repos.deals.postsDueForRefresh(
-    new Date(now.getTime() - POST_STATS_REFRESH.staleAfterMs),
-    new Date(now.getTime() - POST_STATS_REFRESH.refreshForDays * DAY_MS),
-    POST_STATS_REFRESH.postsPerRun,
-  );
-  const counts = { refreshed: 0, deleted: 0, private: 0, failed: 0 };
-  for (const post of posts) {
-    if (!post.socialAccountId) {
-      counts.failed += 1;
-      continue;
-    }
-    try {
-      const stats = await fetchPostStatsFor(ctx, {
-        socialAccountId: post.socialAccountId,
-        postId: post.externalPostId,
-      });
-      if (stats) {
-        await ctx.repos.deals.updatePost(post.id, {
-          status: 'LIVE',
-          ...stats,
-          statsFetchedAt: now,
-        });
-        counts.refreshed += 1;
-      } else {
-        await ctx.repos.deals.updatePost(post.id, { status: 'DELETED', statsFetchedAt: now });
-        counts.deleted += 1;
-      }
-    } catch (error) {
-      if (error instanceof SocialProviderError && error.kind === 'ACCOUNT_PRIVATE') {
-        await ctx.repos.deals.updatePost(post.id, { status: 'PRIVATE', statsFetchedAt: now });
-        counts.private += 1;
-      } else {
-        logger.warn({ err: error, postId: post.id }, 'post stats refresh failed');
-        counts.failed += 1;
-      }
-    }
-  }
-  return counts;
 }
 
 /**

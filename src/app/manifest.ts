@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Creators',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#3b3fa8',
+    background_color: '#fdfcf9',
+    theme_color: '#1f2633',
     icons: [
       { src: '/icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

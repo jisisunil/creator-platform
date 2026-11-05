@@ -23,7 +23,6 @@ export const CLIENT_MESSAGE_NAMESPACES = [
   'deliverables',
   'errors',
   'fieldErrors',
-  'home',
   'industries',
   'plans',
   'ratings',

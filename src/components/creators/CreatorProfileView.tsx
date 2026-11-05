@@ -2,7 +2,6 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { ScoreBreakdown } from '@/components/creators/ScoreBreakdown';
-import { PageShell } from '@/components/layout/PageShell';
 import { ReputationSummary } from '@/components/ratings/RatingDisplay';
 import { Card, CardTitle } from '@/components/ui/card';
 import { CONTENT_LANGUAGES } from '@/config/languages';
@@ -50,77 +49,96 @@ export async function CreatorProfileView({
   );
   const audienceDimensions = ['AGE', 'GENDER', 'CITY'] as const;
 
+  const stats = [
+    ['followers', formatCompactCount(profile.totalFollowers, locale, country)],
+    ['engagement', `${basisPointsToPercent(profile.engagementRateBp)}%`],
+    ...(profile.score ? [['score', String(profile.score.value)] as const] : []),
+    ...(profile.tier ? [['tier', tTiers(profile.tier)] as const] : []),
+  ] as const;
+  const categoryNames = profile.categorySlugs.map((slug) => tCategories(slug));
+
   return (
-    <PageShell title={profile.displayName}>
-      {actions}
-      <Card>
-        <div className="flex flex-wrap items-start gap-4">
-          {photoUrl ? (
-            <Image
-              src={photoUrl}
-              alt=""
-              width={96}
-              height={96}
-              unoptimized
-              className="size-24 rounded-full object-cover"
-            />
-          ) : null}
-          <div className="grid gap-1">
-            <p className="text-sm">
-              {profile.isVerified ? (
-                // Darker than the score-bar blue: white text needs 4.5:1 contrast (NFR-9).
-                <span className="mr-2 rounded bg-[#1d5fb4] px-2 py-0.5 text-xs font-medium text-white">
-                  ✓ {t('verified')}
-                </span>
-              ) : null}
+    <main id="main" className="mx-auto max-w-6xl px-4 py-12">
+      <section className="grid gap-8 md:grid-cols-[auto_1fr] md:items-center">
+        {photoUrl ? (
+          <Image
+            src={photoUrl}
+            alt=""
+            width={128}
+            height={128}
+            unoptimized
+            className="ring-border size-28 rounded-full object-cover ring-1 ring-offset-4 md:size-32"
+          />
+        ) : null}
+        <div>
+          <p className="eyebrow">{[location, ...categoryNames].filter(Boolean).join(' · ')}</p>
+          <h1 className="mt-3 text-5xl leading-[1.05] sm:text-6xl">{profile.displayName}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium">
+            {profile.isVerified ? (
+              <span className="bg-brand-soft text-brand rounded-full px-3 py-1">
+                ✓ {t('verified')}
+              </span>
+            ) : null}
+            <span className="rounded-full border px-3 py-1">
               {profile.isOpenToCollaborations
                 ? t('openToCollaborations')
                 : t('closedToCollaborations')}
-            </p>
-            {location ? <p className="text-muted-foreground">{location}</p> : null}
-            <p className="text-sm">
-              {t('followers', {
-                count: formatCompactCount(profile.totalFollowers, locale, country),
-              })}
-              {' · '}
-              {t('engagement', { rate: basisPointsToPercent(profile.engagementRateBp) })}
-              {profile.tier ? ` · ${t('tier', { tier: tTiers(profile.tier) })}` : ''}
-            </p>
+            </span>
             {profile.lastRefreshedAt ? (
-              <p className="text-muted-foreground text-xs">
+              <span className="text-muted-foreground font-normal">
                 {t('lastUpdated', {
                   date: format.dateTime(profile.lastRefreshedAt, { dateStyle: 'medium' }),
                 })}
-              </p>
+              </span>
             ) : null}
           </div>
         </div>
-        {profile.bio ? <p className="mt-4 whitespace-pre-line">{profile.bio}</p> : null}
-        <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+      </section>
+
+      {actions ? <div className="mt-8">{actions}</div> : null}
+
+      <dl className="mt-10 grid grid-cols-2 border-y sm:grid-cols-4">
+        {stats.map(([key, value]) => (
+          <div
+            key={key}
+            className="border-r py-6 pr-4 last:border-r-0 even:border-r-0 even:pl-4 sm:px-6 sm:first:pl-0 sm:last:border-r-0 sm:even:border-r"
+          >
+            <dt className="eyebrow">{t(`stats.${key}`)}</dt>
+            <dd className="mt-2 font-serif text-4xl tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <section className="mt-10 grid gap-10 md:grid-cols-[1.4fr_1fr]">
+        <div>
+          {profile.bio ? (
+            <p className="max-w-2xl text-lg leading-relaxed whitespace-pre-line">{profile.bio}</p>
+          ) : null}
+        </div>
+        <dl className="grid content-start gap-5 text-sm">
           <div>
-            <dt className="text-muted-foreground">{t('languages')}</dt>
-            <dd>{languageNames.join(', ') || '–'}</dd>
+            <dt className="eyebrow">{t('languages')}</dt>
+            <dd className="mt-1">{languageNames.join(', ') || '–'}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{t('categories')}</dt>
-            <dd>{profile.categorySlugs.map((slug) => tCategories(slug)).join(', ') || '–'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t('accounts')}</dt>
-            {profile.accounts.length === 0 ? <dd>–</dd> : null}
+            <dt className="eyebrow">{t('accounts')}</dt>
+            {profile.accounts.length === 0 ? <dd className="mt-1">–</dd> : null}
             {profile.accounts.map((account) => (
-              <dd key={`${account.platform}-${account.handle}`}>
+              <dd key={`${account.platform}-${account.handle}`} className="mt-1">
                 {account.profileUrl ? (
                   <a
                     href={account.profileUrl}
                     rel="noopener noreferrer nofollow"
                     target="_blank"
-                    className="underline"
+                    className="underline underline-offset-4"
                   >
                     {tPlatforms(account.platform)} {account.handle}
                   </a>
                 ) : (
-                  `${tPlatforms(account.platform)} ${account.handle}${account.isVerified ? ' ✓' : ''}`
+                  <>
+                    {tPlatforms(account.platform)} {account.handle}
+                    {account.isVerified ? <span className="text-brand"> ✓</span> : null}
+                  </>
                 )}
                 {account.isSelfReported ? (
                   <span className="text-muted-foreground text-xs">
@@ -136,95 +154,103 @@ export async function CreatorProfileView({
             ))}
           </div>
         </dl>
-      </Card>
+      </section>
 
-      {profile.score ? (
-        <Card>
-          <ScoreBreakdown
-            score={profile.score.value}
-            components={profile.score.breakdown}
-            weightsVersion={profile.score.weightsVersion}
-          />
-        </Card>
-      ) : null}
+      <div className="below-fold mt-12 grid items-start gap-6 md:grid-cols-[1.4fr_1fr]">
+        <div className="grid gap-6">
+          {profile.score ? (
+            <Card>
+              <ScoreBreakdown
+                score={profile.score.value}
+                components={profile.score.breakdown}
+                weightsVersion={profile.score.weightsVersion}
+              />
+            </Card>
+          ) : null}
 
-      <Card>
-        <CardTitle>{t('audience')}</CardTitle>
-        {profile.audience.length === 0 ? (
-          <p className="text-muted-foreground mt-3 text-sm">{t('audienceNotShared')}</p>
-        ) : (
-          <div className="mt-3 grid gap-4 sm:grid-cols-3">
-            {audienceDimensions.map((dimension) => {
-              const rows = profile.audience
-                .filter((row) => row.dimension === dimension)
-                .slice(0, 5);
-              return (
-                <div key={dimension}>
-                  <h3 className="text-sm font-medium">{t(`dimension.${dimension}`)}</h3>
-                  {rows.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">{t('audienceNotShared')}</p>
-                  ) : (
-                    <ul className="mt-1 grid gap-1 text-sm tabular-nums">
-                      {rows.map((row) => (
-                        <li key={row.bucket} className="flex justify-between gap-2">
-                          <span>
-                            {dimension === 'GENDER' && ['F', 'M', 'U'].includes(row.bucket)
-                              ? t(`gender.${row.bucket as 'F' | 'M' | 'U'}`)
-                              : row.bucket}
-                          </span>
-                          <span>{(row.sharePermille / PERMILLE_PER_PERCENT).toFixed(0)}%</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+          <Card>
+            <CardTitle>{t('audience')}</CardTitle>
+            {profile.audience.length === 0 ? (
+              <p className="text-muted-foreground mt-3 text-sm">{t('audienceNotShared')}</p>
+            ) : (
+              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+                {audienceDimensions.map((dimension) => {
+                  const rows = profile.audience
+                    .filter((row) => row.dimension === dimension)
+                    .slice(0, 5);
+                  return (
+                    <div key={dimension}>
+                      <h3 className="text-sm font-medium">{t(`dimension.${dimension}`)}</h3>
+                      {rows.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">{t('audienceNotShared')}</p>
+                      ) : (
+                        <ul className="mt-1 grid gap-1 text-sm tabular-nums">
+                          {rows.map((row) => (
+                            <li key={row.bucket} className="flex justify-between gap-2">
+                              <span>
+                                {dimension === 'GENDER' && ['F', 'M', 'U'].includes(row.bucket)
+                                  ? t(`gender.${row.bucket as 'F' | 'M' | 'U'}`)
+                                  : row.bucket}
+                              </span>
+                              <span>{(row.sharePermille / PERMILLE_PER_PERCENT).toFixed(0)}%</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+        <div className="grid gap-6">
+          {profile.rateCard.length > 0 ? (
+            <Card>
+              <CardTitle>{t('rateCard')}</CardTitle>
+              <ul className="mt-3 grid gap-1 text-sm">
+                {profile.rateCard.map((item) => (
+                  <li key={item.deliverable} className="flex justify-between gap-2">
+                    <span>{tDeliverables(item.deliverable)}</span>
+                    <span className="tabular-nums">
+                      {formatMoney(item.amountMinor, item.currency, locale, country)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
 
-      {profile.rateCard.length > 0 ? (
-        <Card>
-          <CardTitle>{t('rateCard')}</CardTitle>
-          <ul className="mt-3 grid gap-1 text-sm">
-            {profile.rateCard.map((item) => (
-              <li key={item.deliverable} className="flex justify-between gap-2">
-                <span>{tDeliverables(item.deliverable)}</span>
-                <span className="tabular-nums">
-                  {formatMoney(item.amountMinor, item.currency, locale, country)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-
-      {profile.portfolio.length > 0 ? (
-        <Card>
-          <CardTitle>{t('portfolio')}</CardTitle>
-          <ul className="mt-3 grid gap-1 text-sm">
-            {profile.portfolio.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="underline"
-                >
-                  {item.brandName}
-                </a>{' '}
-                <span className="text-muted-foreground">
-                  {format.dateTime(item.collaboratedOn, { dateStyle: 'medium', timeZone: 'UTC' })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-      <Card>
-        <ReputationSummary reputation={reputation} title={t('ratingsTitle')} />
-      </Card>
-    </PageShell>
+          {profile.portfolio.length > 0 ? (
+            <Card>
+              <CardTitle>{t('portfolio')}</CardTitle>
+              <ul className="mt-3 grid gap-1 text-sm">
+                {profile.portfolio.map((item) => (
+                  <li key={item.id}>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="underline"
+                    >
+                      {item.brandName}
+                    </a>{' '}
+                    <span className="text-muted-foreground">
+                      {format.dateTime(item.collaboratedOn, {
+                        dateStyle: 'medium',
+                        timeZone: 'UTC',
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+          <Card>
+            <ReputationSummary reputation={reputation} title={t('ratingsTitle')} />
+          </Card>
+        </div>
+      </div>
+    </main>
   );
 }

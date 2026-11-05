@@ -12,6 +12,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 /** Top bar: home link, account links for the signed-in user, language choice. */
 export async function SiteHeader() {
   const t = await getTranslations('nav');
+  const tMeta = await getTranslations('metadata');
   const session = await getCurrentSession();
   const isSignedIn = session !== null && session.isTwoFactorSatisfied;
   const role = isSignedIn ? session.user.role : null;
@@ -27,66 +28,112 @@ export async function SiteHeader() {
     isSignedIn && role === 'CREATOR' ? await countOpenRequests(getContainer(), session.user.id) : 0;
 
   return (
-    <header className="border-b print:hidden">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="font-semibold">
-          {t('home')}
+    <header className="bg-background border-b print:hidden">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
+        {/* Wordmark until the product name and logo are chosen (X-07). */}
+        <Link href="/" aria-label={t('home')} className="font-serif text-2xl leading-none">
+          {tMeta('title')}
+          <span aria-hidden="true" className="text-brand">
+            .
+          </span>
         </Link>
-        <nav aria-label={t('mainLabel')} className="flex flex-wrap items-center gap-3 text-sm">
+        <nav
+          aria-label={t('mainLabel')}
+          className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"
+        >
           {isSignedIn ? (
             <>
-              <Link href="/dashboard" className="underline-offset-4 hover:underline">
+              <Link
+                href="/dashboard"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {t('dashboard')}
               </Link>
               {session.user.role === 'CREATOR' ? (
                 <>
-                  <Link href="/creator/profile" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/creator/profile"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('profile')}
                   </Link>
-                  <Link href="/deals" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/deals"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('deals')}
                   </Link>
-                  <Link href="/creator/requests" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/creator/requests"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('requests')}
                     <CountBadge
                       count={openRequests}
                       label={t('openRequests', { count: openRequests })}
                     />
                   </Link>
-                  <Link href="/creator/accounts" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/creator/accounts"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('accounts')}
                   </Link>
-                  <Link href="/creator/analytics" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/creator/analytics"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('analytics')}
                   </Link>
                 </>
               ) : null}
               {session.user.role === 'BRAND' ? (
                 <>
-                  <Link href="/brand/search" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/brand/search"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('search')}
                   </Link>
-                  <Link href="/brand/shortlists" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/brand/shortlists"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('shortlists')}
                   </Link>
-                  <Link href="/brand/requests" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/brand/requests"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('requests')}
                   </Link>
-                  <Link href="/deals" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/deals"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('deals')}
                   </Link>
-                  <Link href="/brand/team" className="underline-offset-4 hover:underline">
+                  <Link
+                    href="/brand/team"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {t('team')}
                   </Link>
                 </>
               ) : null}
               {role === 'ADMIN' ? (
-                <Link href="/admin" className="underline-offset-4 hover:underline">
+                <Link
+                  href="/admin"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {t('admin')}
                 </Link>
               ) : null}
               {isParticipant ? (
-                <Link href="/messages" className="underline-offset-4 hover:underline">
+                <Link
+                  href="/messages"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {t('messages')}
                   <CountBadge
                     count={unreadMessages}
@@ -95,7 +142,10 @@ export async function SiteHeader() {
                 </Link>
               ) : null}
               {isParticipant ? (
-                <Link href="/notifications" className="underline-offset-4 hover:underline">
+                <Link
+                  href="/notifications"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {t('notifications')}
                   <CountBadge
                     count={unreadNotifications}
@@ -103,7 +153,10 @@ export async function SiteHeader() {
                   />
                 </Link>
               ) : null}
-              <Link href="/settings" className="underline-offset-4 hover:underline">
+              <Link
+                href="/settings"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {t('settings')}
               </Link>
               <form action={signOutAction}>
@@ -114,7 +167,10 @@ export async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link href="/sign-in" className="underline-offset-4 hover:underline">
+              <Link
+                href="/sign-in"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {t('signIn')}
               </Link>
               <Button asChild size="sm">
@@ -133,7 +189,7 @@ export async function SiteHeader() {
 function CountBadge({ count, label }: { count: number; label: string }) {
   if (count === 0) return null;
   return (
-    <span className="bg-primary text-primary-foreground ml-1 rounded-full px-1.5 py-0.5 text-xs">
+    <span className="bg-brand text-brand-foreground ml-1 rounded-full px-1.5 py-0.5 text-xs tabular-nums">
       <span aria-hidden="true">{count}</span>
       <span className="sr-only">{label}</span>
     </span>

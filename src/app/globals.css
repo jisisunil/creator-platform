@@ -3,27 +3,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Colour tokens (shadcn/ui). Contrast pairs meet WCAG 2.1 AA (NFR-9). */
+/*
+ * "Premium & minimal" theme: warm paper white, near-black ink, one accent (deep emerald)
+ * for verification, scores and highlights. Every text pair meets WCAG 2.1 AA (NFR-9):
+ * ink on paper ~15:1, muted text ~6:1, emerald text and white-on-emerald ~5.5:1.
+ */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.21 0.02 265);
+  --radius: 0.5rem;
+  --background: oklch(0.992 0.004 85);
+  --foreground: oklch(0.2 0.015 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 265);
+  --card-foreground: oklch(0.2 0.015 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 265);
-  --primary: oklch(0.45 0.16 265);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0.01 265);
-  --secondary-foreground: oklch(0.21 0.02 265);
-  --muted: oklch(0.96 0.01 265);
-  --muted-foreground: oklch(0.45 0.02 265);
-  --accent: oklch(0.96 0.01 265);
-  --accent-foreground: oklch(0.21 0.02 265);
-  --destructive: oklch(0.55 0.22 27);
-  --border: oklch(0.9 0.01 265);
-  --input: oklch(0.9 0.01 265);
-  --ring: oklch(0.45 0.16 265);
+  --popover-foreground: oklch(0.2 0.015 260);
+  --primary: oklch(0.22 0.018 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.965 0.006 85);
+  --secondary-foreground: oklch(0.2 0.015 260);
+  --muted: oklch(0.955 0.006 85);
+  --muted-foreground: oklch(0.47 0.015 260);
+  --accent: oklch(0.955 0.006 85);
+  --accent-foreground: oklch(0.2 0.015 260);
+  --destructive: oklch(0.52 0.2 27);
+  --border: oklch(0.905 0.008 85);
+  --input: oklch(0.88 0.008 85);
+  --ring: oklch(0.47 0.11 162);
+  /* The one accent: verified badges, score bars, links that matter. */
+  --brand: oklch(0.47 0.11 162);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-soft: oklch(0.955 0.03 162);
+  /* Accent on the dark ink panels (~9:1 on --primary). */
+  --brand-light: oklch(0.84 0.09 162);
 }
 
 @theme inline {
@@ -45,10 +55,19 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-light: var(--brand-light);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Self-hosted by next/font (layout.tsx); Devanagari faces load only for Hindi text. */
+  --font-sans:
+    var(--font-inter), var(--font-noto-sans-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-serif:
+    var(--font-instrument-serif), var(--font-noto-serif-devanagari), ui-serif, Georgia, serif;
 }
 
 @layer base {
@@ -56,6 +75,44 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  /* Serif display headings; the app's smaller headings stay in the sans for scanning. */
+  h1 {
+    @apply font-serif font-normal tracking-tight text-balance;
+  }
+}
+
+@layer components {
+  /* Small uppercase label above a heading, led by a short rule. */
+  .eyebrow {
+    @apply text-muted-foreground inline-flex items-center gap-3 text-xs font-medium tracking-[0.18em] uppercase;
+  }
+  .eyebrow::before {
+    content: '';
+    @apply h-px w-6 shrink-0 bg-current opacity-60;
+  }
+  /* The accent phrase in a display headline: serif italic in the one accent colour. */
+  .display-accent {
+    @apply text-brand italic;
+    font-family:
+      var(--font-instrument-serif-italic), var(--font-noto-serif-devanagari), ui-serif, Georgia,
+      serif;
+  }
+  /*
+   * Below-the-fold sections: the browser skips their layout and paint until they near the
+   * viewport, which keeps first paint fast on slow phones (NFR-6). Looks identical.
+   */
+  .below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 700px;
+  }
+  /* System fonts only, for a few words in another script (the language switcher). */
+  .font-system {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  /* Devanagari has no true italic; the colour alone carries the accent in Hindi. */
+  :lang(hi) .display-accent {
+    font-style: normal;
   }
 }

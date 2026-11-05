@@ -30,9 +30,9 @@ export async function ScoreBreakdown({
 
   return (
     <div className="grid gap-4">
-      <p className="text-3xl font-bold" aria-label={t('outOf', { score })}>
+      <p className="font-serif text-6xl leading-none" aria-label={t('outOf', { score })}>
         {score}
-        <span className="text-muted-foreground text-base font-normal"> / 100</span>
+        <span className="text-muted-foreground font-sans text-base"> / 100</span>
       </p>
       <dl className="grid gap-3">
         {COMPONENTS.map((name) => {
@@ -44,17 +44,14 @@ export async function ScoreBreakdown({
               <dd className="text-sm tabular-nums">{value}</dd>
               <dd className="col-span-2">
                 <div
-                  className="bg-muted h-2 overflow-hidden rounded-full"
+                  className="bg-muted h-1.5 overflow-hidden rounded-full"
                   role="meter"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={value}
                   aria-label={t(`components.${name}`)}
                 >
-                  <div
-                    className="h-full rounded-full bg-[#2a78d6]"
-                    style={{ width: `${value}%` }}
-                  />
+                  <div className="bg-brand h-full rounded-full" style={{ width: `${value}%` }} />
                 </div>
               </dd>
               <dd className="text-muted-foreground col-span-2 text-xs">{detail[name]}</dd>

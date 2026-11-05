@@ -23,14 +23,72 @@
     }
   },
   "home": {
-    "headline": "Find verified creators your audience already trusts",
+    "headline": "Find verified creators your audience <em>already trusts</em>",
     "intro": "Brands search, shortlist and contact regional creators with transparent, verified content scores. Creators join free.",
-    "forCreators": "For creators",
-    "forCreatorsText": "Get a verified profile and a transparent content score, and get found by brands.",
-    "forBrands": "For brands",
-    "forBrandsText": "Search by city, language and category, compare creators and track campaigns.",
     "ctaCreator": "Join as a creator",
-    "ctaBrand": "Join as a brand"
+    "ctaBrand": "Join as a brand",
+    "eyebrow": "Creator discovery for India",
+    "example": {
+      "label": "Example profile",
+      "name": "Asha Cooks",
+      "meta": "Food · Chennai, Tamil Nadu · 48K followers",
+      "verified": "Verified",
+      "scoreLabel": "content score, out of 100, with every part shown"
+    },
+    "how": {
+      "creators": {
+        "eyebrow": "For creators",
+        "title": "Get found for the work you already do",
+        "one": {
+          "title": "Create your profile",
+          "text": "Your city, languages, categories and rates. Always free."
+        },
+        "two": {
+          "title": "Connect your channel",
+          "text": "An official login proves the account is yours and earns the verified badge."
+        },
+        "three": {
+          "title": "Answer real requests",
+          "text": "Brands send a clear brief and budget. Accept, chat and track the deal to payment."
+        }
+      },
+      "brands": {
+        "eyebrow": "For brands",
+        "title": "Find creators your customers already follow",
+        "one": {
+          "title": "Search like a local",
+          "text": "By city, language, category, audience and engagement, not just follower counts."
+        },
+        "two": {
+          "title": "Compare honestly",
+          "text": "Every score shows its parts: engagement, consistency, growth and authenticity."
+        },
+        "three": {
+          "title": "Run the collaboration",
+          "text": "Requests, chat, deliverables, payment status and post results in one place."
+        }
+      }
+    },
+    "principles": {
+      "eyebrow": "What we stand for",
+      "title": "Built on verification, <em>not on vanity numbers.</em>",
+      "verified": {
+        "title": "Verified over big",
+        "text": "A connected, proven account counts for more than a large list of scraped profiles."
+      },
+      "transparent": {
+        "title": "A transparent score",
+        "text": "No black box: every creator sees, and every brand can check, how a score is made."
+      },
+      "privacy": {
+        "title": "Private by design",
+        "text": "Phone numbers and emails are never shown to brands. You can download or delete your data at any time."
+      }
+    },
+    "closing": {
+      "title": "Start with a <em>free</em> profile.",
+      "text": "Creators are always free. Brands can search and contact creators during the beta."
+    }
   },
   "errors": {
     "VALIDATION_FAILED": "Some details need fixing. Check the highlighted fields.",
@@ -843,7 +901,13 @@
     },
     "ratingsTitle": "Ratings from brands",
     "selfReported": "(self-reported, not verified)",
-    "selfReportedWithFollowers": "(self-reported, not verified · {followers} followers declared)"
+    "selfReportedWithFollowers": "(self-reported, not verified · {followers} followers declared)",
+    "stats": {
+      "followers": "Followers",
+      "engagement": "Engagement",
+      "score": "Content score",
+      "tier": "Tier"
+    }
   },
   "regions": {
     "IN": {
@@ -1630,5 +1694,14 @@
   "offline": {
     "title": "You are offline",
     "body": "Check your internet connection and try again. Pages you open need a connection to show up-to-date details."
+  },
+  "authPanel": {
+    "eyebrow": "Creator discovery for India",
+    "statement": "Real creators. <em>Honest numbers.</em>",
+    "points": {
+      "verified": "Verified accounts, proven through official logins",
+      "transparent": "A content score that shows every part",
+      "private": "Your phone and email are never shown to brands"
+    }
   }
 }

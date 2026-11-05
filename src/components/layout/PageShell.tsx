@@ -19,11 +19,11 @@ export function PageShell({
   return (
     <main
       id="main"
-      className={cn('mx-auto px-4 py-10', narrow ? 'max-w-md' : wide ? 'max-w-6xl' : 'max-w-3xl')}
+      className={cn('mx-auto px-4 py-12', narrow ? 'max-w-md' : wide ? 'max-w-6xl' : 'max-w-3xl')}
     >
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-      {intro ? <div className="text-muted-foreground mt-2">{intro}</div> : null}
-      <div className="mt-6 grid gap-6">{children}</div>
+      <h1 className="text-4xl leading-tight">{title}</h1>
+      {intro ? <div className="text-muted-foreground mt-3">{intro}</div> : null}
+      <div className="mt-8 grid gap-6">{children}</div>
     </main>
   );
 }

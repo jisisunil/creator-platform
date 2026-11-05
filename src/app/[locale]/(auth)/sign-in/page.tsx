@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { getContainer } from '@/adapters/container';
+import { AuthShell } from '@/components/layout/AuthShell';
 import { PageShell } from '@/components/layout/PageShell';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export default async function SignInPage({
   }
 
   return (
-    <PageShell narrow title={t('title')}>
+    <AuthShell title={t('title')}>
       {query.deleted === '1' ? <Alert variant="success">{t('accountDeleted')}</Alert> : null}
       {query.google === 'rejected' ? (
         <Alert variant="destructive">{t('googleRejected')}</Alert>
@@ -67,6 +68,6 @@ export default async function SignInPage({
           {t('signUpLink')}
         </Link>
       </p>
-    </PageShell>
+    </AuthShell>
   );
 }

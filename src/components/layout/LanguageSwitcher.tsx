@@ -20,7 +20,9 @@ export function LanguageSwitcher() {
           lang={locale}
           aria-current={locale === currentLocale ? 'true' : undefined}
           className={cn(
-            'rounded px-1 underline-offset-4 hover:underline',
+            // The phone's own font: the bundled Devanagari font (~120 KB) would otherwise
+            // download on every English page just for "हिन्दी" (NFR-6).
+            'font-system rounded px-1 underline-offset-4 hover:underline',
             locale === currentLocale && 'font-semibold',
           )}
         >

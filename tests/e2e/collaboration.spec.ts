@@ -70,12 +70,14 @@ async function rateFiveStars(page: Page): Promise<void> {
 }
 
 test.describe('collaboration', () => {
+  // Every test here is a two-person flow (two sign-ups, several pages): about 30 s on a busy
+  // machine, the default limit.
+  test.slow();
+
   test('UC-R1 UC-R2 UC-R3 a brand sends a request, the creator accepts and they chat', async ({
     page,
     browser,
   }) => {
-    // Two people, many pages: about 30 s on a busy machine, the default limit.
-    test.slow();
     const demo = demoCreator('chat');
     await signedInNewBrand(page, uniqueEmail('collab'));
     const requestId = await sendRequest(page, demo.slug, 'E2E festive campaign');
@@ -101,8 +103,6 @@ test.describe('collaboration', () => {
     page,
     browser,
   }) => {
-    // Two people walk a whole deal: more steps than the default per-test time allows.
-    test.slow();
     const demo = demoCreator('deal');
     await signedInNewBrand(page, uniqueEmail('deal'));
     const requestId = await sendRequest(page, demo.slug, 'E2E deal campaign');

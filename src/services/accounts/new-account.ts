@@ -2,8 +2,8 @@ import type { Repositories } from '@/adapters/db/repositories';
 import type { UserRecord } from '@/adapters/db/user-repository';
 import { LAUNCH_COUNTRY_CODE } from '@/config/countries';
 import type { SelfServiceRole } from '@/domain/accounts';
-import { companyDomainOf } from '@/domain/email-address';
-import { invalidState } from '@/domain/errors';
+import { companyDomainOf, isInvitedToSignUp } from '@/domain/email-address';
+import { invalidState, validationFailed } from '@/domain/errors';
 import { startingPlanFor } from '../plans';
 
 export interface NewAccountDetails {
@@ -19,6 +19,8 @@ export interface NewAccountDetails {
   readonly brand?: { readonly name: string; readonly industry: string };
   /** For brand sign-ups from a team invite: join this brand as a member instead. */
   readonly joinBrandId?: string;
+  /** ServiceContext.signUpAllowlist: in a closed pilot only listed emails get accounts. */
+  readonly signUpAllowlist: readonly string[] | null;
 }
 
 /**
@@ -31,6 +33,10 @@ export async function createAccount(
   details: NewAccountDetails,
   ipAddress: string | null,
 ): Promise<UserRecord> {
+  // Every way of getting an account (password, Google, team invite) passes through here.
+  if (!isInvitedToSignUp(details.signUpAllowlist, details.email)) {
+    throw validationFailed({ email: 'email.inviteOnly' });
+  }
   const country = await repos.reference.findCountry(LAUNCH_COUNTRY_CODE);
   if (!country?.isEnabled) throw invalidState();
 

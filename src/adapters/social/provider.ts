@@ -82,6 +82,11 @@ export class SocialProviderError extends Error {
 
 export interface SocialPlatformProvider {
   readonly platform: SocialPlatform;
+  /**
+   * False when the official login is switched off (SOCIAL_PROVIDER_MODE=off, e.g. a pilot
+   * without Google or Meta apps). Creators may then list the platform as self-reported.
+   */
+  readonly isOfficialLoginAvailable: boolean;
 
   /** FR-3.1/3.2: the official login URL that proves ownership. */
   authorizationUrl(input: { state: string; redirectUri: string }): string;

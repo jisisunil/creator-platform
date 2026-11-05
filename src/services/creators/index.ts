@@ -13,7 +13,7 @@ import { containsProfanity, findContactDetails } from '@/domain/content-safety';
 import { missingProfileFields, type ProfileField, slugBaseFrom } from '@/domain/creators';
 import { notAllowed, notFound, validationFailed } from '@/domain/errors';
 import { detectImageType } from '@/domain/file-types';
-import { instagramProfileUrl } from '@/domain/social-handles';
+import { SELF_REPORT_HANDLES } from '@/domain/social-handles';
 import type { ScoreBreakdown } from '@/domain/score';
 import { compressProfilePhoto } from '@/lib/images';
 import type { ServiceContext } from '../context';
@@ -321,10 +321,9 @@ export async function getPublicProfile(
         isVerified: account.isVerified,
         isSelfReported: account.isSelfReported,
         declaredFollowers: account.isSelfReported ? account.selfReportedFollowers : null,
-        profileUrl:
-          account.isSelfReported && account.platform === 'INSTAGRAM'
-            ? instagramProfileUrl(account.handle)
-            : null,
+        profileUrl: account.isSelfReported
+          ? SELF_REPORT_HANDLES[account.platform].profileUrl(account.handle)
+          : null,
       })),
     score: score
       ? { value: score.score, breakdown: score.components, weightsVersion: score.weightsVersion }

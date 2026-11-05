@@ -73,6 +73,7 @@ export async function seedDemoCollaborations(
     fileStorage: createLocalFileStorage(settings.fileStorageDir),
     malwareScanner: disabledMalwareScanner,
     appUrl: settings.appUrl,
+    signUpAllowlist: null,
   };
   const creatorUser = async (index: string) => {
     const user = await repos.users.findByEmail(`demo-creator-${index}@example.test`);

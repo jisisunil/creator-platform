@@ -100,6 +100,36 @@ describe('parseServerEnv (SR-10)', () => {
     expect(parseServerEnv(VALID).AWS_REGION).toBe('ap-south-1');
   });
 
+  const PILOT = {
+    ...VALID,
+    APP_ENV: 'pilot',
+    SOCIAL_PROVIDER_MODE: 'off',
+    MALWARE_SCANNER: 'clamav',
+    SALES_EMAIL: 'founder@gmail.com',
+    SIGNUP_ALLOWLIST: ' Asha@Example.in, brand@shop.in ,',
+  };
+
+  it('accepts a closed pilot without CAPTCHA or Google/Meta apps', () => {
+    const env = parseServerEnv(PILOT);
+
+    expect(env.SIGNUP_ALLOWLIST).toEqual(['asha@example.in', 'brand@shop.in']);
+    expect(env.SOCIAL_PROVIDER_MODE).toBe('off');
+  });
+
+  it('a pilot must be invite-only, show no fake social data and scan uploads', () => {
+    expect(() => parseServerEnv({ ...PILOT, SIGNUP_ALLOWLIST: '' })).toThrow(/SIGNUP_ALLOWLIST/);
+    expect(() => parseServerEnv({ ...PILOT, SOCIAL_PROVIDER_MODE: 'mock' })).toThrow(
+      /SOCIAL_PROVIDER_MODE/,
+    );
+    expect(() => parseServerEnv({ ...PILOT, MALWARE_SCANNER: 'disabled' })).toThrow(
+      /MALWARE_SCANNER/,
+    );
+  });
+
+  it('sign-up is open when no allowlist is set', () => {
+    expect(parseServerEnv(VALID).SIGNUP_ALLOWLIST).toBeNull();
+  });
+
   it('needs both Google sign-in values or neither', () => {
     expect(() => parseServerEnv({ ...VALID, AUTH_GOOGLE_ID: 'id' })).toThrow(/AUTH_GOOGLE_ID/);
   });

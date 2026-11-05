@@ -146,8 +146,8 @@ export async function linkChannelAction(_: ActionState, formData: FormData): Pro
   });
 }
 
-/** Q-43: adds a self-reported Instagram handle (unverified, shown as such). */
-export async function addSelfReportedInstagramAction(
+/** Q-43: adds a self-reported handle (unverified, shown as such). */
+export async function addSelfReportedAccountAction(
   _: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -157,7 +157,7 @@ export async function addSelfReportedInstagramAction(
     const input = parseForm(selfReportedAccountSchema, formData);
     await addSelfReportedAccount(getContainer(), {
       userId: session.user.id,
-      platform: 'INSTAGRAM',
+      platform: input.platform,
       handle: input.handle,
       declaredFollowers: input.declaredFollowers,
     });

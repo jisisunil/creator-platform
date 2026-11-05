@@ -154,6 +154,8 @@ export async function seedDemoCreators(
           passwordHash,
           locale: index % 4 === 0 ? 'hi' : 'en',
           acceptsMarketing: false,
+          // Demo data is never loaded into a pilot or production (seed/index.ts).
+          signUpAllowlist: null,
           emailVerifiedAt: now,
         },
         null,

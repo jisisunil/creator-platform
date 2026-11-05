@@ -124,6 +124,20 @@ describe('Google sign-in (UC-A1, UC-A2)', () => {
     expect(await db.brand.count()).toBe(1);
   });
 
+  it('closed pilot: Google sign-up is refused for emails not on the list', async () => {
+    const pilot = { ...ctx, signUpAllowlist: ['someone-else@example.in'] };
+
+    await expect(
+      resolveGoogleSignIn(
+        pilot,
+        profile,
+        { role: 'CREATOR', acceptsMarketing: false },
+        requestFrom(),
+      ),
+    ).rejects.toMatchObject({ fieldErrors: { email: 'email.inviteOnly' } });
+    expect(await db.user.count()).toBe(0);
+  });
+
   it('UC-A1 sends people who skipped sign-up back to it, creating nothing', async () => {
     const outcome = await resolveGoogleSignIn(ctx, profile, null, requestFrom());
 

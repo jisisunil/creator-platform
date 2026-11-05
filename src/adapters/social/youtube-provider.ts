@@ -91,6 +91,7 @@ export function createYouTubeProvider(
 
   return {
     platform: 'YOUTUBE',
+    isOfficialLoginAvailable: true,
 
     authorizationUrl({ state, redirectUri }) {
       const url = new URL(AUTHORIZE_URL);

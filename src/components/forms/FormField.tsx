@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
+import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -16,7 +17,8 @@ interface FormFieldProps extends Omit<React.ComponentProps<'input'>, 'name' | 'i
 /** Labelled input with hint and error text wired up for screen readers (NFR-9). */
 export function FormField({ name, label, hint, error, ...inputProps }: FormFieldProps) {
   const t = useTranslations('fieldErrors');
-  const id = `field-${name}`;
+  // Unique per instance: two forms on one page may share field names (NFR-9, valid labels).
+  const id = `field-${name}-${useId()}`;
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   return (

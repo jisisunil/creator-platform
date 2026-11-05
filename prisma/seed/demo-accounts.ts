@@ -46,6 +46,8 @@ export async function seedDemoAccounts(
           passwordHash,
           locale: 'en',
           acceptsMarketing: false,
+          // Demo data is never loaded into a pilot or production (seed/index.ts).
+          signUpAllowlist: null,
           emailVerifiedAt: now,
         },
         null,
@@ -65,6 +67,8 @@ export async function seedDemoAccounts(
           passwordHash,
           locale: 'en',
           acceptsMarketing: false,
+          // Demo data is never loaded into a pilot or production (seed/index.ts).
+          signUpAllowlist: null,
           emailVerifiedAt: now,
           brand: { name: 'Demo Spices Co (fake)', industry: 'food-beverage' },
         },

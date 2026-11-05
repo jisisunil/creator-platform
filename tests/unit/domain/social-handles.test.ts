@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { instagramProfileUrl, parseInstagramHandle } from '@/domain/social-handles';
+import {
+  instagramProfileUrl,
+  parseInstagramHandle,
+  parseYouTubeHandle,
+  youtubeChannelUrl,
+} from '@/domain/social-handles';
 
 describe('parseInstagramHandle (Q-43)', () => {
   it.each([
@@ -29,5 +34,31 @@ describe('parseInstagramHandle (Q-43)', () => {
 
   it('links to the public profile', () => {
     expect(instagramProfileUrl('@asha.cooks')).toBe('https://www.instagram.com/asha.cooks/');
+  });
+});
+
+describe('parseYouTubeHandle (Q-43)', () => {
+  it.each([
+    ['@AshaCooks', 'ashacooks'],
+    ['youtube.com/@asha.cooks', 'asha.cooks'],
+    ['https://www.youtube.com/@asha-cooks/videos', 'asha-cooks'],
+    ['https://m.youtube.com/@asha_cooks?si=abc', 'asha_cooks'],
+  ])('reads %s as %s', (input, expected) => {
+    expect(parseYouTubeHandle(input)).toBe(expected);
+  });
+
+  it.each([
+    ['ashacooks'],
+    ['@ab'],
+    ['@asha cooks'],
+    ['https://www.youtube.com/channel/UC1234567890abcdefghij'],
+    ['https://www.youtube.com/c/AshaCooks'],
+    ['https://youtube.com.evil.example/@asha'],
+  ])('rejects %s', (input) => {
+    expect(parseYouTubeHandle(input)).toBeNull();
+  });
+
+  it('links to the channel', () => {
+    expect(youtubeChannelUrl('@ashacooks')).toBe('https://www.youtube.com/@ashacooks');
   });
 });

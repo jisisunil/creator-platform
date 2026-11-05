@@ -3,11 +3,14 @@ import { getOwnProfile, getPublicProfile } from '@/services/creators';
 import { searchCreators } from '@/services/discovery';
 import {
   addSelfReportedAccount,
+  buildConnectionUrl,
+  canSelfReport,
   completeConnection,
   queueDueRefreshes,
   refreshSocialAccount,
   requestCreatorRefresh,
 } from '@/services/social';
+import { createSocialProviderRegistry } from '@/adapters/social/registry';
 import { createVerifiedUser } from './accounts/fixtures';
 import { createBrandOwner } from './discovery-fixtures';
 import { createTestDatabaseClient } from './test-database';
@@ -163,5 +166,48 @@ describe('self-reported Instagram (Q-17, Q-43)', () => {
     expect(
       (await db.creatorProfile.findUniqueOrThrow({ where: { id: impostor.id } })).isSearchable,
     ).toBe(false);
+  });
+
+  it('Q-43 with official logins off (a pilot), YouTube is self-reported too', async () => {
+    const pilot = {
+      ...ctx,
+      socialProviders: createSocialProviderRegistry({ mode: 'off', appUrl: 'https://app.test' }),
+    };
+    const { user } = await creator();
+
+    expect(canSelfReport(ctx, 'YOUTUBE')).toBe(false);
+    expect(canSelfReport(pilot, 'YOUTUBE')).toBe(true);
+    expect(() =>
+      buildConnectionUrl(pilot, { platform: 'YOUTUBE', state: 's', redirectUri: 'https://x' }),
+    ).toThrow();
+    await addSelfReportedAccount(pilot, {
+      userId: user.id,
+      platform: 'YOUTUBE',
+      handle: 'https://www.youtube.com/@AshaCooks/videos',
+      declaredFollowers: 25_000,
+    });
+
+    const shown = await getPublicProfile(pilot, (await getOwnProfile(pilot, user)).slug);
+    expect(shown?.accounts).toEqual([
+      expect.objectContaining({
+        platform: 'YOUTUBE',
+        handle: '@ashacooks',
+        isSelfReported: true,
+        profileUrl: 'https://www.youtube.com/@ashacooks',
+      }),
+    ]);
+  });
+
+  it('Q-43 YouTube cannot be self-reported while its official login works', async () => {
+    const { user } = await creator();
+
+    await expect(
+      addSelfReportedAccount(ctx, {
+        userId: user.id,
+        platform: 'YOUTUBE',
+        handle: '@ashacooks',
+        declaredFollowers: null,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_ALLOWED' });
   });
 });

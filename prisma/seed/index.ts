@@ -6,11 +6,12 @@ import { seedDemoCollaborations } from './demo-collaborations';
 import { seedDemoCreators } from './demo-creators';
 import { seedReferenceData } from './reference-data';
 
-/** Loads reference data and clearly fake demo data. Never run against production. */
+/** Loads reference data and clearly fake demo data. Never run against production or a pilot. */
 async function main(): Promise<void> {
   const env = getServerEnv();
-  if (env.APP_ENV === 'production') {
-    throw new Error('Refusing to seed a production database.');
+  // Fake demo people must never appear next to real ones.
+  if (env.APP_ENV === 'production' || env.APP_ENV === 'pilot') {
+    throw new Error(`Refusing to load demo data into a ${env.APP_ENV} database.`);
   }
   const db = createDatabaseClient(env.DATABASE_URL);
   try {

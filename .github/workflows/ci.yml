@@ -67,7 +67,11 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: End-to-end tests
-        run: npx playwright test
+        run: npx playwright test --grep-invert @perf
+        env:
+          CI: 'true'
+      - name: Page speed on a 4G phone (alone, so other tests don't slow it)
+        run: npx playwright test --grep @perf --workers=1
         env:
           CI: 'true'
       - uses: actions/upload-artifact@v4

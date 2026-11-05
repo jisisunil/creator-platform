@@ -259,6 +259,7 @@ export async function acceptInviteWithNewAccount(
         acceptsMarketing: input.acceptsMarketing,
         emailVerifiedAt: now,
         joinBrandId: invite.brandId,
+        signUpAllowlist: ctx.signUpAllowlist,
       },
       request.ipAddress,
     );

@@ -9,7 +9,7 @@ import { useValidatedForm } from '@/components/forms/use-validated-form';
 import { IDLE } from '@/lib/action-state';
 import { channelLinkSchema, selfReportedAccountSchema } from '@/lib/validation/creator-schemas';
 import {
-  addSelfReportedInstagramAction,
+  addSelfReportedAccountAction,
   chooseAccountAction,
   disconnectAccountAction,
   linkChannelAction,
@@ -37,19 +37,26 @@ export function LinkChannelForm() {
   );
 }
 
-/** Q-43: add an Instagram handle by hand while the official login is unavailable. */
-export function SelfReportedInstagramForm() {
+/** Q-43: add a handle by hand while the platform's official login is unavailable. */
+export function SelfReportedAccountForm({
+  platform,
+  platformName,
+}: {
+  platform: 'YOUTUBE' | 'INSTAGRAM';
+  platformName: string;
+}) {
   const t = useTranslations('creator.accounts');
   const { state, formAction, onSubmit, fieldErrors } = useValidatedForm(
     selfReportedAccountSchema,
-    addSelfReportedInstagramAction,
+    addSelfReportedAccountAction,
   );
   return (
     <form action={formAction} onSubmit={onSubmit} noValidate className="grid gap-3">
       <FormStatus state={state} />
+      <input type="hidden" name="platform" value={platform} />
       <FormField
         name="handle"
-        label={t('selfReportedHandle')}
+        label={t('selfReportedHandle', { platform: platformName })}
         placeholder="@yourname"
         error={fieldErrors.handle}
       />

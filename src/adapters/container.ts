@@ -73,6 +73,7 @@ function buildContainer(): Container {
         ? createClamAvScanner(env.CLAMAV_HOST, env.CLAMAV_PORT)
         : disabledMalwareScanner,
     appUrl: env.APP_URL,
+    signUpAllowlist: env.SIGNUP_ALLOWLIST,
   };
 }
 

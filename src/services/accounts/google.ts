@@ -82,6 +82,7 @@ export async function resolveGoogleSignIn(
         locale: request.locale,
         acceptsMarketing: pendingSignUp.acceptsMarketing,
         emailVerifiedAt: now,
+        signUpAllowlist: ctx.signUpAllowlist,
         brand:
           pendingSignUp.role === 'BRAND' && pendingSignUp.brandName && pendingSignUp.industry
             ? { name: pendingSignUp.brandName, industry: pendingSignUp.industry }

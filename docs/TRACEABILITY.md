@@ -335,3 +335,15 @@ Partial rows where they repeat an ID.
 | SR-8              | Done   | Zod on every action and route, parameterised queries, CSP with nonces, server-action origin check (CSRF)                                                                                    | `unit/lib/csp.test.ts`, schema tests, `e2e/home.spec.ts`                                                   |                                                      |
 | PR-7              | Done   | data used only to run the platform; admin metrics are counts only; no analytics or advertising processors (`docs/processors.md`)                                                            | review                                                                                                     | Policy wording in the privacy notice (X-03)          |
 | SR-16             | Done   | Dependabot (grouped weekly), `npm audit` and Trivy in CI; security fix applied 2026-10-29 (Next.js 16.4.3, Zod, Nodemailer)                                                                 | CI                                                                                                         | Critical fixes within 7 days                         |
+
+## Laptop pilot
+
+A closed pilot with no registrations (Q-45): `infra/laptop` (Compose stack with a Cloudflare
+quick tunnel, `start.ps1`, `backup.ps1`, `stop.ps1`), runbook `docs/runbooks/laptop-pilot.md`.
+
+| ID           | Status | Code                                                                                                             | Tests                                                                                                         | Notes                         |
+| ------------ | ------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| PRV-1 / PR-2 | Done   | invite-only sign-up: `SIGNUP_ALLOWLIST` checked in `createAccount` (password, Google and team-invite sign-ups)   | `integration/accounts/sign-up.test.ts`, `two-factor-and-google.test.ts`                                       | Required when `APP_ENV=pilot` |
+| FR-3 (pilot) | Done   | `SOCIAL_PROVIDER_MODE=off`: no official logins; YouTube and Instagram self-reported (`domain/social-handles.ts`) | `integration/self-reported-accounts.test.ts`, `unit/domain/social-handles.test.ts`, `unit/config/env.test.ts` | Q-43 rules apply              |
+| SR-9 / SR-15 | Done   | ClamAV in the laptop stack; daily `backup.ps1` (database + uploads, 14 kept)                                     | rehearsed locally                                                                                             | Copy backups off the computer |
+| NFR-9        | Done   | form field ids unique per instance (two forms with the same field names on one page)                             | `e2e/accessibility.spec.ts`                                                                                   |                               |

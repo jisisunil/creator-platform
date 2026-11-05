@@ -30,6 +30,8 @@ export interface ServiceContext {
   readonly malwareScanner: MalwareScanner;
   /** Public base URL for links in emails, e.g. "https://app.example.in". */
   readonly appUrl: string;
+  /** Emails allowed to create accounts (a closed pilot); null lets anyone sign up. */
+  readonly signUpAllowlist: readonly string[] | null;
 }
 
 /** Who is making the request; used for rate limits, audit logs and device checks. */

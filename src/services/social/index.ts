@@ -18,7 +18,7 @@ import { notifyUsers } from '../notifications';
 import { recomputeCreatorScore } from '../scoring';
 import { recordSecurityEvent } from '../security';
 
-export { addSelfReportedAccount } from './self-reported';
+export { addSelfReportedAccount, canSelfReport, isOfficialLoginAvailable } from './self-reported';
 
 const logger = getLogger('social');
 

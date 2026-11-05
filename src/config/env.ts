@@ -13,7 +13,10 @@ const base64Key = z
 const serverEnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-    APP_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
+    /** "pilot": a closed pilot with invited people only (laptop + tunnel, docs/runbooks/laptop-pilot.md). */
+    APP_ENV: z
+      .enum(['development', 'test', 'pilot', 'staging', 'production'])
+      .default('development'),
     APP_URL: z.url(),
     DATABASE_URL: z.url(),
     /** Direct (non-pooled) connection for migrations and the job queue; defaults to DATABASE_URL. */
@@ -41,12 +44,28 @@ const serverEnvSchema = z
     BREACHED_PASSWORD_CHECK: z.enum(['hibp', 'offline']).default('hibp'),
     TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
 
-    SOCIAL_PROVIDER_MODE: z.enum(['mock', 'live']).default('mock'),
+    /** off: no official logins (no Google/Meta apps); creators self-report their accounts. */
+    SOCIAL_PROVIDER_MODE: z.enum(['mock', 'live', 'off']).default('mock'),
     YOUTUBE_API_KEY: z.string().optional(),
     INSTAGRAM_APP_ID: z.string().optional(),
     INSTAGRAM_APP_SECRET: z.string().optional(),
 
     /** Where uploads live: local disk (development) or an S3 bucket (staging, production). */
+    /**
+     * Comma-separated emails allowed to create accounts; unset means anyone may sign up.
+     * Required in a pilot: invited people only while the privacy notice is a draft.
+     */
+    SIGNUP_ALLOWLIST: z
+      .string()
+      .optional()
+      .transform((value) =>
+        value
+          ? value
+              .split(',')
+              .map((email) => email.trim().toLowerCase())
+              .filter(Boolean)
+          : null,
+      ),
     FILE_STORAGE: z.enum(['local', 's3']).default('local'),
     FILE_STORAGE_DIR: z.string().min(1).default('./storage'),
     S3_BUCKET: z.string().min(3).optional(),
@@ -58,6 +77,30 @@ const serverEnvSchema = z
   })
   .superRefine((env, context) => {
     const isLive = env.APP_ENV === 'production' || env.APP_ENV === 'staging';
+    // A pilot has real people but no Google/Meta apps or CAPTCHA yet: invite-only, no fake
+    // social data, real malware scanning and a real sales address.
+    const isPilot = env.APP_ENV === 'pilot';
+    if (isPilot && !env.SIGNUP_ALLOWLIST?.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['SIGNUP_ALLOWLIST'],
+        message: 'a pilot is invite-only: list every participant by email',
+      });
+    }
+    if (isPilot && env.SOCIAL_PROVIDER_MODE === 'mock') {
+      context.addIssue({
+        code: 'custom',
+        path: ['SOCIAL_PROVIDER_MODE'],
+        message: 'a pilot must not show fake social data: use off (or live with keys)',
+      });
+    }
+    if (isPilot && (env.MALWARE_SCANNER === 'disabled' || env.SALES_EMAIL.endsWith('.invalid'))) {
+      context.addIssue({
+        code: 'custom',
+        path: [env.MALWARE_SCANNER === 'disabled' ? 'MALWARE_SCANNER' : 'SALES_EMAIL'],
+        message: 'a pilot needs malware scanning and a real sales address',
+      });
+    }
     if (isLive && !(env.TURNSTILE_SECRET_KEY && env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)) {
       context.addIssue({
         code: 'custom',

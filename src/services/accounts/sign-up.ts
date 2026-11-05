@@ -78,6 +78,7 @@ export async function signUpWithPassword(
         locale: request.locale,
         acceptsMarketing: input.acceptsMarketing,
         emailVerifiedAt: null,
+        signUpAllowlist: ctx.signUpAllowlist,
         brand:
           input.role === 'BRAND' && input.brandName && input.industry
             ? { name: input.brandName, industry: input.industry }

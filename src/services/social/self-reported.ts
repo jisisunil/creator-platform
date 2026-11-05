@@ -1,14 +1,36 @@
 import type { SocialPlatform } from '@/adapters/social/provider';
 import { SELF_REPORTED_MAX_FOLLOWERS, SELF_REPORTED_PLATFORMS } from '@/config/creators';
 import { notAllowed, validationFailed } from '@/domain/errors';
-import { parseInstagramHandle } from '@/domain/social-handles';
+import { SELF_REPORT_HANDLES } from '@/domain/social-handles';
 import type { ServiceContext } from '../context';
 import { recomputeCreatorScore } from '../scoring';
 import { recordSecurityEvent } from '../security';
 
 /**
- * Q-17 / Q-43: lets an Instagram-first creator join while the official Instagram login is
- * unavailable (Meta's app review). The handle is shown as "self-reported, not verified" with
+ * Q-43: whether creators may list this platform by hand: always for the platforms in
+ * SELF_REPORTED_PLATFORMS, and for any platform whose official login is switched off.
+ */
+export function canSelfReport(
+  ctx: Pick<ServiceContext, 'socialProviders'>,
+  platform: SocialPlatform,
+) {
+  return (
+    SELF_REPORTED_PLATFORMS.includes(platform) ||
+    !ctx.socialProviders[platform].isOfficialLoginAvailable
+  );
+}
+
+/** Whether the platform's official login can be offered (false in SOCIAL_PROVIDER_MODE=off). */
+export function isOfficialLoginAvailable(
+  ctx: Pick<ServiceContext, 'socialProviders'>,
+  platform: SocialPlatform,
+): boolean {
+  return ctx.socialProviders[platform].isOfficialLoginAvailable;
+}
+
+/**
+ * Q-17 / Q-43: lets a creator join while the platform's official login is unavailable
+ * (Meta's app review, or a pilot without Google/Meta apps). The handle is shown as "self-reported, not verified" with
  * a link for brands to check; it makes the creator findable but feeds nothing measured: no
  * score, tier, follower filters or campaign stats. Errors: NOT_ALLOWED when the platform
  * doesn't allow it; VALIDATION_ERROR for a bad handle, a creator who already has an account
@@ -23,8 +45,8 @@ export async function addSelfReportedAccount(
     declaredFollowers: number | null;
   },
 ): Promise<{ accountId: string }> {
-  if (!SELF_REPORTED_PLATFORMS.includes(input.platform)) throw notAllowed();
-  const username = parseInstagramHandle(input.handle);
+  if (!canSelfReport(ctx, input.platform)) throw notAllowed();
+  const username = SELF_REPORT_HANDLES[input.platform].parse(input.handle);
   if (!username) throw validationFailed({ handle: 'social.handleInvalid' });
   const followers = input.declaredFollowers;
   if (followers !== null && (followers < 0 || followers > SELF_REPORTED_MAX_FOLLOWERS)) {

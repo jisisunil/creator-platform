@@ -52,6 +52,7 @@ export function createTestContext(db: DatabaseClient): TestContext {
       },
     },
     appUrl: 'https://app.test',
+    signUpAllowlist: null,
     socialProviders: createSocialProviderRegistry({ mode: 'mock', appUrl: 'https://app.test' }),
     fileStorage: createInMemoryFileStorage(),
     malwareScanner: disabledMalwareScanner,

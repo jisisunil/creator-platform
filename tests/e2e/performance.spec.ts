@@ -66,7 +66,9 @@ async function medianFirstVisitPaint(input: {
   return median;
 }
 
-test.describe('page speed on a 4G phone (NFR-1)', () => {
+// Tagged @perf: run on their own after the other E2E tests (npm run test:e2e, CI), so other
+// tests' CPU use doesn't count against the page.
+test.describe('page speed on a 4G phone (NFR-1) @perf', () => {
   test.describe.configure({ mode: 'serial' });
   test.slow();
   test.beforeEach(({ browserName }, testInfo) => {

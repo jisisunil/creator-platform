@@ -95,6 +95,7 @@ export const channelLinkSchema = z.object({
  * follower count. The service checks the handle's format and the range.
  */
 export const selfReportedAccountSchema = z.object({
+  platform: z.enum(['YOUTUBE', 'INSTAGRAM'], 'validation.invalidChoice'),
   handle: z.string().trim().min(1, 'validation.required').max(200, 'validation.tooLong'),
   declaredFollowers: z.preprocess(
     (value) => (typeof value === 'string' && value.trim() === '' ? null : value),

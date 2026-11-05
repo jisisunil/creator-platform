@@ -31,6 +31,22 @@ beforeEach(async () => {
 afterAll(() => db.$disconnect());
 
 describe('sign-up (UC-A1, PRV-1)', () => {
+  it('closed pilot: only listed emails can sign up, and nothing is kept for others', async () => {
+    const pilot = { ...ctx, signUpAllowlist: ['invited@example.in'] };
+
+    await expect(signUpWithPassword(pilot, creatorInput, requestFrom())).rejects.toMatchObject({
+      fieldErrors: { email: 'email.inviteOnly' },
+    });
+    expect(await db.user.count()).toBe(0);
+
+    await signUpWithPassword(
+      pilot,
+      { ...creatorInput, email: 'Invited@Example.in' },
+      requestFrom(),
+    );
+    expect(await db.user.count({ where: { email: 'invited@example.in' } })).toBe(1);
+  });
+
   it('UC-A1 creates an unverified account with consent records and a verification email', async () => {
     await signUpWithPassword(ctx, creatorInput, requestFrom());
 

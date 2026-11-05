@@ -122,6 +122,7 @@ export function createInstagramProvider(
 
   return {
     platform: 'INSTAGRAM',
+    isOfficialLoginAvailable: true,
 
     authorizationUrl({ state, redirectUri }) {
       const url = new URL(AUTHORIZE_URL);

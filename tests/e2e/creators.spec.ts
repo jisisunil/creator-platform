@@ -48,7 +48,7 @@ test.describe('creators', () => {
     await page.getByLabel('Followers (optional)').fill('12000');
     await page.getByRole('button', { name: 'Add handle' }).click();
 
-    await expect(page.getByText('Your Instagram handle is listed as self-reported.')).toBeVisible();
+    await expect(page.getByText('Your handle is listed as self-reported.')).toBeVisible();
     await expect(page.getByText(`Instagram · @${handle}`)).toBeVisible();
     await expect(page.getByText('(self-reported, not verified)')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add handle' })).toHaveCount(0);

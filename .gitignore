@@ -40,3 +40,8 @@ node_modules
 *.tfstate
 *.tfstate.*
 *.tfvars
+
+# Laptop pilot: secrets, the tunnel's address and backups stay on that computer
+/infra/laptop/pilot.env
+/infra/laptop/tunnel.env
+/infra/laptop/backups/

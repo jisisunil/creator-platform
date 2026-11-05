@@ -36,3 +36,11 @@ export function companyDomainOf(email: string): string | null {
   const domain = emailDomainOf(email);
   return PUBLIC_EMAIL_DOMAINS.has(domain) ? null : domain;
 }
+
+/**
+ * Closed pilot: whether this email may create an account. No list means sign-up is open;
+ * otherwise the normalised email must be on it.
+ */
+export function isInvitedToSignUp(allowlist: readonly string[] | null, email: string): boolean {
+  return allowlist === null || allowlist.includes(normaliseEmail(email));
+}

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { requirePageSession } from '@/lib/auth/current-session';
 import { getOwnProfile } from '@/services/creators';
-import { SELF_REPORTED_PLATFORMS } from '@/config/creators';
-import { DisconnectButton, LinkChannelForm, SelfReportedInstagramForm } from './AccountForms';
+import { canSelfReport, isOfficialLoginAvailable } from '@/services/social';
+import { DisconnectButton, LinkChannelForm, SelfReportedAccountForm } from './AccountForms';
 
 const RESULTS = [
   'connected',
@@ -37,10 +37,17 @@ export default async function CreatorAccountsPage({
   const tPlatforms = await getTranslations('platforms');
   const format = await getFormatter();
   const shownResult = RESULTS.find((candidate): candidate is Result => candidate === result);
-  // Q-43: offered only while allowed, and only to creators with no Instagram account yet.
-  const canSelfReportInstagram =
-    SELF_REPORTED_PLATFORMS.includes('INSTAGRAM') &&
-    !profile.accounts.some((account) => account.platform === 'INSTAGRAM');
+  const container = getContainer();
+  const PLATFORMS = ['YOUTUBE', 'INSTAGRAM'] as const;
+  const hasAccountOn = (platform: (typeof PLATFORMS)[number]) =>
+    profile.accounts.some((account) => account.platform === platform);
+  // Official logins are hidden when switched off (SOCIAL_PROVIDER_MODE=off, a pilot).
+  const showYouTubeLogin = isOfficialLoginAvailable(container, 'YOUTUBE');
+  const showInstagramLogin = isOfficialLoginAvailable(container, 'INSTAGRAM');
+  // Q-43: self-reporting where allowed, for platforms the creator has no account on yet.
+  const selfReportable = PLATFORMS.filter(
+    (platform) => canSelfReport(container, platform) && !hasAccountOn(platform),
+  );
 
   return (
     <PageShell title={t('title')} intro={t('intro')}>
@@ -101,40 +108,50 @@ export default async function CreatorAccountsPage({
         )}
       </Card>
 
-      <Card>
-        <CardTitle>{t('connectTitle')}</CardTitle>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <form method="post" action="/api/social/youtube/start">
-            <Button type="submit" className="w-full">
-              {t('connectYouTube')}
-            </Button>
-          </form>
-          <form method="post" action="/api/social/instagram/start" className="grid gap-1">
-            <Button type="submit" className="w-full">
-              {t('connectInstagram')}
-            </Button>
-            <p className="text-muted-foreground text-xs">{t('instagramNote')}</p>
-          </form>
-        </div>
-      </Card>
-
-      {canSelfReportInstagram ? (
+      {showYouTubeLogin || showInstagramLogin ? (
         <Card>
-          <CardTitle>{t('selfReportedTitle')}</CardTitle>
-          <CardDescription>{t('selfReportedHint')}</CardDescription>
-          <div className="mt-4">
-            <SelfReportedInstagramForm />
+          <CardTitle>{t('connectTitle')}</CardTitle>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {showYouTubeLogin ? (
+              <form method="post" action="/api/social/youtube/start">
+                <Button type="submit" className="w-full">
+                  {t('connectYouTube')}
+                </Button>
+              </form>
+            ) : null}
+            {showInstagramLogin ? (
+              <form method="post" action="/api/social/instagram/start" className="grid gap-1">
+                <Button type="submit" className="w-full">
+                  {t('connectInstagram')}
+                </Button>
+                <p className="text-muted-foreground text-xs">{t('instagramNote')}</p>
+              </form>
+            ) : null}
           </div>
         </Card>
       ) : null}
 
-      <Card>
-        <CardTitle>{t('linkTitle')}</CardTitle>
-        <CardDescription>{t('linkHint')}</CardDescription>
-        <div className="mt-4">
-          <LinkChannelForm />
-        </div>
-      </Card>
+      {selfReportable.map((platform) => (
+        <Card key={platform}>
+          <CardTitle>{t('selfReportedTitle', { platform: tPlatforms(platform) })}</CardTitle>
+          <CardDescription>
+            {t('selfReportedHint', { platform: tPlatforms(platform) })}
+          </CardDescription>
+          <div className="mt-4">
+            <SelfReportedAccountForm platform={platform} platformName={tPlatforms(platform)} />
+          </div>
+        </Card>
+      ))}
+
+      {showYouTubeLogin ? (
+        <Card>
+          <CardTitle>{t('linkTitle')}</CardTitle>
+          <CardDescription>{t('linkHint')}</CardDescription>
+          <div className="mt-4">
+            <LinkChannelForm />
+          </div>
+        </Card>
+      ) : null}
     </PageShell>
   );
 }

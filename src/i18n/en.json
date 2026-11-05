@@ -127,7 +127,8 @@
     "email": {
       "disposable": "Use a permanent email address, not a temporary inbox.",
       "unavailable": "This email address can't be used. Try another one.",
-      "sameAsCurrent": "This is already your email address."
+      "sameAsCurrent": "This is already your email address.",
+      "inviteOnly": "Sign-up is by invitation during the pilot. Ask the team to add your email address."
     },
     "team": {
       "notABrandAccount": "This email belongs to an account that can't join a brand team.",
@@ -156,9 +157,9 @@
     },
     "social": {
       "channelNotFound": "We couldn't find that channel. Paste the channel link, for example youtube.com/@yourname.",
-      "handleInvalid": "Enter an Instagram handle like @yourname, or your profile link.",
-      "alreadyHasAccount": "You already have an Instagram account on your profile.",
-      "handleAlreadyListed": "This handle is already listed by another creator. If it is yours, connect with Instagram login, or report it."
+      "handleInvalid": "Enter your handle like @yourname, or your profile link.",
+      "alreadyHasAccount": "Your profile already has an account on this platform.",
+      "handleAlreadyListed": "This handle is already listed by another creator. If it is yours, connect with the official login, or report it."
     },
     "search": {
       "tooMany": "You've saved the maximum number of searches. Delete one first.",
@@ -751,16 +752,16 @@
         "no-accounts": "That login doesn't have a channel or account we can connect.",
         "expired": "That connection attempt expired. Please try again.",
         "failed": "We couldn't connect the account. Please try again in a few minutes.",
-        "self-reported": "Your Instagram handle is listed as self-reported."
+        "self-reported": "Your handle is listed as self-reported."
       },
       "chooseTitle": "Choose a channel",
       "chooseIntro": "Your Google account manages several channels. Which one do you want to connect?",
       "choose": "Connect this channel",
       "selfReportedLabel": "self-reported, not verified",
-      "selfReportedExplained": "Brands see this handle marked \"self-reported\" with a link to your profile. It does not count towards your score. Connect with Instagram login when available to verify it.",
-      "selfReportedTitle": "Add your Instagram handle",
-      "selfReportedHint": "Instagram login is not available yet. Until it is, you can list your handle: brands see it marked \"self-reported, not verified\" and can open your profile to check.",
-      "selfReportedHandle": "Instagram handle or profile link",
+      "selfReportedExplained": "Brands see this handle marked \"self-reported\" with a link to your profile. It does not count towards your score. Connect with the official login when it is available to verify it.",
+      "selfReportedTitle": "Add your {platform} handle",
+      "selfReportedHint": "{platform} login is not available yet. Until it is, you can list your handle: brands see it marked \"self-reported, not verified\" and can open your profile to check.",
+      "selfReportedHandle": "{platform} handle or profile link",
       "selfReportedFollowers": "Followers (optional)",
       "selfReportedFollowersHint": "Shown to brands as a number you declared, not a verified figure.",
       "selfReportedAdd": "Add handle"

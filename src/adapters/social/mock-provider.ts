@@ -105,6 +105,7 @@ export function createMockProvider(
 
   return {
     platform,
+    isOfficialLoginAvailable: true,
 
     authorizationUrl({ state, redirectUri }) {
       const url = new URL('/api/social/mock/authorize', appUrl);

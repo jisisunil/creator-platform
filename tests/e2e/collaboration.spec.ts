@@ -74,6 +74,8 @@ test.describe('collaboration', () => {
     page,
     browser,
   }) => {
+    // Two people, many pages: about 30 s on a busy machine, the default limit.
+    test.slow();
     const demo = demoCreator('chat');
     await signedInNewBrand(page, uniqueEmail('collab'));
     const requestId = await sendRequest(page, demo.slug, 'E2E festive campaign');

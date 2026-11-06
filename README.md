@@ -51,28 +51,30 @@ Needs Node 24 (see `.nvmrc`), npm 11.19+, and Docker.
 All variables are documented in [.env.example](.env.example) and validated at startup by
 [src/config/env.ts](src/config/env.ts); the app refuses to start if any are invalid.
 
-| Variable                                                      | Required           | Purpose                                                       |
-| ------------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
-| `APP_ENV`                                                     | no (development)   | development, test, staging or production                      |
-| `APP_URL`                                                     | yes                | Public base URL                                               |
-| `DATABASE_URL`                                                | yes                | PostgreSQL connection                                         |
-| `DATABASE_URL_TEST`                                           | tests only         | Integration-test database (name must end in `_test`)          |
-| `LOG_LEVEL`                                                   | no (info)          | Log verbosity                                                 |
-| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                        | no                 | Error reporting; personal data is not collected               |
-| `AUTH_SECRET`                                                 | yes                | Signs short-lived Google sign-up state                        |
-| `TOKEN_ENCRYPTION_KEY`                                        | yes                | 32-byte key encrypting TOTP secrets (and social tokens later) |
-| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                        | no                 | Google sign-in; set both or neither                           |
-| `SMTP_URL`, `EMAIL_FROM`                                      | yes                | Outgoing email (Mailpit locally)                              |
-| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`      | staging/production | CAPTCHA                                                       |
-| `BREACHED_PASSWORD_CHECK`                                     | no (hibp)          | `hibp` online check or `offline` list                         |
-| `TRUSTED_PROXY_HOPS`                                          | no (0)             | Reverse proxies to trust for the client IP                    |
-| `SALES_EMAIL`                                                 | staging/production | Shown on the plan page for plan changes and credit packs      |
-| `SOCIAL_PROVIDER_MODE`                                        | no (mock)          | `mock` (development) or `live` (official APIs)                |
-| `YOUTUBE_API_KEY`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | live mode          | YouTube Data API and Instagram API credentials                |
-| `FILE_STORAGE`                                                | no (local)         | `local` disk or `s3` (required in staging/production)         |
-| `FILE_STORAGE_DIR`                                            | no (./storage)     | Uploads folder when `FILE_STORAGE=local`                      |
-| `S3_BUCKET`, `AWS_REGION`                                     | with `s3`          | Uploads bucket; region defaults to Mumbai (`ap-south-1`)      |
-| `MALWARE_SCANNER`, `CLAMAV_HOST`, `CLAMAV_PORT`               | staging/production | Upload scanning with ClamAV                                   |
+| Variable                                                            | Required           | Purpose                                                            |
+| ------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| `APP_ENV`                                                           | no (development)   | development, test, staging or production                           |
+| `APP_URL`                                                           | yes                | Public base URL                                                    |
+| `DATABASE_URL`                                                      | yes                | PostgreSQL connection                                              |
+| `DATABASE_URL_TEST`                                                 | tests only         | Integration-test database (name must end in `_test`)               |
+| `LOG_LEVEL`                                                         | no (info)          | Log verbosity                                                      |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`                              | no                 | Error reporting; personal data is not collected                    |
+| `AUTH_SECRET`                                                       | yes                | Signs short-lived Google sign-up state                             |
+| `TOKEN_ENCRYPTION_KEY`                                              | yes                | 32-byte key encrypting TOTP secrets (and social tokens later)      |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`                              | no                 | Google sign-in; set both or neither                                |
+| `SMTP_URL`, `EMAIL_FROM`                                            | yes                | Outgoing email (Mailpit locally)                                   |
+| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`            | staging/production | CAPTCHA                                                            |
+| `BREACHED_PASSWORD_CHECK`                                           | no (hibp)          | `hibp` online check or `offline` list                              |
+| `TRUSTED_PROXY_HOPS`                                                | no (0)             | Reverse proxies to trust for the client IP                         |
+| `SALES_EMAIL`                                                       | staging/production | Shown on the plan page for plan changes and credit packs           |
+| `SOCIAL_PROVIDER_MODE`                                              | no (mock)          | `mock` (development) or `live` (official APIs)                     |
+| `PAYMENTS_MODE`                                                     | no (off)           | Escrow: `off` (direct payment), `fake` (dev), `razorpay`           |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | razorpay mode      | Razorpay API keys and webhook secret (`docs/runbooks/razorpay.md`) |
+| `YOUTUBE_API_KEY`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`       | live mode          | YouTube Data API and Instagram API credentials                     |
+| `FILE_STORAGE`                                                      | no (local)         | `local` disk or `s3` (required in staging/production)              |
+| `FILE_STORAGE_DIR`                                                  | no (./storage)     | Uploads folder when `FILE_STORAGE=local`                           |
+| `S3_BUCKET`, `AWS_REGION`                                           | with `s3`          | Uploads bucket; region defaults to Mumbai (`ap-south-1`)           |
+| `MALWARE_SCANNER`, `CLAMAV_HOST`, `CLAMAV_PORT`                     | staging/production | Upload scanning with ClamAV                                        |
 
 ## Hosting and deploys
 

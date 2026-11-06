@@ -8,6 +8,7 @@ import { createCreatorRepository } from './creator-repository';
 import { createDealRepository } from './deal-repository';
 import { createDealWorkRepository } from './deal-work-repository';
 import { createDiscoveryRepository } from './discovery-repository';
+import { createEscrowRepository } from './escrow-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
 import { createHealthRepository } from './health-repository';
@@ -52,6 +53,7 @@ export function createRepositories(db: DbClient) {
     reports: createReportRepository(db),
     deals: createDealRepository(db),
     dealWork: createDealWorkRepository(db),
+    escrow: createEscrowRepository(db),
     ratings: createRatingRepository(db),
     plans: createPlanRepository(db),
     notifications: createNotificationRepository(db),

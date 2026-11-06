@@ -512,6 +512,7 @@ model CreatorProfile {
   blocks            Block[]
   chatThreads       ChatThread[]
   deals             Deal[]
+  payoutAccount     PayoutAccount?
 
   @@index([countryCode, stateCode, city])
   @@index([tier])
@@ -1108,6 +1109,8 @@ model Deal {
   paymentDueOn           DateTime?        @db.Date
   deadline               DateTime         @db.Date
   postedAt               DateTime?
+  /// ADR-013: paid directly between the parties, or held by the payment gateway (escrow).
+  paymentMethod          PaymentMethod    @default(DIRECT)
   /// When the work was approved; payment falls due from here.
   approvedAt             DateTime?
   /// While work is under review: when it is approved automatically if the brand doesn't act.
@@ -1130,6 +1133,7 @@ model Deal {
   ratings                Rating[]
   contracts              DealContract[]
   submissions            DealSubmission[]
+  payment                DealPayment?
 
   @@index([brandId, status])
   @@index([creatorId, status])
@@ -1157,6 +1161,9 @@ enum DealEventKind {
   WORK_APPROVED
   WORK_AUTO_APPROVED
   DISPUTE_RAISED
+  ESCROW_FUNDED
+  ESCROW_RELEASED
+  ESCROW_REFUNDED
 }
 
 /// The deal's history, shown to both sides (FR-9.1).
@@ -1466,4 +1473,62 @@ model DealSubmissionFile {
   submission   DealSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@index([submissionId])
+}
+
+enum PaymentMethod {
+  DIRECT
+  ESCROW
+}
+
+enum EscrowStatus {
+  /// An order exists at the gateway; the brand hasn't paid yet.
+  AWAITING_PAYMENT
+  FUNDED
+  RELEASE_PENDING
+  RELEASED
+  REFUND_PENDING
+  REFUNDED
+}
+
+/// ADR-013: a deal's payment held by the gateway until the work is approved. Only gateway
+/// references: no card, UPI or bank details.
+model DealPayment {
+  id           String       @id @default(cuid())
+  dealId       String       @unique
+  gateway      String
+  orderId      String       @unique
+  paymentId    String?      @unique
+  /// The held transfer to the creator's payout account.
+  transferId   String?
+  /// What the creator receives (the contract amount), in minor units.
+  amountMinor  Int
+  /// The gateway's processing fee the brand pays on top (not refunded).
+  feeMinor     Int
+  currencyCode String
+  status       EscrowStatus @default(AWAITING_PAYMENT)
+  /// A dispute stops automatic release until the brand approves or an admin decides.
+  isFrozen     Boolean      @default(false)
+  fundedAt     DateTime?
+  releasedAt   DateTime?
+  refundedAt   DateTime?
+  /// The last gateway failure while releasing or refunding (retried hourly).
+  lastError    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deal         Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+/// ADR-013: the creator's payout account at the gateway. The PAN and bank details go to the
+/// gateway only; we keep its account id and the bank account's last 4 digits.
+model PayoutAccount {
+  id               String         @id @default(cuid())
+  creatorId        String         @unique
+  gateway          String
+  gatewayAccountId String         @unique
+  bankLast4        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  creator          CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 }

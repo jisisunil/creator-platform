@@ -11,6 +11,7 @@ import type { ServiceContext } from '../context';
 import { requestEmailDispatch } from '../email';
 import { brandContactIds, notifyUsers } from '../notifications';
 import { loadDealFacts, notifyOtherSide, performAction } from './deal-actions';
+import { freezeHeldPayment, releaseHeldPayment } from './escrow';
 
 const logger = getLogger('deals');
 
@@ -73,7 +74,7 @@ export async function submitWork(
     throw validationFailed({ links: 'work.proofRequired' });
   }
   await performAction(ctx, input, 'SUBMIT_WORK', async (deal, side, now) => {
-    const { contract } = await loadDealFacts(ctx.repos, deal.id);
+    const { contract } = await loadDealFacts(ctx.repos, deal);
     const reviewDays = contract?.terms.reviewDays ?? WORK_REVIEW.reviewDays;
     const files = await storeProofFiles(ctx, input.files);
     return {
@@ -150,6 +151,8 @@ export async function approveWork(
       }))(repos);
     },
   }));
+  // ADR-013: with escrow, approval pays the creator (and a disputed payment is unfrozen).
+  await releaseHeldPayment(ctx, input.dealId);
 }
 
 /**
@@ -166,6 +169,7 @@ export async function raiseDealDispute(
     event: { kind: 'DISPUTE_RAISED', note },
     alsoDo: async (repos) => {
       if (await repos.reports.hasOpenReport(input.userId, 'DEAL', deal.id)) throw invalidState();
+      await freezeHeldPayment(repos, deal.id);
       await repos.reports.create({
         reporterUserId: input.userId,
         targetType: 'DEAL',
@@ -190,7 +194,10 @@ export async function raiseDealDispute(
  * approved automatically, so a creator is never left waiting; both sides are told.
  */
 export async function autoApproveDueWork(
-  deps: Pick<ServiceContext, 'repos' | 'transaction' | 'clock' | 'jobQueue' | 'appUrl'>,
+  deps: Pick<
+    ServiceContext,
+    'repos' | 'transaction' | 'clock' | 'jobQueue' | 'appUrl' | 'paymentGateway'
+  >,
 ): Promise<{ approved: number }> {
   const now = deps.clock.now();
   const deals = await deps.repos.deals.reviewsDue(now, WORK_REVIEW.autoApprovalsPerRun);
@@ -228,7 +235,9 @@ export async function autoApproveDueWork(
       });
       return true;
     });
-    if (isApproved) approved += 1;
+    if (!isApproved) continue;
+    approved += 1;
+    await releaseHeldPayment(deps, deal.id);
   }
   if (approved > 0) await requestEmailDispatch(deps.jobQueue);
   return { approved };

@@ -50,6 +50,15 @@ const serverEnvSchema = z
     INSTAGRAM_APP_ID: z.string().optional(),
     INSTAGRAM_APP_SECRET: z.string().optional(),
 
+    /**
+     * ADR-013: off = brands pay creators directly (no gateway); fake = simulated escrow for
+     * development and tests; razorpay = payments held by Razorpay Route until approval.
+     */
+    PAYMENTS_MODE: z.enum(['off', 'fake', 'razorpay']).default('off'),
+    RAZORPAY_KEY_ID: z.string().optional(),
+    RAZORPAY_KEY_SECRET: z.string().optional(),
+    RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+
     /** Where uploads live: local disk (development) or an S3 bucket (staging, production). */
     /**
      * Comma-separated emails allowed to create accounts; unset means anyone may sign up.
@@ -153,6 +162,22 @@ const serverEnvSchema = z
           'live mode needs YOUTUBE_API_KEY, AUTH_GOOGLE_ID/SECRET and INSTAGRAM_APP_ID/SECRET',
       });
     }
+    if (env.PAYMENTS_MODE === 'fake' && (isLive || isPilot)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['PAYMENTS_MODE'],
+        message: 'simulated payments only in development: use off or razorpay',
+      });
+    }
+    const hasRazorpayKeys =
+      env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET && env.RAZORPAY_WEBHOOK_SECRET;
+    if (env.PAYMENTS_MODE === 'razorpay' && !hasRazorpayKeys) {
+      context.addIssue({
+        code: 'custom',
+        path: ['PAYMENTS_MODE'],
+        message: 'razorpay needs RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET',
+      });
+    }
     if (Boolean(env.AUTH_GOOGLE_ID) !== Boolean(env.AUTH_GOOGLE_SECRET)) {
       context.addIssue({
         code: 'custom',
@@ -230,4 +255,18 @@ export function socialProviderSettings(env: ServerEnv) {
 /** True when Google sign-in is configured. */
 export function isGoogleSignInEnabled(env: ServerEnv): boolean {
   return Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET);
+}
+
+/** ADR-013: Razorpay keys when escrow runs on Razorpay, else null. */
+export function razorpaySettings(env: ServerEnv) {
+  return env.PAYMENTS_MODE === 'razorpay' &&
+    env.RAZORPAY_KEY_ID &&
+    env.RAZORPAY_KEY_SECRET &&
+    env.RAZORPAY_WEBHOOK_SECRET
+    ? {
+        keyId: env.RAZORPAY_KEY_ID,
+        keySecret: env.RAZORPAY_KEY_SECRET,
+        webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+      }
+    : null;
 }

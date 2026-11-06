@@ -3,6 +3,7 @@
  * sides accept. Pure: no I/O.
  */
 import type { CollabSide } from './chat';
+import type { PaymentMethod } from './escrow';
 import type { DeliverableLine, UsageRights } from './requests';
 
 /** The terms a contract version records when it is issued. Dates are "YYYY-MM-DD" (UTC). */
@@ -15,6 +16,8 @@ export interface ContractTerms {
   readonly usageRights: UsageRights;
   readonly amountMinor: number;
   readonly currencyCode: string;
+  /** ADR-013: paid directly, or held in escrow and released on approval. */
+  readonly paymentMethod: PaymentMethod;
   readonly advancePercent: number | null;
   readonly paymentDueOn: string | null;
   readonly deadline: string;

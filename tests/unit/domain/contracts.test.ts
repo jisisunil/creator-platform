@@ -10,6 +10,7 @@ const TERMS: ContractTerms = {
   usageRights: 'BRAND_ORGANIC',
   amountMinor: 3_000_000,
   currencyCode: 'INR',
+  paymentMethod: 'DIRECT',
   advancePercent: 30,
   paymentDueOn: null,
   deadline: '2026-12-01',

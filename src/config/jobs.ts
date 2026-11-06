@@ -10,6 +10,7 @@ export const JOB_NAMES = {
   sendDealReminders: 'deals.send-reminders',
   refreshDealPosts: 'deals.refresh-posts',
   autoApproveWork: 'deals.auto-approve-work',
+  settleEscrow: 'deals.settle-escrow',
   sendTrialReminders: 'plans.trial-reminders',
   finaliseDeletions: 'privacy.finalise-deletions',
   handleInactiveAccounts: 'privacy.inactive-accounts',

@@ -107,3 +107,13 @@ export const cancelDealSchema = z.object({
     .min(REASON_MIN, 'deal.reasonRequired')
     .max(DEAL_LIMITS.reasonMax, 'validation.tooLong'),
 });
+
+const gatewayId = z.string().regex(/^[A-Za-z0-9_]{1,64}$/);
+
+/** ADR-013: the checkout's confirmation of the brand's payment (checked by the service). */
+export const confirmFundingSchema = z.object({
+  dealId: id,
+  orderId: gatewayId,
+  paymentId: gatewayId,
+  signature: z.string().regex(/^[0-9a-f]{64}$/),
+});

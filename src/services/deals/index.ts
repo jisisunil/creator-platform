@@ -4,24 +4,28 @@
  */
 import type { DealEventRecord, DealRecord, DealSummary } from '@/adapters/db/deal-repository';
 import type { SubmissionRecord } from '@/adapters/db/deal-work-repository';
+import type { DealPaymentRecord } from '@/adapters/db/escrow-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { RequestRecord } from '@/adapters/db/request-repository';
 import { type SocialPlatform, SocialProviderError } from '@/adapters/social/provider';
-import { COLLABORATION_PAGE_SIZE, DEAL_LIMITS } from '@/config/collaboration';
+import { COLLABORATION_PAGE_SIZE, DEAL_LIMITS, ESCROW } from '@/config/collaboration';
 import type { CollabSide } from '@/domain/chat';
 import { type ContractState, contractStateOf } from '@/domain/contracts';
 import { allowedDealActions, type DealAction, paymentDueAt, splitPayment } from '@/domain/deals';
 import { validationFailed } from '@/domain/errors';
+import { escrowCharge, type PaymentMethod } from '@/domain/escrow';
 import type { ServiceContext } from '../context';
 import { notifyUsers } from '../notifications';
 import { findCreatorPost } from '../social';
 import {
+  askBothToRate,
   loadDealFacts,
   notifyOtherSide,
   otherSideContacts,
   performAction,
   requireDealParticipant,
 } from './deal-actions';
+import { refundHeldPayment } from './escrow';
 
 export type { DealEventRecord, DealPostRecord, DealSummary } from '@/adapters/db/deal-repository';
 export type { SubmissionRecord } from '@/adapters/db/deal-work-repository';
@@ -34,6 +38,21 @@ export {
   type IssueContractInput,
 } from './contract';
 export { requireDealParticipant } from './deal-actions';
+
+export {
+  confirmEscrowFunding,
+  type DealPaymentRecord,
+  type FundingStart,
+  getHeldPaymentForAdmin,
+  getPayoutAccount,
+  type PayoutAccountRecord,
+  type PayoutDetailsInput,
+  recordCapturedPayment,
+  resolveEscrowDispute,
+  setUpPayoutAccount,
+  settlePendingEscrow,
+  startEscrowFunding,
+} from './escrow';
 export { refreshDealPosts, sendDealReminders } from './deal-jobs';
 export {
   approveWork,
@@ -50,7 +69,7 @@ const ACCOUNT_DELETED_REASON = 'Account deleted';
 export async function createDealFromRequest(
   repos: Repositories,
   request: RequestRecord,
-  now: Date,
+  options: { readonly now: Date; readonly paymentMethod: PaymentMethod },
 ): Promise<string> {
   return repos.deals.create({
     requestId: request.id,
@@ -60,7 +79,8 @@ export async function createDealFromRequest(
     agreedAmountMinor: request.budgetMinor,
     currencyCode: request.currencyCode,
     deadline: request.deadline,
-    createdAt: now,
+    paymentMethod: options.paymentMethod,
+    createdAt: options.now,
   });
 }
 
@@ -81,6 +101,13 @@ export interface DealView extends DealRecord {
   };
   readonly submissions: readonly SubmissionRecord[];
   readonly changeRequestsLeft: number;
+  /** ADR-013: the held payment for escrow deals; null when the parties pay directly. */
+  readonly escrow: {
+    readonly payment: DealPaymentRecord | null;
+    readonly hasPayoutAccount: boolean;
+    /** What funding costs the brand, once an amount is agreed. */
+    readonly charge: { readonly feeMinor: number; readonly chargedMinor: number } | null;
+  } | null;
 }
 
 /** FR-9.1: one deal with its history and what the viewer can do next. */
@@ -89,7 +116,7 @@ export async function getDeal(
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<DealView> {
   const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
-  const facts = await loadDealFacts(ctx.repos, deal.id);
+  const facts = await loadDealFacts(ctx.repos, deal);
   return {
     ...deal,
     viewerSide: side,
@@ -109,6 +136,17 @@ export async function getDeal(
     },
     submissions: await ctx.repos.dealWork.listSubmissions(deal.id),
     changeRequestsLeft: Math.max(0, facts.maxChangeRequests - facts.changeRequestsUsed),
+    escrow:
+      deal.paymentMethod === 'ESCROW'
+        ? {
+            payment: await ctx.repos.escrow.findPaymentForDeal(deal.id),
+            hasPayoutAccount: facts.hasPayoutAccount,
+            charge:
+              deal.agreedAmountMinor === null
+                ? null
+                : escrowCharge(deal.agreedAmountMinor, ESCROW.feeBasisPoints),
+          }
+        : null,
   };
 }
 
@@ -229,33 +267,10 @@ export async function confirmPaymentReceived(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<void> {
-  await performAction(ctx, input, 'CONFIRM_RECEIVED', (deal, side, now) => ({
+  await performAction(ctx, input, 'CONFIRM_RECEIVED', (deal, _side, now) => ({
     changes: { completedAt: now },
     event: { kind: 'PAYMENT_CONFIRMED' },
-    // FR-12.1 / FR-10.1: both sides are asked to rate each other.
-    alsoDo: async (repos) => {
-      await notifyOtherSide(ctx, deal, side, (recipient) => ({
-        template: 'ratingRequested',
-        payload: {
-          ...recipient,
-          otherPartyName: deal.creatorDisplayName,
-          campaignName: deal.campaignName,
-        },
-      }))(repos);
-      await notifyUsers(repos, ctx.appUrl, {
-        now: ctx.clock.now(),
-        userIds: [deal.creatorUserId],
-        path: `/deals/${deal.id}`,
-        email: (recipient) => ({
-          template: 'ratingRequested',
-          payload: {
-            ...recipient,
-            otherPartyName: deal.brandName,
-            campaignName: deal.campaignName,
-          },
-        }),
-      });
-    },
+    alsoDo: (repos) => askBothToRate(repos, ctx.appUrl, deal, now),
   }));
 }
 
@@ -290,7 +305,10 @@ export async function reportPaymentNotReceived(
   }));
 }
 
-/** UC-R4: either side cancels before payment, with a reason the other side sees. */
+/**
+ * UC-R4: either side cancels before payment, with a reason the other side sees. ADR-013: a
+ * payment held before any work was submitted goes back to the brand.
+ */
 export async function cancelDeal(
   ctx: ServiceContext,
   input: { readonly userId: string; readonly dealId: string; readonly reason: string },
@@ -307,6 +325,7 @@ export async function cancelDeal(
       },
     })),
   }));
+  await refundHeldPayment(ctx, input.dealId);
 }
 
 /**

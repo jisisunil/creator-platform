@@ -29,6 +29,9 @@ export interface EmailTemplates {
   workApproved: { name: string; brandName: string; campaignName: string; link: string };
   workAutoApproved: { name: string; campaignName: string; link: string };
   dealDisputed: { name: string; otherPartyName: string; campaignName: string; link: string };
+  escrowFunded: { name: string; brandName: string; campaignName: string; link: string };
+  escrowReleased: { name: string; brandName: string; campaignName: string; link: string };
+  escrowRefunded: { name: string; campaignName: string; link: string };
   dealContentSubmitted: { name: string; creatorName: string; campaignName: string; link: string };
   dealPostAdded: { name: string; creatorName: string; campaignName: string; link: string };
   paymentDisputed: { name: string; creatorName: string; campaignName: string; link: string };
@@ -72,6 +75,9 @@ const ACTION_KEYS = {
   workApproved: 'workApproved.action',
   workAutoApproved: 'workAutoApproved.action',
   dealDisputed: 'dealDisputed.action',
+  escrowFunded: 'escrowFunded.action',
+  escrowReleased: 'escrowReleased.action',
+  escrowRefunded: 'escrowRefunded.action',
   dealContentSubmitted: 'dealContentSubmitted.action',
   dealPostAdded: 'dealPostAdded.action',
   paymentDisputed: 'paymentDisputed.action',

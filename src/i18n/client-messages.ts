@@ -41,9 +41,13 @@ export const DEAL_PAGE_MESSAGE_NAMESPACES = [
   'deals.actions',
   'deals.contract.acceptForm',
   'deals.contract.form',
+  'deals.escrow.fund',
   'deals.summary',
   'deals.work',
 ] as const;
+
+/** Sent in addition on the creator's payouts page only (`creator/payouts/layout.tsx`). */
+export const PAYOUT_PAGE_MESSAGE_NAMESPACES = ['payouts.form'] as const;
 
 type Messages = Readonly<Record<string, unknown>>;
 

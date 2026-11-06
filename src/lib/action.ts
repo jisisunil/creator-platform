@@ -30,3 +30,18 @@ export async function runAction(work: () => Promise<ActionState | void>): Promis
     }
   });
 }
+
+/** A server action's result for a caller that needs data back (not just success). */
+export type ResultState<T> =
+  { readonly status: 'success'; readonly data: T } | Extract<ActionState, { status: 'error' }>;
+
+/** Like runAction, for actions that return data (e.g. a checkout session to open). */
+export async function runActionWithResult<T>(work: () => Promise<T>): Promise<ResultState<T>> {
+  const holder: { result?: { data: T } } = {};
+  const state = await runAction(async () => {
+    holder.result = { data: await work() };
+  });
+  if (state.status === 'error') return state;
+  if (!holder.result) throw new Error('action finished without a result');
+  return { status: 'success', data: holder.result.data };
+}

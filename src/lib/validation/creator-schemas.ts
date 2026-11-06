@@ -119,3 +119,40 @@ export const appealFlagSchema = z.object({
   flagId: z.string().min(1).max(64),
   appealText: z.string().trim().min(20, 'profile.appealTooShort').max(1000, 'validation.tooLong'),
 });
+
+const upper = (value: string) => value.trim().toUpperCase();
+
+/**
+ * ADR-013: payout account details, passed straight to the payment gateway (never stored).
+ * Formats: PAN AAAAA9999A, IFSC AAAA0XXXXXX, Indian mobile numbers, 9–18 digit accounts.
+ */
+export const payoutDetailsSchema = z
+  .object({
+    legalName: z.string().trim().min(2, 'validation.required').max(100, 'validation.tooLong'),
+    pan: z
+      .string()
+      .transform(upper)
+      .refine((value) => /^[A-Z]{5}\d{4}[A-Z]$/.test(value), 'payout.invalidPan'),
+    phone: z
+      .string()
+      .transform((value) => value.replace(/[\s-]/g, '').replace(/^(\+91|0)/, ''))
+      .refine((value) => /^[6-9]\d{9}$/.test(value), 'payout.invalidPhone'),
+    accountHolderName: z
+      .string()
+      .trim()
+      .min(2, 'validation.required')
+      .max(100, 'validation.tooLong'),
+    accountNumber: z
+      .string()
+      .trim()
+      .refine((value) => /^\d{9,18}$/.test(value), 'payout.invalidAccountNumber'),
+    confirmAccountNumber: z.string().trim(),
+    ifsc: z
+      .string()
+      .transform(upper)
+      .refine((value) => /^[A-Z]{4}0[A-Z0-9]{6}$/.test(value), 'payout.invalidIfsc'),
+  })
+  .refine((fields) => fields.accountNumber === fields.confirmAccountNumber, {
+    message: 'payout.accountNumbersDiffer',
+    path: ['confirmAccountNumber'],
+  });

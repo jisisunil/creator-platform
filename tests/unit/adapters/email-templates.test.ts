@@ -89,6 +89,19 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },
+  escrowFunded: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  escrowReleased: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  escrowRefunded: { name: 'Ravi', campaignName: 'Diwali', link: 'https://app.test/en/deals/d1' },
   dealDisputed: {
     name: 'Ravi',
     otherPartyName: 'Asha',

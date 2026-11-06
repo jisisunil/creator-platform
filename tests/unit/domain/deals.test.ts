@@ -22,7 +22,13 @@ const SIGNED: DealFacts = {
   contractAcceptedBy: ['BRAND', 'CREATOR'],
   changeRequestsUsed: 0,
   maxChangeRequests: 2,
+  hasSubmissions: false,
+  paymentMethod: 'DIRECT',
+  escrowStatus: null,
+  hasPayoutAccount: false,
 };
+/** An escrow deal with a signed contract and the creator's payout account, not yet funded. */
+const ESCROW_READY: DealFacts = { ...SIGNED, paymentMethod: 'ESCROW', hasPayoutAccount: true };
 const NO_CONTRACT: DealFacts = { ...SIGNED, hasContract: false, contractAcceptedBy: [] };
 const BRAND_ONLY: DealFacts = { ...SIGNED, contractAcceptedBy: ['BRAND'] };
 
@@ -121,6 +127,48 @@ describe('contract and review rules (ADR-012)', () => {
     expect(reviewDueAt(at('2026-11-01T10:00:00Z'), 7).toISOString()).toBe(
       '2026-11-08T10:00:00.000Z',
     );
+  });
+});
+
+describe('escrow rules (ADR-013)', () => {
+  it('the brand funds once the contract is signed and the creator can be paid out', () => {
+    expect(dealActionBlocker('FUND_ESCROW', 'BRAND', ESCROW_READY)).toBeNull();
+    expect(dealActionBlocker('FUND_ESCROW', 'BRAND', SIGNED)).toBe('NOT_ESCROW');
+    expect(
+      dealActionBlocker('FUND_ESCROW', 'BRAND', { ...ESCROW_READY, hasPayoutAccount: false }),
+    ).toBe('NO_PAYOUT_ACCOUNT');
+    expect(
+      dealActionBlocker('FUND_ESCROW', 'BRAND', { ...ESCROW_READY, contractAcceptedBy: ['BRAND'] }),
+    ).toBe('CONTRACT_NOT_SIGNED');
+    expect(
+      dealActionBlocker('FUND_ESCROW', 'BRAND', { ...ESCROW_READY, escrowStatus: 'FUNDED' }),
+    ).toBe('ALREADY_FUNDED');
+    expect(nextDealStatus('ACCEPTED', 'FUND_ESCROW', 'CREATOR')).toBeNull();
+  });
+
+  it('work starts only once the payment is held, and the amount is then fixed', () => {
+    const funded = { ...ESCROW_READY, escrowStatus: 'FUNDED' as const };
+    expect(dealActionBlocker('SUBMIT_WORK', 'CREATOR', ESCROW_READY)).toBe('NOT_FUNDED');
+    expect(dealActionBlocker('SUBMIT_WORK', 'CREATOR', funded)).toBeNull();
+    expect(dealActionBlocker('ISSUE_CONTRACT', 'BRAND', funded)).toBe('ESCROW_FUNDED');
+    expect(dealActionBlocker('ISSUE_CONTRACT', 'BRAND', ESCROW_READY)).toBeNull();
+  });
+
+  it('escrow deals are never marked paid by hand', () => {
+    expect(dealActionBlocker('MARK_PAID', 'BRAND', ESCROW_READY)).toBe('PAID_THROUGH_ESCROW');
+    expect(dealActionBlocker('CONFIRM_RECEIVED', 'CREATOR', ESCROW_READY)).toBe(
+      'PAID_THROUGH_ESCROW',
+    );
+    expect(dealActionBlocker('MARK_PAID', 'BRAND', SIGNED)).toBeNull();
+  });
+
+  it('a funded deal can be cancelled only before any work is submitted', () => {
+    const funded = { ...ESCROW_READY, escrowStatus: 'FUNDED' as const };
+    expect(dealActionBlocker('CANCEL', 'BRAND', funded)).toBeNull();
+    expect(dealActionBlocker('CANCEL', 'BRAND', { ...funded, hasSubmissions: true })).toBe(
+      'ESCROW_NEEDS_ADMIN',
+    );
+    expect(dealActionBlocker('CANCEL', 'BRAND', { ...SIGNED, hasSubmissions: true })).toBeNull();
   });
 });
 

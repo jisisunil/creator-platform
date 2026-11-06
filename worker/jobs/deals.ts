@@ -1,5 +1,10 @@
 import { JOB_NAMES } from '@/config/jobs';
-import { autoApproveDueWork, refreshDealPosts, sendDealReminders } from '@/services/deals';
+import {
+  autoApproveDueWork,
+  refreshDealPosts,
+  sendDealReminders,
+  settlePendingEscrow,
+} from '@/services/deals';
 import type { JobDefinition } from '../job-definition';
 
 /** UC-R4 / UC-R5: daily deadline and overdue-payment reminders, in the morning in India. */
@@ -23,4 +28,11 @@ export const autoApproveWorkJob: JobDefinition = {
   name: JOB_NAMES.autoApproveWork,
   schedule: '15 * * * *',
   handle: (_data, container) => autoApproveDueWork(container),
+};
+
+/** ADR-013: hourly, retries escrow releases and refunds the gateway couldn't finish. */
+export const settleEscrowJob: JobDefinition = {
+  name: JOB_NAMES.settleEscrow,
+  schedule: '45 * * * *',
+  handle: (_data, container) => settlePendingEscrow(container),
 };

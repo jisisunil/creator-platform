@@ -1,4 +1,7 @@
 const CAPTCHA_ORIGIN = 'https://challenges.cloudflare.com';
+/** Razorpay Checkout: its script (loaded by ours), its window and its API (ADR-013). */
+const RAZORPAY_FRAME_ORIGINS = ['https://api.razorpay.com', 'https://checkout.razorpay.com'];
+const RAZORPAY_CONNECT_ORIGINS = ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'];
 
 export interface CspOptions {
   readonly nonce: string;
@@ -9,6 +12,8 @@ export interface CspOptions {
   readonly errorReportingOrigin?: string;
   /** True when the CAPTCHA widget is configured; it runs in a Cloudflare iframe. */
   readonly isCaptchaEnabled?: boolean;
+  /** True when payments run on Razorpay; its checkout opens in a Razorpay iframe. */
+  readonly isRazorpayEnabled?: boolean;
 }
 
 /**
@@ -25,7 +30,12 @@ export function buildContentSecurityPolicy(options: CspOptions): string {
   const connectSources = [
     "'self'",
     ...(options.errorReportingOrigin ? [options.errorReportingOrigin] : []),
+    ...(options.isRazorpayEnabled ? RAZORPAY_CONNECT_ORIGINS : []),
     ...(options.isDevelopment ? ['ws:'] : []),
+  ];
+  const frameSources = [
+    ...(options.isCaptchaEnabled ? [CAPTCHA_ORIGIN] : []),
+    ...(options.isRazorpayEnabled ? RAZORPAY_FRAME_ORIGINS : []),
   ];
   const directives = [
     "default-src 'self'",
@@ -37,7 +47,7 @@ export function buildContentSecurityPolicy(options: CspOptions): string {
     // The offline service worker (NFR-5); 'strict-dynamic' would otherwise block it.
     "worker-src 'self'",
     `connect-src ${connectSources.join(' ')}`,
-    `frame-src ${options.isCaptchaEnabled ? CAPTCHA_ORIGIN : "'none'"}`,
+    `frame-src ${frameSources.length > 0 ? frameSources.join(' ') : "'none'"}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -56,6 +56,7 @@ export function createTestContext(db: DatabaseClient): TestContext {
     socialProviders: createSocialProviderRegistry({ mode: 'mock', appUrl: 'https://app.test' }),
     fileStorage: createInMemoryFileStorage(),
     malwareScanner: disabledMalwareScanner,
+    paymentGateway: null,
     enqueuedJobs,
     breachedPasswordList,
     setCaptchaEnabled(isEnabled) {

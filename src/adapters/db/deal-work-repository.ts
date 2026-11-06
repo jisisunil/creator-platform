@@ -56,6 +56,8 @@ const storedTermsSchema = z.object({
   usageRights: z.enum(USAGE_RIGHTS),
   amountMinor: z.number().int().min(0),
   currencyCode: z.string(),
+  // Contracts from before ADR-013 were all paid directly.
+  paymentMethod: z.enum(['DIRECT', 'ESCROW']).default('DIRECT'),
   advancePercent: z.number().int().min(0).max(100).nullable(),
   paymentDueOn: z.string().nullable(),
   deadline: z.string(),
@@ -188,6 +190,10 @@ export function createDealWorkRepository(db: DbClient) {
         orderBy: { round: 'asc' },
         select: SUBMISSION_SELECT,
       });
+    },
+
+    async countSubmissions(dealId: string): Promise<number> {
+      return db.dealSubmission.count({ where: { dealId } });
     },
 
     async countChangeRequests(dealId: string): Promise<number> {

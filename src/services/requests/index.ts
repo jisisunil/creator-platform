@@ -302,7 +302,11 @@ export async function respondToRequest(
     let dealId: string | null = null;
     if (isAccepted) {
       await openChatThread(repos, request, now);
-      dealId = await createDealFromRequest(repos, request, now);
+      // ADR-013: escrow when a payment gateway is configured; each deal keeps its method.
+      dealId = await createDealFromRequest(repos, request, {
+        now,
+        paymentMethod: ctx.paymentGateway ? 'ESCROW' : 'DIRECT',
+      });
     }
     await notifyUsers(repos, ctx.appUrl, {
       now: ctx.clock.now(),

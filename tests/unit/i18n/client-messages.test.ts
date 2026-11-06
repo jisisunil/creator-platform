@@ -5,10 +5,15 @@ import en from '@/i18n/en.json';
 import {
   CLIENT_MESSAGE_NAMESPACES,
   DEAL_PAGE_MESSAGE_NAMESPACES,
+  PAYOUT_PAGE_MESSAGE_NAMESPACES,
   pickMessages,
 } from '@/i18n/client-messages';
 
-const ALL_SENT = [...CLIENT_MESSAGE_NAMESPACES, ...DEAL_PAGE_MESSAGE_NAMESPACES];
+const ALL_SENT = [
+  ...CLIENT_MESSAGE_NAMESPACES,
+  ...DEAL_PAGE_MESSAGE_NAMESPACES,
+  ...PAYOUT_PAGE_MESSAGE_NAMESPACES,
+];
 const DEAL_COMPONENTS = path.join('src', 'components', 'deals');
 
 function sourceFiles(directory: string): string[] {

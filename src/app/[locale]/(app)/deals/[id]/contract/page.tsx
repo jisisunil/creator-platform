@@ -86,13 +86,15 @@ export default async function DealContractPage({
     [t('amount'), money(terms.amountMinor)],
     [
       t('paymentTerms'),
-      terms.advancePercent
-        ? t('split', {
-            percent: terms.advancePercent,
-            advance: money(split.advanceMinor),
-            balance: money(split.balanceMinor),
-          })
-        : t('fullOnApproval'),
+      terms.paymentMethod === 'ESCROW'
+        ? t('heldInEscrow')
+        : terms.advancePercent
+          ? t('split', {
+              percent: terms.advancePercent,
+              advance: money(split.advanceMinor),
+              balance: money(split.balanceMinor),
+            })
+          : t('fullOnApproval'),
     ],
     [
       t('paymentDue'),
@@ -162,10 +164,14 @@ export default async function DealContractPage({
           <ol className="grid list-decimal gap-2 pl-5 text-sm">
             {CLAUSES.map((clause) => (
               <li key={clause}>
-                {t(`clauses.${clause}`, {
-                  reviewDays: terms.reviewDays,
-                  rounds: terms.maxChangeRequests,
-                })}
+                {/* ADR-013: escrow deals have their own payment clause. */}
+                {t(
+                  `clauses.${clause === 'payment' && terms.paymentMethod === 'ESCROW' ? 'paymentEscrow' : clause}`,
+                  {
+                    reviewDays: terms.reviewDays,
+                    rounds: terms.maxChangeRequests,
+                  },
+                )}
               </li>
             ))}
           </ol>

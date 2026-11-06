@@ -92,3 +92,11 @@ export const closeDataRequestSchema = z.object({
   outcome: z.enum(['COMPLETED', 'REJECTED']),
   resolution: reasonSchema,
 });
+
+/** ADR-013: an admin's decision on a disputed escrow deal. */
+export const resolveEscrowSchema = z.object({
+  dealId: id,
+  reportId: id,
+  outcome: z.enum(['RELEASE', 'REFUND']),
+  reason: reasonSchema,
+});

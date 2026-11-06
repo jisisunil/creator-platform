@@ -1,5 +1,6 @@
 import type { CollabSide } from '@/domain/chat';
 import type { DealStatus } from '@/domain/deals';
+import type { PaymentMethod } from '@/domain/escrow';
 import type { DeliverableLine, UsageRights } from '@/domain/requests';
 import type { Prisma } from '@/generated/prisma/client';
 import type { SocialPlatform } from '../social/provider';
@@ -22,7 +23,10 @@ export type DealEventKind =
   | 'CHANGES_REQUESTED'
   | 'WORK_APPROVED'
   | 'WORK_AUTO_APPROVED'
-  | 'DISPUTE_RAISED';
+  | 'DISPUTE_RAISED'
+  | 'ESCROW_FUNDED'
+  | 'ESCROW_RELEASED'
+  | 'ESCROW_REFUNDED';
 
 export type DealPostStatus = 'LIVE' | 'DELETED' | 'PRIVATE';
 
@@ -51,6 +55,7 @@ export interface DealRecord {
   /** The team member who sent the request, if still known. */
   readonly sentByUserId: string | null;
   readonly status: DealStatus;
+  readonly paymentMethod: PaymentMethod;
   readonly agreedAmountMinor: number | null;
   readonly currencyCode: string;
   readonly advancePercent: number | null;
@@ -126,6 +131,7 @@ const DEAL_SELECT = {
   brandId: true,
   creatorId: true,
   status: true,
+  paymentMethod: true,
   agreedAmountMinor: true,
   currencyCode: true,
   advancePercent: true,
@@ -182,6 +188,7 @@ export function createDealRepository(db: DbClient) {
       agreedAmountMinor: number | null;
       currencyCode: string;
       deadline: Date;
+      paymentMethod: PaymentMethod;
       createdAt: Date;
     }): Promise<string> {
       const created = await db.deal.create({
@@ -377,7 +384,12 @@ export function createDealRepository(db: DbClient) {
     /** ADR-012: deals whose work review period ended without the brand acting. */
     async reviewsDue(now: Date, limit: number): Promise<DealRecord[]> {
       const rows = await db.deal.findMany({
-        where: { status: 'CONTENT_SUBMITTED', reviewDueAt: { lte: now } },
+        // A disputed held payment waits for the brand or an admin (ADR-013).
+        where: {
+          status: 'CONTENT_SUBMITTED',
+          reviewDueAt: { lte: now },
+          NOT: { payment: { isFrozen: true } },
+        },
         orderBy: { reviewDueAt: 'asc' },
         take: limit,
         select: DEAL_SELECT,

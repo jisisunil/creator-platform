@@ -8,6 +8,7 @@ import {
   DealStatusBadge,
   DealSubmissions,
 } from '@/components/deals/DealDisplay';
+import { EscrowPanel } from '@/components/deals/EscrowPanel';
 import {
   AcceptContractForm,
   CancelDealForm,
@@ -185,11 +186,14 @@ export default async function DealPage({
                 paymentDueOn={deal.paymentDueOn?.toISOString().slice(0, 10) ?? null}
                 additionalTerms={contract?.additionalTerms ?? null}
                 hasUploadedFile={contract?.source === 'UPLOADED'}
+                hasAdvance={deal.paymentMethod === 'DIRECT'}
               />
             </div>
           </details>
         ) : null}
       </Card>
+
+      <EscrowPanel deal={deal} locale={locale} countryCode={session.user.countryCode} />
 
       <Card className="grid gap-4">
         <CardTitle>{t('work.title')}</CardTitle>
@@ -205,7 +209,11 @@ export default async function DealPage({
         {deal.viewerSide === 'CREATOR' &&
         (deal.status === 'ACCEPTED' || deal.status === 'CHANGES_REQUESTED') &&
         !can('SUBMIT_WORK') ? (
-          <p className="text-muted-foreground text-sm">{t('work.needsContract')}</p>
+          <p className="text-muted-foreground text-sm">
+            {deal.contract.state === 'SIGNED' && deal.escrow
+              ? t('work.needsFunding')
+              : t('work.needsContract')}
+          </p>
         ) : null}
         {deal.viewerSide === 'BRAND' && isUnderReview ? (
           <ReviewWorkForms

@@ -59,21 +59,30 @@ export async function otherSideContacts(
     : brandContactIds(repos, deal.brandId, deal.sentByUserId);
 }
 
-/** ADR-012: the deal's current contract and review so far, for the action rules. */
+/** ADR-012 / ADR-013: the deal's contract, review and payment so far, for the action rules. */
 export async function loadDealFacts(
   repos: Repositories,
-  dealId: string,
+  deal: Pick<DealRecord, 'id' | 'creatorId' | 'paymentMethod'>,
 ): Promise<DealFacts & { readonly contract: ContractRecord | null }> {
-  const [contract, changeRequestsUsed] = await Promise.all([
-    repos.dealWork.currentContract(dealId),
-    repos.dealWork.countChangeRequests(dealId),
-  ]);
+  const [contract, changeRequestsUsed, submissionCount, payment, payoutAccount] = await Promise.all(
+    [
+      repos.dealWork.currentContract(deal.id),
+      repos.dealWork.countChangeRequests(deal.id),
+      repos.dealWork.countSubmissions(deal.id),
+      repos.escrow.findPaymentForDeal(deal.id),
+      repos.escrow.findPayoutAccount(deal.creatorId),
+    ],
+  );
   return {
     contract,
     hasContract: contract !== null,
     contractAcceptedBy: contract?.acceptances.map((acceptance) => acceptance.side) ?? [],
     changeRequestsUsed,
     maxChangeRequests: contract?.terms.maxChangeRequests ?? WORK_REVIEW.maxChangeRequests,
+    hasSubmissions: submissionCount > 0,
+    paymentMethod: deal.paymentMethod,
+    escrowStatus: payment?.status ?? null,
+    hasPayoutAccount: payoutAccount !== null,
   };
 }
 
@@ -104,7 +113,7 @@ export async function performAction(
   if (!isActionForSide(action, side)) throw notAllowed();
   const next = nextDealStatus(deal.status, action, side);
   if (!next) throw invalidState();
-  if (dealActionBlocker(action, side, await loadDealFacts(ctx.repos, deal.id))) {
+  if (dealActionBlocker(action, side, await loadDealFacts(ctx.repos, deal))) {
     throw invalidState();
   }
   const outcome = await decide(deal, side, now);
@@ -113,7 +122,7 @@ export async function performAction(
       if (!(await repos.deals.transition(deal.id, deal.status, next, outcome.changes))) {
         throw invalidState();
       }
-      if (dealActionBlocker(action, side, await loadDealFacts(repos, deal.id))) {
+      if (dealActionBlocker(action, side, await loadDealFacts(repos, deal))) {
         throw invalidState();
       }
       await repos.deals.addEvent({
@@ -149,4 +158,35 @@ export function notifyOtherSide(
       email,
     });
   };
+}
+
+/** FR-12.1 / FR-10.1: a completed deal asks both sides to rate each other. */
+export async function askBothToRate(
+  repos: Repositories,
+  appUrl: string,
+  deal: DealRecord,
+  now: Date,
+): Promise<void> {
+  await notifyUsers(repos, appUrl, {
+    now,
+    userIds: await brandContactIds(repos, deal.brandId, deal.sentByUserId),
+    path: `/deals/${deal.id}`,
+    email: (recipient) => ({
+      template: 'ratingRequested',
+      payload: {
+        ...recipient,
+        otherPartyName: deal.creatorDisplayName,
+        campaignName: deal.campaignName,
+      },
+    }),
+  });
+  await notifyUsers(repos, appUrl, {
+    now,
+    userIds: [deal.creatorUserId],
+    path: `/deals/${deal.id}`,
+    email: (recipient) => ({
+      template: 'ratingRequested',
+      payload: { ...recipient, otherPartyName: deal.brandName, campaignName: deal.campaignName },
+    }),
+  });
 }

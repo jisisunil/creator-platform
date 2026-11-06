@@ -12,6 +12,8 @@ const serverEnv = {
   // The worker's "worker started" line (info level) tells Playwright it is ready. CI sets
   // LOG_LEVEL=warn for the unit tests, which hid it and timed out every E2E run.
   LOG_LEVEL: 'info',
+  // The flows test direct payment, whatever a developer's .env says (escrow has its own tests).
+  PAYMENTS_MODE: 'off',
 };
 
 export default defineConfig({

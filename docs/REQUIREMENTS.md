@@ -124,7 +124,7 @@ Requirements are grouped by module and numbered so each can be traced to use cas
 3. Must: campaign groups many deals; creator submits the post link; the platform fetches that post's stats and shows a campaign report (views, likes, comments, engagement, cost per view or engagement if amount is known).
 4. Must: downloadable deal summary (parties, deliverables, amount, dates) as an informal contract.
 5. Must: disclosure reminder that sponsored posts must be labelled (#ad, #collab).
-6. Later: tracked links and discount codes; in-app payments with holding until delivery (escrow phase 2 of ADR-012: Razorpay, after company registration).
+6. Built, off until the Razorpay account exists (ADR-013): in-app payments held until the work is approved (escrow with Razorpay Route). Later: tracked links and discount codes.
 
 **FR-10 Ratings and reviews**
 
@@ -282,7 +282,7 @@ India's Digital Personal Data Protection Act 2023 applies from the first user, f
 | Phone number | Optional | No | WhatsApp alerts only | Removal or deletion |
 | Security logs (IP, device, login times) | All users | Automatic | Security and fraud | 1 year |
 
-**Not collected:** Aadhaar, PAN, date of birth, home address, bank or UPI details, social media passwords, device contacts or location. Payment-related data is collected only when in-app payments are added.
+**Not collected:** Aadhaar, PAN, date of birth, home address, bank or UPI details, social media passwords, device contacts or location. Payment-related data is collected only when in-app payments are added: with escrow (ADR-013), a creator's KYC details are passed to the payment gateway and not stored; the platform keeps the gateway's account id and the last 4 digits.
 
 **Privacy requirements**
 

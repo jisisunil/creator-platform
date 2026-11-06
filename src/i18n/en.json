@@ -281,6 +281,15 @@
       "fileTooLarge": "Files can be 10 MB in all.",
       "fileType": "Files must be JPEG, PNG, WebP or PDF.",
       "fileRejected": "One of the files looks unsafe and was rejected."
+    },
+    "payout": {
+      "invalidPan": "Enter a PAN like ABCDE1234F.",
+      "invalidPhone": "Enter a 10-digit Indian mobile number.",
+      "invalidAccountNumber": "Enter the account number: 9 to 18 digits.",
+      "accountNumbersDiffer": "The account numbers don’t match.",
+      "invalidIfsc": "Enter an IFSC like HDFC0001234.",
+      "rejected": "Razorpay couldn’t verify these details. Check them and try again.",
+      "tryLater": "Razorpay couldn’t be reached. Please try again in a few minutes."
     }
   },
   "industries": {
@@ -738,6 +747,21 @@
     "dealDisputed": {
       "subject": "{otherPartyName} raised a dispute",
       "body": "Hi {name},\n{otherPartyName} disagrees about the work for \"{campaignName}\". Our team will look into it and contact you both.",
+      "action": "View deal"
+    },
+    "escrowFunded": {
+      "subject": "{brandName} paid into escrow",
+      "body": "Hi {name},\n{brandName} paid the agreed amount for \"{campaignName}\" into escrow. It is held for you and paid out when the work is approved. You can start the work.",
+      "action": "View deal"
+    },
+    "escrowReleased": {
+      "subject": "Payment released: {campaignName}",
+      "body": "Hi {name},\nThe payment held for \"{campaignName}\" has been released to your payout account. Bank transfers usually arrive within 2 working days.",
+      "action": "View deal"
+    },
+    "escrowRefunded": {
+      "subject": "Payment refunded: {campaignName}",
+      "body": "Hi {name},\nThe payment you held in escrow for \"{campaignName}\" has been refunded. Refunds usually reach your account within 5–7 working days.",
       "action": "View deal"
     }
   },
@@ -1342,7 +1366,10 @@
         "CHANGES_REQUESTED": "The brand asked for changes",
         "WORK_APPROVED": "The brand approved the work",
         "WORK_AUTO_APPROVED": "The review period ended; the work was approved automatically",
-        "DISPUTE_RAISED": "{side, select, BRAND {The brand} CREATOR {The creator} other {Someone}} raised a dispute"
+        "DISPUTE_RAISED": "{side, select, BRAND {The brand} CREATOR {The creator} other {Someone}} raised a dispute",
+        "ESCROW_FUNDED": "The brand paid into escrow",
+        "ESCROW_RELEASED": "The held payment was paid to the creator",
+        "ESCROW_REFUNDED": "The held payment was refunded to the brand"
       }
     },
     "summary": {
@@ -1452,7 +1479,8 @@
         "disclosure": "Sponsored posts are clearly labelled, for example with #ad or #collab, as advertising rules in India require.",
         "cancellation": "Either side may cancel before payment, giving a reason. Work already approved should be paid for unless both sides agree otherwise.",
         "disputes": "If the sides disagree about the work, either side can raise it on the platform; the team will look at the deal history and talk to both sides.",
-        "platform": "This agreement is between the brand and the creator only. The platform is not a party to it."
+        "platform": "This agreement is between the brand and the creator only. The platform is not a party to it.",
+        "paymentEscrow": "The brand pays the agreed amount into escrow with Razorpay before the work starts. It is paid to the creator when the work is approved (or the review period ends), and refunded to the brand if the deal is cancelled before any work is submitted. The platform never holds the money itself."
       },
       "additionalTitle": "Additional terms",
       "acceptanceTitle": "Acceptance",
@@ -1463,7 +1491,8 @@
       "acceptForm": {
         "agree": "I have read this contract and agree to it.",
         "accept": "Accept contract"
-      }
+      },
+      "heldInEscrow": "The full amount is held in escrow and paid out when the work is approved"
     },
     "work": {
       "title": "Proof of work",
@@ -1499,7 +1528,42 @@
       "disputeNote": "What is the disagreement?",
       "disputeHint": "Our team will look at the deal history and contact you both.",
       "dispute": "Raise a dispute",
-      "disputeSent": "Sent to our team. We will contact you both."
+      "disputeSent": "Sent to our team. We will contact you both.",
+      "needsFunding": "Start the work once the brand has paid into escrow."
+    },
+    "escrow": {
+      "title": "Payment held by Razorpay",
+      "explain": "The brand pays the agreed amount into escrow before the work starts. Razorpay holds it and pays the creator when the work is approved.",
+      "status": {
+        "AWAITING_PAYMENT": "Not paid in yet",
+        "FUNDED": "Held",
+        "RELEASE_PENDING": "Being paid out",
+        "RELEASED": "Paid to the creator",
+        "REFUND_PENDING": "Being refunded",
+        "REFUNDED": "Refunded to the brand"
+      },
+      "waitingForPayout": "Waiting for the creator to set up their payout account.",
+      "setUpPayout": "Set up your payout account so the held payment can reach you.",
+      "setUpPayoutLink": "Set up payouts",
+      "breakdown": "You pay {total}: {amount} for the creator plus a {fee} processing fee.",
+      "feeNote": "The processing fee covers Razorpay’s charges and GST. It is not refunded if the deal is cancelled.",
+      "waitingForFunding": "Waiting for the brand to pay into escrow. Start the work once it is held.",
+      "fundAfterContract": "You can pay into escrow once both sides have accepted the contract.",
+      "detail": {
+        "FUNDED": "{amount} held since {date}. It goes to the creator when the work is approved.",
+        "RELEASE_PENDING": "Paying {amount} to the creator.",
+        "RELEASED": "{amount} paid to the creator on {date}.",
+        "REFUND_PENDING": "Refunding {amount} to the brand.",
+        "REFUNDED": "{amount} refunded to the brand on {date}."
+      },
+      "frozen": "A dispute is open, so the payment won’t be released automatically. It is released when the brand approves the work, or our team decides.",
+      "fund": {
+        "pay": "Pay {total} into escrow",
+        "working": "Opening payment…",
+        "checkoutName": "Collaboration escrow",
+        "fakeConfirm": "Test mode: no real money moves. Simulate paying {total} into escrow?",
+        "checkoutFailed": "The payment window couldn’t open. Check your connection and try again."
+      }
     }
   },
   "campaigns": {
@@ -1646,7 +1710,10 @@
       "workChangesRequested": "{brandName} asked for changes for \"{campaignName}\".",
       "workApproved": "{brandName} approved your work for \"{campaignName}\".",
       "workAutoApproved": "The work for \"{campaignName}\" was approved automatically.",
-      "dealDisputed": "{otherPartyName} raised a dispute about \"{campaignName}\"."
+      "dealDisputed": "{otherPartyName} raised a dispute about \"{campaignName}\".",
+      "escrowFunded": "{brandName} paid into escrow for \"{campaignName}\". You can start the work.",
+      "escrowReleased": "The payment for \"{campaignName}\" was released to you.",
+      "escrowRefunded": "The payment for \"{campaignName}\" was refunded."
     }
   },
   "admin": {
@@ -1791,7 +1858,14 @@
       "resolveNote": "What was done",
       "resolve": "Mark resolved",
       "dismissNote": "Why it is unfounded",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "escrow": {
+        "held": "{amount} is held in escrow for this deal.",
+        "releaseReason": "Why release it to the creator?",
+        "release": "Release to the creator",
+        "refundReason": "Why refund it to the brand?",
+        "refund": "Refund the brand"
+      }
     },
     "chat": {
       "title": "Chat: {brand} and {creator}",
@@ -1879,6 +1953,27 @@
       "verified": "Verified accounts, proven through official logins",
       "transparent": "A content score that shows every part",
       "private": "Your phone and email are never shown to brands"
+    }
+  },
+  "payouts": {
+    "title": "Payouts",
+    "intro": "Where payments held for your deals are paid out.",
+    "notAvailable": "Payments through the platform aren’t switched on yet. Brands pay you directly, as agreed in the contract.",
+    "ready": "Payouts go to the bank account ending {last4}.",
+    "since": "Set up on {date}.",
+    "change": "To change the account, contact support.",
+    "form": {
+      "legalName": "Legal name (as on your PAN)",
+      "legalNameHint": "Used for KYC by our payment partner, Razorpay.",
+      "pan": "PAN",
+      "phone": "Mobile number",
+      "phoneHint": "For Razorpay’s account checks.",
+      "accountHolderName": "Account holder’s name",
+      "accountNumber": "Bank account number",
+      "confirmAccountNumber": "Confirm account number",
+      "ifsc": "IFSC",
+      "privacy": "These details go straight to Razorpay to set up your payout account. We don’t store your PAN or full account number: only the last 4 digits, to show which account is used.",
+      "submit": "Set up payouts"
     }
   }
 }

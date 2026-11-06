@@ -5,6 +5,7 @@ import type { TotpService } from '@/adapters/crypto/totp';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { TransactionRunner } from '@/adapters/db/transaction';
 import type { JobQueue } from '@/adapters/jobs/job-queue';
+import type { PaymentGateway } from '@/adapters/payments/payment-gateway';
 import type { MalwareScanner } from '@/adapters/scan/malware-scanner';
 import type { BreachedPasswordChecker } from '@/adapters/security/breached-password-checker';
 import type { CaptchaVerifier } from '@/adapters/security/captcha-verifier';
@@ -28,6 +29,8 @@ export interface ServiceContext {
   readonly socialProviders: SocialProviderRegistry;
   readonly fileStorage: FileStorage;
   readonly malwareScanner: MalwareScanner;
+  /** ADR-013: holds payments until approval; null when brands pay creators directly. */
+  readonly paymentGateway: PaymentGateway | null;
   /** Public base URL for links in emails, e.g. "https://app.example.in". */
   readonly appUrl: string;
   /** Emails allowed to create accounts (a closed pilot); null lets anyone sign up. */

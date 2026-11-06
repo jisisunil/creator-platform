@@ -76,6 +76,8 @@ export async function seedDemoCollaborations(
     socialProviders: createSocialProviderRegistry({ mode: 'mock', appUrl: settings.appUrl }),
     fileStorage: createLocalFileStorage(settings.fileStorageDir),
     malwareScanner: disabledMalwareScanner,
+    // Demo deals are paid directly; escrow shows on new deals when PAYMENTS_MODE is set.
+    paymentGateway: null,
     appUrl: settings.appUrl,
     signUpAllowlist: null,
   };

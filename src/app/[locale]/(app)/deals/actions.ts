@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { getContainer } from '@/adapters/container';
-import { type ActionState, runAction } from '@/lib/action';
+import { type ActionState, type ResultState, runAction, runActionWithResult } from '@/lib/action';
 import { requireActionSession } from '@/lib/auth/current-session';
 import {
   acceptContractSchema,
   cancelDealSchema,
+  confirmFundingSchema,
   dealTargetSchema,
   issueContractSchema,
   paymentDisputeSchema,
@@ -14,19 +15,22 @@ import {
   reviewNoteSchema,
   submitWorkSchema,
 } from '@/lib/validation/deal-schemas';
-import { parseForm } from '@/lib/validation/form-data';
+import { parseForm, parseInput } from '@/lib/validation/form-data';
 import { ratingFormSchema, reportRatingSchema, scoresFrom } from '@/lib/validation/rating-schemas';
 import {
   acceptContract,
   addPostLink,
   approveWork,
   cancelDeal,
+  confirmEscrowFunding,
   confirmPaymentReceived,
+  type FundingStart,
   issueContract,
   markDealPaid,
   raiseDealDispute,
   reportPaymentNotReceived,
   requestChanges,
+  startEscrowFunding,
   submitWork,
 } from '@/services/deals';
 import { reportRating, submitRating } from '@/services/ratings';
@@ -193,5 +197,29 @@ export async function reportRatingAction(_: ActionState, formData: FormData): Pr
     const session = await participantsOnly();
     const input = parseForm(reportRatingSchema, formData);
     await reportRating(getContainer(), { userId: session.user.id, ...input });
+  });
+}
+
+/** ADR-013: the brand starts paying into escrow; returns what the checkout needs. */
+export async function startFundingAction(dealId: string): Promise<ResultState<FundingStart>> {
+  return runActionWithResult(async () => {
+    const session = await participantsOnly();
+    const input = parseInput(dealTargetSchema, { dealId });
+    return startEscrowFunding(getContainer(), { userId: session.user.id, ...input });
+  });
+}
+
+/** ADR-013: the checkout's signed confirmation that the brand paid. */
+export async function confirmFundingAction(confirmation: {
+  dealId: string;
+  orderId: string;
+  paymentId: string;
+  signature: string;
+}): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await participantsOnly();
+    const input = parseInput(confirmFundingSchema, confirmation);
+    await confirmEscrowFunding(getContainer(), { userId: session.user.id, ...input });
+    revalidatePath(DEALS_PATH, 'layout');
   });
 }

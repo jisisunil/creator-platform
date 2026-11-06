@@ -17,8 +17,10 @@ import {
   profileDetailsSchema,
   rateCardSchema,
   selfReportedAccountSchema,
+  payoutDetailsSchema,
 } from '@/lib/validation/creator-schemas';
 import { parseForm } from '@/lib/validation/form-data';
+import { setUpPayoutAccount } from '@/services/deals';
 import { appealFlag } from '@/services/moderation';
 import {
   addPortfolioItem,
@@ -202,5 +204,18 @@ export async function appealFlagAction(_: ActionState, formData: FormData): Prom
     const input = parseForm(appealFlagSchema, formData);
     await appealFlag(getContainer(), { userId: session.user.id, ...input });
     revalidatePath('/[locale]/creator/analytics', 'page');
+  });
+}
+
+/** ADR-013: sets up the creator's payout account; details go to the gateway, not stored. */
+export async function setUpPayoutAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const session = await creatorOnly();
+    const { confirmAccountNumber: _confirmed, ...details } = parseForm(
+      payoutDetailsSchema,
+      formData,
+    );
+    await setUpPayoutAccount(getContainer(), { userId: session.user.id, ...details });
+    revalidatePath('/[locale]/creator/payouts', 'page');
   });
 }

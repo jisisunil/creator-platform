@@ -43,6 +43,7 @@ function contractTermsFor(deal: DealRecord): ContractTerms {
     usageRights: deal.usageRights,
     amountMinor: deal.agreedAmountMinor,
     currencyCode: deal.currencyCode,
+    paymentMethod: deal.paymentMethod,
     advancePercent: deal.advancePercent,
     paymentDueOn: deal.paymentDueOn ? toIsoDate(deal.paymentDueOn) : null,
     deadline: toIsoDate(deal.deadline),
@@ -135,7 +136,8 @@ export async function issueContract(ctx: ServiceContext, input: IssueContractInp
     return {
       changes: {
         agreedAmountMinor: input.amountRupees * PAISE_PER_RUPEE,
-        advancePercent: input.advancePercent,
+        // ADR-013: escrow holds the whole amount until approval, so there is no advance.
+        advancePercent: deal.paymentMethod === 'ESCROW' ? null : input.advancePercent,
         paymentDueOn,
       },
       event: { kind: 'CONTRACT_ISSUED' },
@@ -219,7 +221,7 @@ export async function getDealContract(
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<ContractView> {
   const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
-  const facts = await loadDealFacts(ctx.repos, deal.id);
+  const facts = await loadDealFacts(ctx.repos, deal);
   return {
     contract: facts.contract,
     state: contractStateOf(facts.hasContract, facts.contractAcceptedBy),

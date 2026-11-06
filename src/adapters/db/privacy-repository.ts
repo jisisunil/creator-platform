@@ -236,6 +236,7 @@ export function createPrivacyRepository(db: DbClient) {
               categories: { select: { category: { select: { slug: true } } } },
               rateCard: { select: { deliverable: true, amountMinor: true, currency: true } },
               portfolio: { select: { url: true, brandName: true, collaboratedOn: true } },
+              payoutAccount: { select: { gateway: true, bankLast4: true, createdAt: true } },
               socialAccounts: {
                 select: {
                   platform: true,
@@ -451,6 +452,8 @@ export function createPrivacyRepository(db: DbClient) {
         await db.creatorCategory.deleteMany({ where: { creatorId: creator.id } });
         await db.rateCardItem.deleteMany({ where: { creatorId: creator.id } });
         await db.portfolioItem.deleteMany({ where: { creatorId: creator.id } });
+        // ADR-013: the link to the gateway account goes; held payments stay with the deal.
+        await db.payoutAccount.deleteMany({ where: { creatorId: creator.id } });
         await db.socialAccount.deleteMany({ where: { creatorId: creator.id } });
         await db.scoreResult.deleteMany({ where: { creatorId: creator.id } });
         await db.authenticityFlag.deleteMany({ where: { creatorId: creator.id } });

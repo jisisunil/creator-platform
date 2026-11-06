@@ -82,6 +82,17 @@ export const WORK_REVIEW = {
   autoApprovalsPerRun: 200,
 } as const;
 
+/** ADR-013: payments held by the gateway until the work is approved. */
+export const ESCROW = {
+  /**
+   * The processing fee the brand pays on top of the contract amount, in basis points:
+   * Razorpay's ~2% plus 18% GST on it. Not refunded if the deal is cancelled (Q-47).
+   */
+  feeBasisPoints: 236,
+  /** Releases and refunds retried per job run. */
+  settlementsPerRun: 100,
+} as const;
+
 /** UC-R6: post stats are refreshed daily for 90 days after posting. */
 export const POST_STATS_REFRESH = {
   staleAfterMs: 20 * 3_600_000,

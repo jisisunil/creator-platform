@@ -35,3 +35,13 @@ export function parseForm<Schema extends z.ZodType>(
   if (!result.success) throw validationFailed(fieldErrorsFrom(result.error));
   return result.data;
 }
+
+/** Validates a server action's plain-object input (not FormData) with its schema. */
+export function parseInput<Schema extends z.ZodType>(
+  schema: Schema,
+  value: unknown,
+): z.infer<Schema> {
+  const result = schema.safeParse(value);
+  if (!result.success) throw validationFailed(fieldErrorsFrom(result.error));
+  return result.data;
+}

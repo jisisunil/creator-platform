@@ -14,8 +14,10 @@ import {
   resolveDisputeSchema,
   reviewFlagSchema,
   warnUserSchema,
+  resolveEscrowSchema,
 } from '@/lib/validation/admin-schemas';
 import { parseForm } from '@/lib/validation/form-data';
+import { resolveEscrowDispute } from '@/services/deals';
 import {
   closeReport,
   openChatForReview,
@@ -110,5 +112,20 @@ export async function resolveDisputeAction(
     const input = parseForm(resolveDisputeSchema, formData);
     await resolveDispute(getContainer(), { adminUserId: session.user.id, request, ...input });
     revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** ADR-013: decides a disputed escrow deal: release to the creator or refund the brand. */
+export async function resolveEscrowAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const locale = await getLocale();
+  const request = await getRequestInfo(locale);
+  return runAction(async () => {
+    const session = await adminOnly();
+    const input = parseForm(resolveEscrowSchema, formData);
+    await resolveEscrowDispute(getContainer(), { adminUserId: session.user.id, request, ...input });
+    redirect(`/${locale}/admin/reports`);
   });
 }

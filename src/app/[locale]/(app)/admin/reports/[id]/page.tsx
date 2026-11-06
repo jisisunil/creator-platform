@@ -6,12 +6,15 @@ import { DecisionButton, ReasonForm } from '@/components/admin/ModerationForms';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card, CardTitle } from '@/components/ui/card';
 import { isDomainError } from '@/domain/errors';
+import { formatMoney } from '@/lib/format';
 import { Link } from '@/i18n/navigation';
 import { requirePageSession } from '@/lib/auth/current-session';
+import { getHeldPaymentForAdmin } from '@/services/deals';
 import { getReport, type ReportView } from '@/services/moderation';
 import {
   closeReportAction,
   openChatAction,
+  resolveEscrowAction,
   setRatingHiddenAction,
   warnUserAction,
 } from '../../moderation-actions';
@@ -39,6 +42,14 @@ export default async function AdminReportPage({
     throw error;
   }
   const isOpen = report.status === 'OPEN';
+  // ADR-013: a dispute about an escrow deal is settled by releasing or refunding the money.
+  const heldPayment = isDealReport(report.targetType)
+    ? await getHeldPaymentForAdmin(getContainer(), {
+        adminUserId: session.user.id,
+        dealId: report.targetId,
+      })
+    : null;
+  const canSettle = isOpen && heldPayment?.status === 'FUNDED';
 
   return (
     <PageShell title={t(`targets.${report.targetType}`)} intro={<AdminNav />} wide>
@@ -118,6 +129,36 @@ export default async function AdminReportPage({
               submitLabel={t('warn')}
               successMessage={t('warned')}
             />
+          ) : null}
+          {canSettle && heldPayment ? (
+            <div className="grid gap-3 rounded-md border p-4">
+              <p className="font-medium">
+                {t('escrow.held', {
+                  amount: formatMoney(
+                    heldPayment.amountMinor,
+                    heldPayment.currencyCode,
+                    locale,
+                    session.user.countryCode,
+                  ),
+                })}
+              </p>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <ReasonForm
+                  action={resolveEscrowAction}
+                  hidden={{ dealId: report.targetId, reportId: report.id, outcome: 'RELEASE' }}
+                  fieldName="reason"
+                  label={t('escrow.releaseReason')}
+                  submitLabel={t('escrow.release')}
+                />
+                <ReasonForm
+                  action={resolveEscrowAction}
+                  hidden={{ dealId: report.targetId, reportId: report.id, outcome: 'REFUND' }}
+                  fieldName="reason"
+                  label={t('escrow.refundReason')}
+                  submitLabel={t('escrow.refund')}
+                />
+              </div>
+            </div>
           ) : null}
           <div className="grid gap-6 sm:grid-cols-2">
             <ReasonForm

@@ -1,8 +1,9 @@
 /**
  * Deal rules: the status flow, the contract and work-review gates, payment terms and
- * reminders (FR-9, UC-R4, UC-R5, ADR-012). Pure: no I/O.
+ * reminders, and escrow (FR-9, UC-R4, UC-R5, ADR-012, ADR-013). Pure: no I/O.
  */
 import type { CollabSide } from './chat';
+import { canCancelFundedDeal, type EscrowStatus, isEscrowHeld, type PaymentMethod } from './escrow';
 
 const DAY_MS = 86_400_000;
 const PERCENT = 100;
@@ -33,6 +34,7 @@ export function dealStepOf(status: DealStatus): DealStatus {
 export type DealAction =
   | 'ISSUE_CONTRACT'
   | 'ACCEPT_CONTRACT'
+  | 'FUND_ESCROW'
   | 'SUBMIT_WORK'
   | 'REQUEST_CHANGES'
   | 'APPROVE_WORK'
@@ -64,6 +66,7 @@ const unchanged = (statuses: readonly DealStatus[]) =>
 const TRANSITIONS: Readonly<Record<DealAction, Transition>> = {
   ISSUE_CONTRACT: { side: 'BRAND', moves: unchanged(WITH_CREATOR) },
   ACCEPT_CONTRACT: { side: 'EITHER', moves: unchanged(WITH_CREATOR) },
+  FUND_ESCROW: { side: 'BRAND', moves: { ACCEPTED: 'ACCEPTED' } },
   SUBMIT_WORK: {
     side: 'CREATOR',
     moves: { ACCEPTED: 'CONTENT_SUBMITTED', CHANGES_REQUESTED: 'CONTENT_SUBMITTED' },
@@ -81,17 +84,32 @@ const TRANSITIONS: Readonly<Record<DealAction, Transition>> = {
   },
 };
 
-/** What the status alone can't tell: the contract and the review so far (ADR-012). */
+/** What the status alone can't tell: the contract, review and payment so far. */
 export interface DealFacts {
   readonly hasContract: boolean;
   /** The sides that accepted the current contract version. */
   readonly contractAcceptedBy: readonly CollabSide[];
   readonly changeRequestsUsed: number;
   readonly maxChangeRequests: number;
+  readonly hasSubmissions: boolean;
+  /** ADR-013: paid directly, or held by the gateway; the held payment's status, if any. */
+  readonly paymentMethod: PaymentMethod;
+  readonly escrowStatus: EscrowStatus | null;
+  readonly hasPayoutAccount: boolean;
 }
 
 export type DealActionBlocker =
-  'NO_CONTRACT' | 'ALREADY_ACCEPTED' | 'CONTRACT_NOT_SIGNED' | 'NO_ROUNDS_LEFT';
+  | 'NO_CONTRACT'
+  | 'ALREADY_ACCEPTED'
+  | 'CONTRACT_NOT_SIGNED'
+  | 'NO_ROUNDS_LEFT'
+  | 'NOT_ESCROW'
+  | 'NO_PAYOUT_ACCOUNT'
+  | 'ALREADY_FUNDED'
+  | 'NOT_FUNDED'
+  | 'ESCROW_FUNDED'
+  | 'PAID_THROUGH_ESCROW'
+  | 'ESCROW_NEEDS_ADMIN';
 
 /** ADR-012: a contract version is signed once both sides accepted it. */
 export function isContractSigned(acceptedBy: readonly CollabSide[]): boolean {
@@ -99,22 +117,43 @@ export function isContractSigned(acceptedBy: readonly CollabSide[]): boolean {
 }
 
 /**
- * ADR-012: why an action the status allows still can't happen, or null. Work starts only
- * under a contract both sides accepted; changes can be asked for a limited number of times.
+ * ADR-012 / ADR-013: why an action the status allows still can't happen, or null. Work
+ * starts only under a contract both sides accepted (and, with escrow, once the brand's
+ * payment is held); changes can be asked for a limited number of times; escrow deals are
+ * paid out by the gateway, never marked paid by hand.
  */
 export function dealActionBlocker(
   action: DealAction,
   side: CollabSide,
   facts: DealFacts,
 ): DealActionBlocker | null {
+  const isEscrow = facts.paymentMethod === 'ESCROW';
+  const isHeld = isEscrowHeld(facts.escrowStatus);
   switch (action) {
+    case 'ISSUE_CONTRACT':
+      // The amount is fixed once the brand has paid it in.
+      return isHeld ? 'ESCROW_FUNDED' : null;
     case 'ACCEPT_CONTRACT':
       if (!facts.hasContract) return 'NO_CONTRACT';
       return facts.contractAcceptedBy.includes(side) ? 'ALREADY_ACCEPTED' : null;
+    case 'FUND_ESCROW':
+      if (!isEscrow) return 'NOT_ESCROW';
+      if (!isContractSigned(facts.contractAcceptedBy)) return 'CONTRACT_NOT_SIGNED';
+      if (!facts.hasPayoutAccount) return 'NO_PAYOUT_ACCOUNT';
+      return facts.escrowStatus === null || facts.escrowStatus === 'AWAITING_PAYMENT'
+        ? null
+        : 'ALREADY_FUNDED';
     case 'SUBMIT_WORK':
-      return isContractSigned(facts.contractAcceptedBy) ? null : 'CONTRACT_NOT_SIGNED';
+      if (!isContractSigned(facts.contractAcceptedBy)) return 'CONTRACT_NOT_SIGNED';
+      return isEscrow && !isHeld ? 'NOT_FUNDED' : null;
     case 'REQUEST_CHANGES':
       return facts.changeRequestsUsed < facts.maxChangeRequests ? null : 'NO_ROUNDS_LEFT';
+    case 'MARK_PAID':
+    case 'CONFIRM_RECEIVED':
+    case 'REPORT_NOT_RECEIVED':
+      return isEscrow ? 'PAID_THROUGH_ESCROW' : null;
+    case 'CANCEL':
+      return isHeld && !canCancelFundedDeal(facts.hasSubmissions) ? 'ESCROW_NEEDS_ADMIN' : null;
     default:
       return null;
   }

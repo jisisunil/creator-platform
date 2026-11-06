@@ -84,6 +84,7 @@ export function ContractForm({
   paymentDueOn,
   additionalTerms,
   hasUploadedFile,
+  hasAdvance,
 }: {
   dealId: string;
   amountRupees: number | null;
@@ -92,6 +93,8 @@ export function ContractForm({
   additionalTerms: string | null;
   /** The current version is the brand's own PDF (kept unless a new one is chosen). */
   hasUploadedFile: boolean;
+  /** Direct payment allows an advance; escrow holds the whole amount until approval. */
+  hasAdvance: boolean;
 }) {
   const t = useTranslations('deals.contract.form');
   const tFields = useTranslations('fieldErrors');
@@ -115,13 +118,17 @@ export function ContractForm({
           defaultValue={amountRupees ?? ''}
           error={fieldErrors.amountRupees}
         />
-        <FormField
-          name="advancePercent"
-          label={t('advancePercent')}
-          inputMode="numeric"
-          defaultValue={advancePercent ?? ''}
-          error={fieldErrors.advancePercent}
-        />
+        {hasAdvance ? (
+          <FormField
+            name="advancePercent"
+            label={t('advancePercent')}
+            inputMode="numeric"
+            defaultValue={advancePercent ?? ''}
+            error={fieldErrors.advancePercent}
+          />
+        ) : (
+          <input type="hidden" name="advancePercent" value="" />
+        )}
         <FormField
           name="paymentDueOn"
           type="date"

@@ -45,6 +45,18 @@ describe('buildContentSecurityPolicy (SR-8)', () => {
     expect(csp).not.toContain('upgrade-insecure-requests');
   });
 
+  it('ADR-013 allows Razorpay Checkout only when payments run on Razorpay', () => {
+    const base = { nonce: 'n', isDevelopment: false, isHttps: true };
+
+    const off = buildContentSecurityPolicy(base);
+    const on = buildContentSecurityPolicy({ ...base, isRazorpayEnabled: true });
+
+    expect(off).toContain("frame-src 'none'");
+    expect(off).not.toContain('razorpay');
+    expect(on).toContain('frame-src https://api.razorpay.com https://checkout.razorpay.com');
+    expect(on).toMatch(/connect-src [^;]*https:\/\/api\.razorpay\.com/);
+  });
+
   it('relaxes eval only in development for hot reload', () => {
     const csp = buildContentSecurityPolicy({ nonce: 'n', isDevelopment: true, isHttps: false });
 

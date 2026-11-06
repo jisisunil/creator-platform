@@ -133,4 +133,26 @@ describe('parseServerEnv (SR-10)', () => {
   it('needs both Google sign-in values or neither', () => {
     expect(() => parseServerEnv({ ...VALID, AUTH_GOOGLE_ID: 'id' })).toThrow(/AUTH_GOOGLE_ID/);
   });
+
+  it('ADR-013 runs payments off by default, and fake payments only in development', () => {
+    expect(parseServerEnv(VALID).PAYMENTS_MODE).toBe('off');
+    expect(parseServerEnv({ ...VALID, PAYMENTS_MODE: 'fake' }).PAYMENTS_MODE).toBe('fake');
+    expect(() =>
+      parseServerEnv({ ...VALID, APP_ENV: 'production', PAYMENTS_MODE: 'fake' }),
+    ).toThrow(/PAYMENTS_MODE/);
+  });
+
+  it('ADR-013 needs all three Razorpay keys for razorpay payments', () => {
+    expect(() => parseServerEnv({ ...VALID, PAYMENTS_MODE: 'razorpay' })).toThrow(
+      /RAZORPAY_KEY_ID/,
+    );
+    const env = parseServerEnv({
+      ...VALID,
+      PAYMENTS_MODE: 'razorpay',
+      RAZORPAY_KEY_ID: 'rzp_test_x',
+      RAZORPAY_KEY_SECRET: 'secret',
+      RAZORPAY_WEBHOOK_SECRET: 'hook',
+    });
+    expect(env.PAYMENTS_MODE).toBe('razorpay');
+  });
 });

@@ -1059,7 +1059,8 @@
       "noScore": "अभी कोई स्कोर नहीं",
       "verified": "सत्यापित",
       "closed": "अनुरोध नहीं ले रहे",
-      "viewProfile": "प्रोफ़ाइल देखें"
+      "viewProfile": "प्रोफ़ाइल देखें",
+      "sendRequest": "अनुरोध भेजें"
     },
     "shortlists": {
       "title": "शॉर्टलिस्ट",

@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { fileUrlFor } from '@/lib/file-url';
 import { basisPointsToPercent, formatCompactCount } from '@/lib/format';
@@ -92,6 +93,18 @@ export async function CreatorCard({
         {creator.categorySlugs.map((slug) => tCategories(slug)).join(' · ')}
         {creator.isOpenToCollaborations ? '' : ` · ${t('closed')}`}
       </p>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/brand/creators/${creator.slug}`}>{t('viewProfile')}</Link>
+        </Button>
+        {creator.isOpenToCollaborations ? (
+          <Button asChild size="sm">
+            <Link href={{ pathname: '/brand/requests/new', query: { creator: creator.slug } }}>
+              {t('sendRequest')}
+            </Link>
+          </Button>
+        ) : null}
+      </div>
       {children}
     </article>
   );

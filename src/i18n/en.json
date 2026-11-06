@@ -1059,7 +1059,8 @@
       "noScore": "No score yet",
       "verified": "Verified",
       "closed": "Not taking requests",
-      "viewProfile": "View profile"
+      "viewProfile": "View profile",
+      "sendRequest": "Send request"
     },
     "shortlists": {
       "title": "Shortlists",

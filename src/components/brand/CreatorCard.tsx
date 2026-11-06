@@ -35,7 +35,7 @@ export async function CreatorCard({
     .join(', ');
 
   return (
-    <article className="bg-card grid gap-3 rounded-xl border p-4">
+    <article className="lazy-card bg-card grid gap-3 rounded-xl border p-4">
       <div className="flex items-start gap-3">
         {selectControl}
         {photoUrl ? (

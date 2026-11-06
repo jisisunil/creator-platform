@@ -1,8 +1,11 @@
 /** Brand search and discovery tunables (FR-5, FR-6, UC-D). */
 
-/** UC-D1: results per page, and how deep paging may go (very broad searches). */
-export const SEARCH_PAGE_SIZE = 24;
-export const SEARCH_MAX_PAGE = 50;
+/**
+ * UC-D1: results per page, and how deep paging may go (very broad searches). 12 keeps the
+ * first paint of a results page within NFR-1 on a slow phone (24 took ~2.7 s).
+ */
+export const SEARCH_PAGE_SIZE = 12;
+export const SEARCH_MAX_PAGE = 100;
 /**
  * NFR-1: a search finds at most this many creators: every page a brand can reach. More
  * matches show as "1,200+". Exact counts of broad searches cost seconds at 500k creators.

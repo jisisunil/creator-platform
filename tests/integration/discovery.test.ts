@@ -208,7 +208,9 @@ describe('search (FR-5, UC-D1)', () => {
   it('UC-D1 caps the page number', async () => {
     const brand = await createBrandOwner(ctx, db, 'owner@spiceco.in');
 
-    await expect(search(brand.id, {}, 'score', 10_000)).resolves.toMatchObject({ page: 50 });
+    await expect(search(brand.id, {}, 'score', 10_000)).resolves.toMatchObject({
+      page: SEARCH_MAX_PAGE,
+    });
   });
 
   it('SR-12 search results never include contact details', async () => {

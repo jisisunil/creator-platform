@@ -107,6 +107,11 @@
     content-visibility: auto;
     contain-intrinsic-size: auto 700px;
   }
+  /* A card in a long list: skipped until near the viewport, like .below-fold (NFR-1). */
+  .lazy-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 280px;
+  }
   /* System fonts only, for a few words in another script (the language switcher). */
   .font-system {
     font-family: ui-sans-serif, system-ui, sans-serif;

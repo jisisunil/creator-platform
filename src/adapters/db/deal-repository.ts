@@ -16,7 +16,13 @@ export type DealEventKind =
   | 'PAYMENT_DISPUTED'
   | 'CANCELLED'
   | 'DEADLINE_REMINDER'
-  | 'PAYMENT_REMINDER';
+  | 'PAYMENT_REMINDER'
+  | 'CONTRACT_ISSUED'
+  | 'CONTRACT_ACCEPTED'
+  | 'CHANGES_REQUESTED'
+  | 'WORK_APPROVED'
+  | 'WORK_AUTO_APPROVED'
+  | 'DISPUTE_RAISED';
 
 export type DealPostStatus = 'LIVE' | 'DELETED' | 'PRIVATE';
 
@@ -54,6 +60,8 @@ export interface DealRecord {
   readonly deliverables: readonly DeliverableLine[];
   readonly usageRights: UsageRights;
   readonly postedAt: Date | null;
+  readonly approvedAt: Date | null;
+  readonly reviewDueAt: Date | null;
   readonly paymentMarkedAt: Date | null;
   readonly completedAt: Date | null;
   readonly cancelledAt: Date | null;
@@ -91,6 +99,8 @@ export interface DealChanges {
   readonly advancePercent?: number | null;
   readonly paymentDueOn?: Date | null;
   readonly postedAt?: Date;
+  readonly approvedAt?: Date;
+  readonly reviewDueAt?: Date | null;
   readonly paymentMarkedAt?: Date;
   readonly completedAt?: Date;
   readonly cancelledAt?: Date;
@@ -122,6 +132,8 @@ const DEAL_SELECT = {
   paymentDueOn: true,
   deadline: true,
   postedAt: true,
+  approvedAt: true,
+  reviewDueAt: true,
   paymentMarkedAt: true,
   completedAt: true,
   cancelledAt: true,
@@ -189,7 +201,10 @@ export function createDealRepository(db: DbClient) {
       owner: { brandId: string } | { creatorId: string },
     ): Promise<DealRecord[]> {
       const rows = await db.deal.findMany({
-        where: { ...owner, status: { in: ['ACCEPTED', 'CONTENT_SUBMITTED', 'POSTED'] } },
+        where: {
+          ...owner,
+          status: { in: ['ACCEPTED', 'CONTENT_SUBMITTED', 'CHANGES_REQUESTED', 'APPROVED'] },
+        },
         select: DEAL_SELECT,
       });
       return rows.map(toRecord);
@@ -335,24 +350,35 @@ export function createDealRepository(db: DbClient) {
     },
 
     /**
-     * Deals that may need a deadline or payment reminder (UC-R4, UC-R5): content past its
-     * deadline, or posted deals whose payment date (or `postedBefore`, without one) passed.
-     * The domain rules make the final call.
+     * Deals that may need a deadline or payment reminder (UC-R4, UC-R5): work past its
+     * deadline, or approved deals whose payment date (or `approvedBefore`, without one)
+     * passed. The domain rules make the final call.
      */
-    async remindableDeals(now: Date, postedBefore: Date, limit: number): Promise<DealRecord[]> {
+    async remindableDeals(now: Date, approvedBefore: Date, limit: number): Promise<DealRecord[]> {
       const rows = await db.deal.findMany({
         where: {
           OR: [
             {
-              status: { in: ['ACCEPTED', 'CONTENT_SUBMITTED'] },
+              status: { in: ['ACCEPTED', 'CHANGES_REQUESTED'] },
               deadline: { lt: now },
               deadlineReminderSentAt: null,
             },
-            { status: 'POSTED', paymentDueOn: { lt: now } },
-            { status: 'POSTED', paymentDueOn: null, postedAt: { lte: postedBefore } },
+            { status: 'APPROVED', paymentDueOn: { lt: now } },
+            { status: 'APPROVED', paymentDueOn: null, approvedAt: { lte: approvedBefore } },
           ],
         },
         orderBy: { deadline: 'asc' },
+        take: limit,
+        select: DEAL_SELECT,
+      });
+      return rows.map(toRecord);
+    },
+
+    /** ADR-012: deals whose work review period ended without the brand acting. */
+    async reviewsDue(now: Date, limit: number): Promise<DealRecord[]> {
+      const rows = await db.deal.findMany({
+        where: { status: 'CONTENT_SUBMITTED', reviewDueAt: { lte: now } },
+        orderBy: { reviewDueAt: 'asc' },
         take: limit,
         select: DEAL_SELECT,
       });

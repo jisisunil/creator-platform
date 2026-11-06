@@ -197,6 +197,10 @@ model User {
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
   reports                  Report[]
+  contractsIssued          DealContract[]            @relation("ContractIssuer")
+  contractAcceptances      DealContractAcceptance[]
+  workSubmitted            DealSubmission[]          @relation("WorkSubmitter")
+  workReviewed             DealSubmission[]          @relation("WorkReviewer")
 
   @@index([status, createdAt])
   @@index([role])
@@ -1037,6 +1041,7 @@ enum ReportTarget {
   CREATOR // a creator reported by a brand
   RATING // an unfair review (FR-10.3)
   PAYMENT // "payment not received" (UC-R5)
+  DEAL // a dispute about the work under review (ADR-012)
 }
 
 enum ReportStatus {
@@ -1076,8 +1081,12 @@ model Report {
 /// FR-9.1: requested → accepted → content submitted → posted → payment marked → completed.
 enum DealStatus {
   ACCEPTED
+  /// The creator submitted proof of work; the brand reviews it.
   CONTENT_SUBMITTED
-  POSTED
+  /// The brand asked for changes; the work is back with the creator.
+  CHANGES_REQUESTED
+  /// The brand approved the work (or the review period passed); payment is due.
+  APPROVED
   PAYMENT_MARKED
   COMPLETED
   CANCELLED
@@ -1085,20 +1094,24 @@ enum DealStatus {
 
 /// A collaboration after the creator accepted (FR-9, UC-R4, UC-R5).
 model Deal {
-  id                     String         @id @default(cuid())
-  requestId              String         @unique
+  id                     String           @id @default(cuid())
+  requestId              String           @unique
   campaignId             String
   brandId                String
   creatorId              String
-  status                 DealStatus     @default(ACCEPTED)
+  status                 DealStatus       @default(ACCEPTED)
   /// Agreed amount in minor units (paise); starts as the request's budget.
   agreedAmountMinor      Int?
   currencyCode           String
   /// FR-9.2: share paid in advance, 0-100; the rest is the balance.
   advancePercent         Int?
-  paymentDueOn           DateTime?      @db.Date
-  deadline               DateTime       @db.Date
+  paymentDueOn           DateTime?        @db.Date
+  deadline               DateTime         @db.Date
   postedAt               DateTime?
+  /// When the work was approved; payment falls due from here.
+  approvedAt             DateTime?
+  /// While work is under review: when it is approved automatically if the brand doesn't act.
+  reviewDueAt            DateTime?
   paymentMarkedAt        DateTime?
   completedAt            DateTime?
   cancelledAt            DateTime?
@@ -1106,21 +1119,25 @@ model Deal {
   cancelReason           String?
   deadlineReminderSentAt DateTime?
   paymentReminderSentAt  DateTime?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  request                CollabRequest  @relation(fields: [requestId], references: [id])
-  campaign               Campaign       @relation(fields: [campaignId], references: [id])
-  brand                  Brand          @relation(fields: [brandId], references: [id])
-  creator                CreatorProfile @relation(fields: [creatorId], references: [id])
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  request                CollabRequest    @relation(fields: [requestId], references: [id])
+  campaign               Campaign         @relation(fields: [campaignId], references: [id])
+  brand                  Brand            @relation(fields: [brandId], references: [id])
+  creator                CreatorProfile   @relation(fields: [creatorId], references: [id])
   events                 DealEvent[]
   posts                  DealPost[]
   ratings                Rating[]
+  contracts              DealContract[]
+  submissions            DealSubmission[]
 
   @@index([brandId, status])
   @@index([creatorId, status])
   @@index([campaignId])
   @@index([status, deadline])
   @@index([status, postedAt])
+  @@index([status, approvedAt])
+  @@index([status, reviewDueAt])
 }
 
 enum DealEventKind {
@@ -1134,6 +1151,12 @@ enum DealEventKind {
   CANCELLED
   DEADLINE_REMINDER
   PAYMENT_REMINDER
+  CONTRACT_ISSUED
+  CONTRACT_ACCEPTED
+  CHANGES_REQUESTED
+  WORK_APPROVED
+  WORK_AUTO_APPROVED
+  DISPUTE_RAISED
 }
 
 /// The deal's history, shown to both sides (FR-9.1).
@@ -1345,4 +1368,102 @@ model DataRequest {
 
   @@index([status, dueAt])
   @@index([userId, type])
+}
+
+enum ContractSource {
+  /// Built from the deal's terms and the standard clauses.
+  GENERATED
+  /// The brand's own PDF, with the deal's key terms alongside.
+  UPLOADED
+}
+
+/// One version of a deal's contract (ADR-012). A new version replaces the last; both sides
+/// accept the exact version (its fingerprint) before work starts.
+model DealContract {
+  id              String                   @id @default(cuid())
+  dealId          String
+  version         Int
+  source          ContractSource
+  /// The standard clauses' version the text was built from.
+  templateVersion Int
+  /// The agreed terms when issued (amount, deliverables, dates, review rules).
+  terms           Json
+  additionalTerms String?
+  fileStorageKey  String?                  @unique
+  fileName        String?
+  fileSizeBytes   Int?
+  /// SHA-256 of the terms, text and file: what both sides accepted.
+  fingerprint     String
+  issuedByUserId  String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  deal            Deal                     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  issuedBy        User?                    @relation("ContractIssuer", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+  acceptances     DealContractAcceptance[]
+
+  @@unique([dealId, version])
+  @@index([issuedByUserId])
+}
+
+/// One side's acceptance of one contract version; never changed afterwards.
+model DealContractAcceptance {
+  id         String       @id @default(cuid())
+  contractId String
+  side       CollabSide
+  userId     String?
+  acceptedAt DateTime
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  contract   DealContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([contractId, side])
+  @@index([userId])
+}
+
+enum SubmissionReview {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  AUTO_APPROVED
+}
+
+/// The creator's proof of work for one review round, and the brand's answer (ADR-012).
+model DealSubmission {
+  id                String               @id @default(cuid())
+  dealId            String
+  round             Int
+  note              String
+  links             String[]
+  submittedByUserId String?
+  submittedAt       DateTime
+  review            SubmissionReview     @default(PENDING)
+  reviewNote        String?
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  deal              Deal                 @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  submittedBy       User?                @relation("WorkSubmitter", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+  reviewedBy        User?                @relation("WorkReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  files             DealSubmissionFile[]
+
+  @@unique([dealId, round])
+  @@index([submittedByUserId])
+  @@index([reviewedByUserId])
+}
+
+/// A screenshot or PDF attached to a submission (scanned, private storage: SR-9).
+model DealSubmissionFile {
+  id           String         @id @default(cuid())
+  submissionId String
+  storageKey   String         @unique
+  fileName     String
+  contentType  String
+  sizeBytes    Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  submission   DealSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
 }

@@ -1,6 +1,6 @@
 import type { DbClient } from './db-client';
 
-export type ReportTarget = 'BRAND' | 'CREATOR' | 'RATING' | 'PAYMENT';
+export type ReportTarget = 'BRAND' | 'CREATOR' | 'RATING' | 'PAYMENT' | 'DEAL';
 
 export type ReportRepository = ReturnType<typeof createReportRepository>;
 

@@ -1,16 +1,22 @@
-/** Deals module: status flow, payment terms, posts, reminders and summaries (FR-9, UC-R4 to UC-R6). */
+/**
+ * Deals module: status flow, contracts, proof of work and review, payment, posts, reminders
+ * and summaries (FR-9, UC-R4 to UC-R6, ADR-012).
+ */
 import type { DealEventRecord, DealRecord, DealSummary } from '@/adapters/db/deal-repository';
+import type { SubmissionRecord } from '@/adapters/db/deal-work-repository';
 import type { Repositories } from '@/adapters/db/repositories';
 import type { RequestRecord } from '@/adapters/db/request-repository';
 import { type SocialPlatform, SocialProviderError } from '@/adapters/social/provider';
 import { COLLABORATION_PAGE_SIZE, DEAL_LIMITS } from '@/config/collaboration';
 import type { CollabSide } from '@/domain/chat';
+import { type ContractState, contractStateOf } from '@/domain/contracts';
 import { allowedDealActions, type DealAction, paymentDueAt, splitPayment } from '@/domain/deals';
 import { validationFailed } from '@/domain/errors';
 import type { ServiceContext } from '../context';
 import { notifyUsers } from '../notifications';
 import { findCreatorPost } from '../social';
 import {
+  loadDealFacts,
   notifyOtherSide,
   otherSideContacts,
   performAction,
@@ -18,11 +24,25 @@ import {
 } from './deal-actions';
 
 export type { DealEventRecord, DealPostRecord, DealSummary } from '@/adapters/db/deal-repository';
+export type { SubmissionRecord } from '@/adapters/db/deal-work-repository';
+export {
+  acceptContract,
+  type ContractRecord,
+  type ContractView,
+  getDealContract,
+  issueContract,
+  type IssueContractInput,
+} from './contract';
 export { requireDealParticipant } from './deal-actions';
 export { refreshDealPosts, sendDealReminders } from './deal-jobs';
+export {
+  approveWork,
+  autoApproveDueWork,
+  raiseDealDispute,
+  requestChanges,
+  submitWork,
+} from './work-review';
 
-const PAISE_PER_RUPEE = 100;
-const DAY_MS = 86_400_000;
 /** Shown as the cancellation reason when a deal ends because an account was deleted. */
 const ACCOUNT_DELETED_REASON = 'Account deleted';
 
@@ -53,6 +73,14 @@ export interface DealView extends DealRecord {
   readonly payment: { readonly advanceMinor: number; readonly balanceMinor: number } | null;
   readonly paymentDueAt: Date | null;
   readonly chatId: string | null;
+  /** ADR-012: the current contract version and who still has to accept it. */
+  readonly contract: {
+    readonly state: ContractState;
+    readonly version: number | null;
+    readonly fingerprint: string | null;
+  };
+  readonly submissions: readonly SubmissionRecord[];
+  readonly changeRequestsLeft: number;
 }
 
 /** FR-9.1: one deal with its history and what the viewer can do next. */
@@ -61,11 +89,12 @@ export async function getDeal(
   input: { readonly userId: string; readonly dealId: string },
 ): Promise<DealView> {
   const { deal, side } = await requireDealParticipant(ctx.repos, input.userId, input.dealId);
+  const facts = await loadDealFacts(ctx.repos, deal.id);
   return {
     ...deal,
     viewerSide: side,
     otherPartyName: side === 'BRAND' ? deal.creatorDisplayName : deal.brandName,
-    allowedActions: allowedDealActions(deal.status, side),
+    allowedActions: allowedDealActions(deal.status, side, facts),
     events: await ctx.repos.deals.listEvents(deal.id),
     payment:
       deal.agreedAmountMinor === null
@@ -73,6 +102,13 @@ export async function getDeal(
         : splitPayment(deal.agreedAmountMinor, deal.advancePercent),
     paymentDueAt: paymentDueAt(deal, DEAL_LIMITS.paymentGraceDays),
     chatId: await ctx.repos.chat.findThreadIdForRequest(deal.requestId),
+    contract: {
+      state: contractStateOf(facts.hasContract, facts.contractAcceptedBy),
+      version: facts.contract?.version ?? null,
+      fingerprint: facts.contract?.fingerprint ?? null,
+    },
+    submissions: await ctx.repos.dealWork.listSubmissions(deal.id),
+    changeRequestsLeft: Math.max(0, facts.maxChangeRequests - facts.changeRequestsUsed),
   };
 }
 
@@ -107,58 +143,6 @@ export async function listDeals(
   };
 }
 
-export interface DealTermsInput {
-  readonly agreedAmountRupees: number | null;
-  readonly advancePercent: number | null;
-  /** "YYYY-MM-DD" or null. */
-  readonly paymentDueOn: string | null;
-}
-
-/** FR-9.2: the brand records the agreed amount and payment terms (until payment is marked). */
-export async function updateDealTerms(
-  ctx: ServiceContext,
-  input: DealTermsInput & { readonly userId: string; readonly dealId: string },
-): Promise<void> {
-  await performAction(ctx, input, 'UPDATE_TERMS', (deal, side, now) => {
-    const paymentDueOn = input.paymentDueOn ? new Date(`${input.paymentDueOn}T00:00:00Z`) : null;
-    const today = new Date(Math.floor(now.getTime() / DAY_MS) * DAY_MS);
-    if (paymentDueOn && (Number.isNaN(paymentDueOn.getTime()) || paymentDueOn < today)) {
-      throw validationFailed({ paymentDueOn: 'deal.invalidDueDate' });
-    }
-    return {
-      changes: {
-        agreedAmountMinor:
-          input.agreedAmountRupees === null ? null : input.agreedAmountRupees * PAISE_PER_RUPEE,
-        advancePercent: input.advancePercent,
-        paymentDueOn,
-      },
-      event: { kind: 'TERMS_UPDATED' },
-      alsoDo: notifyOtherSide(ctx, deal, side, (recipient) => ({
-        template: 'dealTermsUpdated',
-        payload: { ...recipient, brandName: deal.brandName, campaignName: deal.campaignName },
-      })),
-    };
-  });
-}
-
-/** FR-9.1: the creator sends the content for the brand to review, with an optional note. */
-export async function submitContent(
-  ctx: ServiceContext,
-  input: { readonly userId: string; readonly dealId: string; readonly note: string },
-): Promise<void> {
-  await performAction(ctx, input, 'SUBMIT_CONTENT', (deal, side) => ({
-    event: { kind: 'CONTENT_SUBMITTED', note: input.note.trim() || null },
-    alsoDo: notifyOtherSide(ctx, deal, side, (recipient) => ({
-      template: 'dealContentSubmitted',
-      payload: {
-        ...recipient,
-        creatorName: deal.creatorDisplayName,
-        campaignName: deal.campaignName,
-      },
-    })),
-  }));
-}
-
 /** The platform whose post links match `url`, with the post id. */
 function parsePostLink(
   ctx: ServiceContext,
@@ -177,7 +161,8 @@ function parsePostLink(
 /**
  * FR-9.3 / UC-R6: the creator adds the link of a published post. It must be a post on one
  * of their own connected accounts (proved by fetching it through that account); its stats
- * are saved now and refreshed daily. The first post moves the deal to "posted".
+ * are saved now and refreshed daily for the campaign report. It doesn't change the status:
+ * the brand's review of the work does (ADR-012).
  */
 export async function addPostLink(
   ctx: ServiceContext,

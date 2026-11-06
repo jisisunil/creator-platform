@@ -119,12 +119,12 @@ Requirements are grouped by module and numbered so each can be traced to use cas
 
 **FR-9 Deals and campaigns**
 
-1. Must: deal status: requested → accepted → content submitted → posted → payment marked → completed (or cancelled).
-2. Must: agreed amount and payment terms recorded (advance %, balance); both sides mark "paid" and "received"; reminders for overdue payment.
+1. Must: deal status: requested → accepted → work submitted (⇄ changes requested) → work approved → payment marked → completed (or cancelled). Before work starts, the brand issues a contract (standard terms or its own PDF) and the creator accepts that exact version; the creator submits proof of work (links or screenshots); the brand approves or asks for changes (limited rounds); unreviewed work is approved automatically after the review period (ADR-012).
+2. Must: agreed amount and payment terms recorded in the contract (advance %, balance); payment falls due when the work is approved; both sides mark "paid" and "received"; reminders for overdue payment.
 3. Must: campaign groups many deals; creator submits the post link; the platform fetches that post's stats and shows a campaign report (views, likes, comments, engagement, cost per view or engagement if amount is known).
 4. Must: downloadable deal summary (parties, deliverables, amount, dates) as an informal contract.
 5. Must: disclosure reminder that sponsored posts must be labelled (#ad, #collab).
-6. Later: tracked links and discount codes; in-app payments with holding until delivery.
+6. Later: tracked links and discount codes; in-app payments with holding until delivery (escrow phase 2 of ADR-012: Razorpay, after company registration).
 
 **FR-10 Ratings and reviews**
 
@@ -196,8 +196,8 @@ Every use case has an ID used in code and tests; each lists its main flow and th
 | UC-R1 | Send request | Brand fills brief, sends; counts against plan | Plan limit reached; creator not open; duplicate open request; creator blocked the brand (generic "not available") |
 | UC-R2 | Respond to request | Creator accepts or declines | Request expired; brand deleted meanwhile; accept after budget changed (creator sees latest version) |
 | UC-R3 | Chat | Messages and attachments | Contact details flagged; blocked user; oversized or unsafe file rejected; other side deleted ("Deleted user") |
-| UC-R4 | Track deal | Status moves through stages | Out-of-order updates rejected; cancellation by either side with reason; deadline passed (reminder to both) |
-| UC-R5 | Mark payment | Brand marks paid; creator confirms received | Disagreement ("not received") goes to admin as a report; overdue reminders after 7 days |
+| UC-R4 | Track deal | Contract accepted, work submitted, reviewed and approved | Out-of-order updates rejected; no work before both accept the contract; a new contract version must be accepted again; changes asked at most the contract's number of times; unreviewed work approved automatically; disputes go to admin; cancellation by either side with reason; deadline passed (reminder to both) |
+| UC-R5 | Mark payment | Brand marks paid after approving the work; creator confirms received | Disagreement ("not received") goes to admin as a report; overdue reminders 7 days after approval |
 | UC-R6 | Campaign report | Creator submits post link; stats fetched | Link to a different account than the creator's (rejected); post deleted later (keep last stats, mark deleted); private post |
 | UC-R7 | Rate | Both sides rate after completion | One side never rates (other's rating shown after 14 days); retaliation report |
 

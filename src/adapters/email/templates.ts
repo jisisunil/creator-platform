@@ -23,7 +23,12 @@ export interface EmailTemplates {
   paymentOverdue: { name: string; creatorName: string; campaignName: string; link: string };
   ratingRequested: { name: string; otherPartyName: string; campaignName: string; link: string };
   newMessage: { name: string; senderName: string; campaignName: string; link: string };
-  dealTermsUpdated: { name: string; brandName: string; campaignName: string; link: string };
+  contractIssued: { name: string; brandName: string; campaignName: string; link: string };
+  contractAccepted: { name: string; otherPartyName: string; campaignName: string; link: string };
+  workChangesRequested: { name: string; brandName: string; campaignName: string; link: string };
+  workApproved: { name: string; brandName: string; campaignName: string; link: string };
+  workAutoApproved: { name: string; campaignName: string; link: string };
+  dealDisputed: { name: string; otherPartyName: string; campaignName: string; link: string };
   dealContentSubmitted: { name: string; creatorName: string; campaignName: string; link: string };
   dealPostAdded: { name: string; creatorName: string; campaignName: string; link: string };
   paymentDisputed: { name: string; creatorName: string; campaignName: string; link: string };
@@ -61,7 +66,12 @@ const ACTION_KEYS = {
   paymentOverdue: 'paymentOverdue.action',
   ratingRequested: 'ratingRequested.action',
   newMessage: 'newMessage.action',
-  dealTermsUpdated: 'dealTermsUpdated.action',
+  contractIssued: 'contractIssued.action',
+  contractAccepted: 'contractAccepted.action',
+  workChangesRequested: 'workChangesRequested.action',
+  workApproved: 'workApproved.action',
+  workAutoApproved: 'workAutoApproved.action',
+  dealDisputed: 'dealDisputed.action',
   dealContentSubmitted: 'dealContentSubmitted.action',
   dealPostAdded: 'dealPostAdded.action',
   paymentDisputed: 'paymentDisputed.action',

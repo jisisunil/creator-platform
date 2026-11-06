@@ -4,19 +4,24 @@ import { SocialProviderError } from '@/adapters/social/provider';
 import { getCampaignReport, listCampaigns } from '@/services/campaigns';
 import {
   addPostLink,
+  approveWork,
   cancelDeal,
   confirmPaymentReceived,
   getDeal,
+  issueContract,
   listDeals,
   markDealPaid,
   refreshDealPosts,
   reportPaymentNotReceived,
   sendDealReminders,
-  submitContent,
-  updateDealTerms,
+  submitWork,
 } from '@/services/deals';
-import { getRequest } from '@/services/requests';
-import { acceptedRequest, CREATOR_CHANNEL_ID, type PartyOptions } from './collaboration-fixtures';
+import {
+  CREATOR_CHANNEL_ID,
+  openDeal as openDealWith,
+  type PartyOptions,
+  signContract,
+} from './collaboration-fixtures';
 import { createTestDatabaseClient } from './test-database';
 import { createTestContext, resetDatabase, type TestContext } from './test-context';
 
@@ -31,12 +36,21 @@ beforeEach(async () => {
 });
 afterAll(() => db.$disconnect());
 
-/** An accepted request and its deal. */
-async function openDeal(options: PartyOptions = {}) {
-  const parties = await acceptedRequest(ctx, db, options);
-  const view = await getRequest(ctx, { userId: parties.brand.id, requestId: parties.requestId });
-  if (!view.dealId) throw new Error('accepting should start a deal');
-  return { ...parties, dealId: view.dealId };
+const openDeal = (options: PartyOptions = {}) => openDealWith(ctx, db, options);
+
+/** A deal with a signed contract and approved work: payment is due. */
+async function approvedDeal() {
+  const parties = await openDeal();
+  await signContract(ctx, parties);
+  await submitWork(ctx, {
+    userId: parties.creatorUser.id,
+    dealId: parties.dealId,
+    note: '',
+    links: [POST_URL],
+    files: [],
+  });
+  await approveWork(ctx, { userId: parties.brand.id, dealId: parties.dealId });
+  return parties;
 }
 
 describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
@@ -50,7 +64,8 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
       agreedAmountMinor: 2_500_000,
       viewerSide: 'CREATOR',
       otherPartyName: 'Test Brand Pvt Ltd',
-      allowedActions: ['SUBMIT_CONTENT', 'ADD_POST', 'CANCEL'],
+      contract: { state: 'NONE', version: null },
+      allowedActions: ['ADD_POST', 'CANCEL'],
     });
     expect(deal.chatId).not.toBeNull();
     expect((await listDeals(ctx, { userId: brand.id, page: 1 })).items).toHaveLength(1);
@@ -59,14 +74,19 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
   it('UC-R4 runs from acceptance to completion in order', async () => {
     const { brand, creatorUser, dealId } = await openDeal();
 
-    await updateDealTerms(ctx, {
-      userId: brand.id,
+    await signContract(
+      ctx,
+      { brand, creatorUser, dealId },
+      { amountRupees: 30_000, advancePercent: 50, paymentDueOn: '2026-11-30' },
+    );
+    await submitWork(ctx, {
+      userId: creatorUser.id,
       dealId,
-      agreedAmountRupees: 30_000,
-      advancePercent: 50,
-      paymentDueOn: '2026-11-30',
+      note: 'Reel is live',
+      links: [POST_URL],
+      files: [],
     });
-    await submitContent(ctx, { userId: creatorUser.id, dealId, note: 'Draft shared in chat' });
+    await approveWork(ctx, { userId: brand.id, dealId });
     await addPostLink(ctx, { userId: creatorUser.id, dealId, url: POST_URL });
     await markDealPaid(ctx, { userId: brand.id, dealId });
     await confirmPaymentReceived(ctx, { userId: creatorUser.id, dealId });
@@ -82,8 +102,10 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
     ]);
     expect(deal.events.map((event) => event.kind)).toEqual([
       'CREATED',
-      'TERMS_UPDATED',
+      'CONTRACT_ISSUED',
+      'CONTRACT_ACCEPTED',
       'CONTENT_SUBMITTED',
+      'WORK_APPROVED',
       'POST_ADDED',
       'PAYMENT_MARKED',
       'PAYMENT_CONFIRMED',
@@ -103,9 +125,9 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
     await expect(markDealPaid(ctx, { userId: creatorUser.id, dealId })).rejects.toMatchObject({
       code: 'NOT_ALLOWED',
     });
-    await expect(submitContent(ctx, { userId: brand.id, dealId, note: '' })).rejects.toMatchObject({
-      code: 'NOT_ALLOWED',
-    });
+    await expect(
+      submitWork(ctx, { userId: brand.id, dealId, note: '', links: [POST_URL], files: [] }),
+    ).rejects.toMatchObject({ code: 'NOT_ALLOWED' });
     expect((await getDeal(ctx, { userId: brand.id, dealId })).status).toBe('ACCEPTED');
   });
 
@@ -125,8 +147,7 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
   });
 
   it('UC-R4 a deal cannot be cancelled once payment is marked', async () => {
-    const { brand, creatorUser, dealId } = await openDeal();
-    await addPostLink(ctx, { userId: creatorUser.id, dealId, url: POST_URL });
+    const { brand, dealId } = await approvedDeal();
     await markDealPaid(ctx, { userId: brand.id, dealId });
 
     await expect(
@@ -135,8 +156,7 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
   });
 
   it('UC-R5 "not received" goes to the admins as a report and the deal waits', async () => {
-    const { brand, creatorUser, dealId } = await openDeal();
-    await addPostLink(ctx, { userId: creatorUser.id, dealId, url: POST_URL });
+    const { brand, creatorUser, dealId } = await approvedDeal();
     await markDealPaid(ctx, { userId: brand.id, dealId });
 
     await reportPaymentNotReceived(ctx, {
@@ -160,19 +180,22 @@ describe('deals (FR-9.1, FR-9.2, UC-R4, UC-R5)', () => {
     const { brand, dealId } = await openDeal();
 
     await expect(
-      updateDealTerms(ctx, {
+      issueContract(ctx, {
         userId: brand.id,
         dealId,
-        agreedAmountRupees: 10_000,
+        amountRupees: 10_000,
         advancePercent: null,
         paymentDueOn: '2026-10-01',
+        additionalTerms: '',
+        source: 'GENERATED',
+        file: null,
       }),
     ).rejects.toMatchObject({ fieldErrors: { paymentDueOn: 'deal.invalidDueDate' } });
   });
 });
 
 describe('reminders (UC-R4, UC-R5)', () => {
-  it('UC-R4 reminds both sides once when the deadline passes with nothing posted', async () => {
+  it('UC-R4 reminds both sides once when the deadline passes with no work submitted', async () => {
     await openDeal();
     ctx.clock.advance(40 * DAY_MS); // deadline 2026-11-15, now 2026-11-18
 
@@ -186,9 +209,8 @@ describe('reminders (UC-R4, UC-R5)', () => {
     ]);
   });
 
-  it('UC-R5 reminds the brand of an overdue payment after 7 days, then weekly', async () => {
-    const { creatorUser, dealId } = await openDeal();
-    await addPostLink(ctx, { userId: creatorUser.id, dealId, url: POST_URL });
+  it('UC-R5 reminds the brand of an overdue payment 7 days after approval, then weekly', async () => {
+    await approvedDeal();
 
     ctx.clock.advance(6 * DAY_MS);
     expect((await sendDealReminders(ctx)).paymentReminders).toBe(0);

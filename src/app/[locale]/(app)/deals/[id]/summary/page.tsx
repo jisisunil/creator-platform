@@ -73,6 +73,7 @@ export default async function DealSummaryPage({
     [t('accepted'), date(deal.createdAt)],
     [t('contentDeadline'), date(deal.deadline, 'UTC')],
     [t('paymentDue'), date(deal.paymentDueAt)],
+    [t('approved'), date(deal.approvedAt)],
     [t('posted'), date(deal.postedAt)],
     [t('paid'), date(deal.paymentMarkedAt)],
     [t('completed'), date(deal.completedAt)],

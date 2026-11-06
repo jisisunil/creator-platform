@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { requestPasswordReset } from '@/services/accounts';
 import { getChat, sendMessage } from '@/services/chat';
-import { submitContent } from '@/services/deals';
+import { submitWork } from '@/services/deals';
 import {
   countUnreadNotifications,
   getNotificationPreferences,
@@ -10,7 +10,13 @@ import {
 } from '@/services/notifications';
 import { getRequest } from '@/services/requests';
 import { purgeExpiredSecurityData } from '@/services/retention';
-import { acceptedRequest, createBrandAndCreator, sendTestRequest } from './collaboration-fixtures';
+import {
+  acceptedRequest,
+  createBrandAndCreator,
+  openDeal,
+  sendTestRequest,
+  signContract,
+} from './collaboration-fixtures';
 import { createTestDatabaseClient } from './test-database';
 import { createTestContext, requestFrom, resetDatabase, type TestContext } from './test-context';
 
@@ -69,11 +75,19 @@ describe('notifications (FR-12.1)', () => {
   });
 
   it('FR-12.1 deal steps notify the other side', async () => {
-    const { brand, creatorUser, requestId } = await acceptedRequest(ctx, db);
-    const dealId = (await getRequest(ctx, { userId: brand.id, requestId })).dealId ?? '';
+    const parties = await openDeal(ctx, db);
+    await signContract(ctx, parties);
 
-    await submitContent(ctx, { userId: creatorUser.id, dealId, note: '' });
+    await submitWork(ctx, {
+      userId: parties.creatorUser.id,
+      dealId: parties.dealId,
+      note: '',
+      links: ['https://example.com/draft'],
+      files: [],
+    });
 
+    expect(await emailCount('contractIssued', 'creator@example.in')).toBe(1);
+    expect(await emailCount('contractAccepted', 'owner@spiceco.in')).toBe(1);
     expect(await emailCount('dealContentSubmitted', 'owner@spiceco.in')).toBe(1);
   });
 });

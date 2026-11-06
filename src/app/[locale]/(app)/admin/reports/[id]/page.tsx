@@ -16,6 +16,9 @@ import {
   warnUserAction,
 } from '../../moderation-actions';
 
+const isDealReport = (targetType: ReportView['targetType']) =>
+  targetType === 'PAYMENT' || targetType === 'DEAL';
+
 /** UC-M1: one report; warn, hide a rating, open the chat with a reason, then close it. */
 export default async function AdminReportPage({
   params,
@@ -105,7 +108,8 @@ export default async function AdminReportPage({
               submitLabel={t('openChat')}
             />
           ) : null}
-          {report.target?.userIds[0] && report.targetType !== 'PAYMENT' ? (
+          {/* Payment and deal disputes involve both sides: no one-click warning. */}
+          {report.target?.userIds[0] && !isDealReport(report.targetType) ? (
             <ReasonForm
               action={warnUserAction}
               hidden={{ userId: report.target.userIds[0], reportId: report.id }}

@@ -47,12 +47,39 @@ export const REPORT_REASON_MAX = 1000;
 export const DEAL_LIMITS = {
   reasonMax: 500,
   postUrlMax: 500,
-  /** UC-R5: without an agreed due date, payment is due this many days after posting. */
+  /** UC-R5: without an agreed due date, payment is due this many days after approval. */
   paymentGraceDays: 7,
   /** UC-R5: overdue payments are reminded again every this many days. */
   paymentReminderRepeatDays: 7,
   /** Deals handled per reminder job run. */
   remindersPerRun: 500,
+} as const;
+
+/** ADR-012: deal contracts. */
+export const DEAL_CONTRACT = {
+  /** Bump when the standard clauses (i18n `contract.clauses`) change. */
+  templateVersion: 1,
+  additionalTermsMax: 3000,
+  /** The brand's own contract: a PDF up to 10 MB. */
+  fileMaxBytes: 10 * 1024 * 1024,
+  fileNameMax: 100,
+} as const;
+
+/** ADR-012: proof of work and the brand's review. */
+export const WORK_REVIEW = {
+  /** Work the brand doesn't review within this many days is approved automatically. */
+  reviewDays: 7,
+  /** The brand may ask for changes this many times; after that it approves or disputes. */
+  maxChangeRequests: 2,
+  noteMax: 2000,
+  linksMax: 5,
+  linkMax: 500,
+  /** Screenshots (images) or PDFs: up to 5 files, 10 MB in all (one form post: next.config). */
+  filesMax: 5,
+  totalBytesMax: 10 * 1024 * 1024,
+  fileNameMax: 100,
+  /** Deals handled per auto-approval job run. */
+  autoApprovalsPerRun: 200,
 } as const;
 
 /** UC-R6: post stats are refreshed daily for 90 days after posting. */

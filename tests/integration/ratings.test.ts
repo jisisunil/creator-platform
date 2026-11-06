@@ -8,7 +8,7 @@ import {
   submitRating,
 } from '@/services/ratings';
 import { getRequest } from '@/services/requests';
-import { acceptedRequest, CREATOR_CHANNEL_ID } from './collaboration-fixtures';
+import { acceptedRequest, CREATOR_CHANNEL_ID, deliverApprovedWork } from './collaboration-fixtures';
 import { createTestDatabaseClient } from './test-database';
 import { createTestContext, resetDatabase, type TestContext } from './test-context';
 
@@ -36,6 +36,7 @@ async function completedDeal() {
     dealId,
     url: `https://mock.social/${CREATOR_CHANNEL_ID}/reel`,
   });
+  await deliverApprovedWork(ctx, { ...parties, dealId });
   await markDealPaid(ctx, { userId: parties.brand.id, dealId });
   await confirmPaymentReceived(ctx, { userId: parties.creatorUser.id, dealId });
   return { ...parties, dealId };

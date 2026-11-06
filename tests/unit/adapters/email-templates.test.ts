@@ -60,9 +60,38 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     campaignName: 'Diwali',
     link: 'https://app.test/en/messages/t1',
   },
-  dealTermsUpdated: {
+  contractIssued: {
     name: 'Asha',
     brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  contractAccepted: {
+    name: 'Ravi',
+    otherPartyName: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  workChangesRequested: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  workApproved: {
+    name: 'Asha',
+    brandName: 'Spice Co',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  workAutoApproved: {
+    name: 'Asha',
+    campaignName: 'Diwali',
+    link: 'https://app.test/en/deals/d1',
+  },
+  dealDisputed: {
+    name: 'Ravi',
+    otherPartyName: 'Asha',
     campaignName: 'Diwali',
     link: 'https://app.test/en/deals/d1',
   },

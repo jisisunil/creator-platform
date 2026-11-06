@@ -289,6 +289,32 @@ export function createPrivacyRepository(db: DbClient) {
                   brand: { select: { name: true } },
                   campaign: { select: { name: true } },
                   posts: { select: { url: true, views: true, likes: true, comments: true } },
+                  contracts: {
+                    orderBy: { version: 'asc' },
+                    select: {
+                      version: true,
+                      source: true,
+                      terms: true,
+                      additionalTerms: true,
+                      fileName: true,
+                      fingerprint: true,
+                      createdAt: true,
+                      acceptances: { select: { side: true, acceptedAt: true } },
+                    },
+                  },
+                  submissions: {
+                    orderBy: { round: 'asc' },
+                    select: {
+                      round: true,
+                      note: true,
+                      links: true,
+                      submittedAt: true,
+                      review: true,
+                      reviewNote: true,
+                      reviewedAt: true,
+                      files: { select: { fileName: true, contentType: true, sizeBytes: true } },
+                    },
+                  },
                 },
               },
             },
@@ -315,6 +341,23 @@ export function createPrivacyRepository(db: DbClient) {
             },
           },
           savedSearches: { select: { name: true, filters: true, createdAt: true } },
+          contractsIssued: {
+            select: {
+              version: true,
+              additionalTerms: true,
+              createdAt: true,
+              deal: { select: { campaign: { select: { name: true } } } },
+            },
+          },
+          workReviewed: {
+            select: {
+              round: true,
+              review: true,
+              reviewNote: true,
+              reviewedAt: true,
+              deal: { select: { campaign: { select: { name: true } } } },
+            },
+          },
           sentRequests: {
             select: {
               createdAt: true,
@@ -380,6 +423,21 @@ export function createPrivacyRepository(db: DbClient) {
       await db.dealEvent.updateMany({
         where: { actorUserId: userId },
         data: { actorUserId: null },
+      });
+      // ADR-012: the agreement and work history stay for the other side; the link to this
+      // person goes (the side and time of each acceptance remain as the record).
+      await db.dealContract.updateMany({
+        where: { issuedByUserId: userId },
+        data: { issuedByUserId: null },
+      });
+      await db.dealContractAcceptance.updateMany({ where: { userId }, data: { userId: null } });
+      await db.dealSubmission.updateMany({
+        where: { submittedByUserId: userId },
+        data: { submittedByUserId: null },
+      });
+      await db.dealSubmission.updateMany({
+        where: { reviewedByUserId: userId },
+        data: { reviewedByUserId: null },
       });
       await db.report.updateMany({
         where: { reporterUserId: userId },

@@ -1,5 +1,6 @@
 import type { DatabaseClient } from '@/adapters/db/client';
-import { type RequestInput, respondToRequest, sendRequest } from '@/services/requests';
+import { acceptContract, approveWork, getDeal, issueContract, submitWork } from '@/services/deals';
+import { getRequest, type RequestInput, respondToRequest, sendRequest } from '@/services/requests';
 import { createBrandOwner, createSearchableCreator } from './discovery-fixtures';
 import type { TestContext } from './test-context';
 
@@ -73,4 +74,61 @@ export async function acceptedRequest(
     decision: 'accept',
   });
   return { ...parties, requestId };
+}
+
+/** An accepted request and its deal. */
+export async function openDeal(ctx: TestContext, db: DatabaseClient, options: PartyOptions = {}) {
+  const parties = await acceptedRequest(ctx, db, options);
+  const view = await getRequest(ctx, { userId: parties.brand.id, requestId: parties.requestId });
+  if (!view.dealId) throw new Error('accepting should start a deal');
+  return { ...parties, dealId: view.dealId };
+}
+
+/** ADR-012: the brand issues the standard contract and the creator accepts it. */
+export async function signContract(
+  ctx: TestContext,
+  parties: { brand: { id: string }; creatorUser: { id: string }; dealId: string },
+  terms: {
+    amountRupees?: number;
+    advancePercent?: number | null;
+    paymentDueOn?: string | null;
+  } = {},
+): Promise<string> {
+  await issueContract(ctx, {
+    userId: parties.brand.id,
+    dealId: parties.dealId,
+    amountRupees: terms.amountRupees ?? 25_000,
+    advancePercent: terms.advancePercent ?? null,
+    paymentDueOn: terms.paymentDueOn ?? null,
+    additionalTerms: '',
+    source: 'GENERATED',
+    file: null,
+  });
+  const { contract } = await getDeal(ctx, {
+    userId: parties.creatorUser.id,
+    dealId: parties.dealId,
+  });
+  if (!contract.fingerprint) throw new Error('issuing should create a contract');
+  await acceptContract(ctx, {
+    userId: parties.creatorUser.id,
+    dealId: parties.dealId,
+    fingerprint: contract.fingerprint,
+  });
+  return contract.fingerprint;
+}
+
+/** ADR-012: contract signed, work submitted and approved, so payment is due. */
+export async function deliverApprovedWork(
+  ctx: TestContext,
+  parties: { brand: { id: string }; creatorUser: { id: string }; dealId: string },
+): Promise<void> {
+  await signContract(ctx, parties);
+  await submitWork(ctx, {
+    userId: parties.creatorUser.id,
+    dealId: parties.dealId,
+    note: '',
+    links: [`https://mock.social/${CREATOR_CHANNEL_ID}/reel`],
+    files: [],
+  });
+  await approveWork(ctx, { userId: parties.brand.id, dealId: parties.dealId });
 }

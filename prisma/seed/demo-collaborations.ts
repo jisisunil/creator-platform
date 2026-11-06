@@ -13,10 +13,14 @@ import { createLocalFileStorage } from '@/adapters/storage/file-storage';
 import { sendMessage } from '@/services/chat';
 import type { ServiceContext } from '@/services/context';
 import {
+  acceptContract,
   addPostLink,
+  approveWork,
   confirmPaymentReceived,
+  getDeal,
+  issueContract,
   markDealPaid,
-  updateDealTerms,
+  submitWork,
 } from '@/services/deals';
 import { submitRating } from '@/services/ratings';
 import { getRequest, type RequestInput, respondToRequest, sendRequest } from '@/services/requests';
@@ -98,18 +102,33 @@ export async function seedDemoCollaborations(
   });
   const firstDealId = (await getRequest(ctx, { userId: brandUserId, requestId: firstId })).dealId;
   if (!firstDealId) throw new Error('accepting should start a deal');
-  await updateDealTerms(ctx, {
+  await issueContract(ctx, {
     userId: brandUserId,
     dealId: firstDealId,
-    agreedAmountRupees: 30_000,
+    amountRupees: 30_000,
     advancePercent: 30,
     paymentDueOn: null,
+    additionalTerms: '',
+    source: 'GENERATED',
+    file: null,
   });
-  await addPostLink(ctx, {
+  const { contract } = await getDeal(ctx, { userId: completed.userId, dealId: firstDealId });
+  if (!contract.fingerprint) throw new Error('issuing should create a contract');
+  await acceptContract(ctx, {
     userId: completed.userId,
     dealId: firstDealId,
-    url: 'https://mock.social/mock-yt-seed-03/diwali-sweets-reel',
+    fingerprint: contract.fingerprint,
   });
+  const postUrl = 'https://mock.social/mock-yt-seed-03/diwali-sweets-reel';
+  await submitWork(ctx, {
+    userId: completed.userId,
+    dealId: firstDealId,
+    note: 'Both reels are live. (Demo submission)',
+    links: [postUrl],
+    files: [],
+  });
+  await approveWork(ctx, { userId: brandUserId, dealId: firstDealId });
+  await addPostLink(ctx, { userId: completed.userId, dealId: firstDealId, url: postUrl });
   await markDealPaid(ctx, { userId: brandUserId, dealId: firstDealId });
   await confirmPaymentReceived(ctx, { userId: completed.userId, dealId: firstDealId });
   await submitRating(ctx, {

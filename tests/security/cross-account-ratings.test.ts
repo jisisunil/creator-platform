@@ -2,7 +2,11 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { addPostLink, confirmPaymentReceived, markDealPaid } from '@/services/deals';
 import { getDealRatings, reportRating, submitRating } from '@/services/ratings';
 import { getRequest } from '@/services/requests';
-import { acceptedRequest, CREATOR_CHANNEL_ID } from '../integration/collaboration-fixtures';
+import {
+  acceptedRequest,
+  CREATOR_CHANNEL_ID,
+  deliverApprovedWork,
+} from '../integration/collaboration-fixtures';
 import { createBrandOwner } from '../integration/discovery-fixtures';
 import { createTestDatabaseClient } from '../integration/test-database';
 import { createTestContext, resetDatabase, type TestContext } from '../integration/test-context';
@@ -25,6 +29,7 @@ describe('ratings across accounts (SR-5, SEC-2)', () => {
       dealId,
       url: `https://mock.social/${CREATOR_CHANNEL_ID}/reel`,
     });
+    await deliverApprovedWork(ctx, { brand, creatorUser, dealId });
     await markDealPaid(ctx, { userId: brand.id, dealId });
     await confirmPaymentReceived(ctx, { userId: creatorUser.id, dealId });
     await submitRating(ctx, {

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { confirmPaymentReceived, reportPaymentNotReceived, submitContent } from '@/services/deals';
+import { confirmPaymentReceived, reportPaymentNotReceived, submitWork } from '@/services/deals';
 import { getRequest } from '@/services/requests';
 import {
   addToShortlist,
@@ -117,7 +117,14 @@ describe('remaining resources across accounts (SR-5, SEC-2)', () => {
     const outsider = await db.user.findUniqueOrThrow({ where: { email: 'outsider@example.in' } });
 
     const attempts = [
-      () => submitContent(ctx, { userId: outsider.id, dealId, note: '' }),
+      () =>
+        submitWork(ctx, {
+          userId: outsider.id,
+          dealId,
+          note: '',
+          links: ['https://example.com/x'],
+          files: [],
+        }),
       () => confirmPaymentReceived(ctx, { userId: outsider.id, dealId }),
       () => reportPaymentNotReceived(ctx, { userId: outsider.id, dealId, note: 'not mine' }),
     ];

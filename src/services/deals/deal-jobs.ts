@@ -12,17 +12,17 @@ const DAY_MS = 86_400_000;
 const logger = getLogger('deals');
 
 /**
- * UC-R4 / UC-R5: daily job. Past-deadline deals with nothing posted remind both sides
+ * UC-R4 / UC-R5: daily job. Past-deadline deals with no work submitted remind both sides
  * once; overdue payments remind the brand every week until marked paid.
  */
 export async function sendDealReminders(
   deps: Pick<ServiceContext, 'repos' | 'transaction' | 'clock' | 'jobQueue' | 'appUrl'>,
 ): Promise<{ deadlineReminders: number; paymentReminders: number }> {
   const now = deps.clock.now();
-  const postedBefore = new Date(now.getTime() - DEAL_LIMITS.paymentGraceDays * DAY_MS);
+  const approvedBefore = new Date(now.getTime() - DEAL_LIMITS.paymentGraceDays * DAY_MS);
   const deals = await deps.repos.deals.remindableDeals(
     now,
-    postedBefore,
+    approvedBefore,
     DEAL_LIMITS.remindersPerRun,
   );
   const days = {

@@ -265,6 +265,22 @@
     "privacy": {
       "detailsTooShort": "Tell us what to correct (at least 10 characters).",
       "confirmEmail": "Type the email address of this account to confirm."
+    },
+    "contract": {
+      "fileTooLarge": "Choose a PDF up to 10 MB.",
+      "fileType": "The contract must be a PDF.",
+      "fileRejected": "This file looks unsafe and was rejected.",
+      "fileRequired": "Choose your contract PDF.",
+      "mustAgree": "Tick the box to confirm you have read and agree to the contract."
+    },
+    "work": {
+      "proofRequired": "Add at least one link or file.",
+      "tooManyLinks": "Add up to 5 links.",
+      "invalidLink": "Each line must be a full link starting with https://",
+      "tooManyFiles": "Choose up to 5 files.",
+      "fileTooLarge": "Files can be 10 MB in all.",
+      "fileType": "Files must be JPEG, PNG, WebP or PDF.",
+      "fileRejected": "One of the files looks unsafe and was rejected."
     }
   },
   "industries": {
@@ -653,15 +669,10 @@
       "body": "Hi {name},\n{senderName} sent you a message about \"{campaignName}\". Reply in the chat; we never put message text in emails.",
       "action": "Open chat"
     },
-    "dealTermsUpdated": {
-      "subject": "{brandName} updated a deal",
-      "body": "Hi {name},\n{brandName} updated the amount or payment terms for \"{campaignName}\". Check the deal page.",
-      "action": "View deal"
-    },
     "dealContentSubmitted": {
-      "subject": "{creatorName} submitted content",
-      "body": "Hi {name},\n{creatorName} submitted the content for \"{campaignName}\". Review it in the chat.",
-      "action": "View deal"
+      "subject": "{creatorName} submitted work",
+      "body": "Hi {name},\n{creatorName} submitted work for \"{campaignName}\". Please review it on the deal page: approve it or ask for changes.",
+      "action": "Review work"
     },
     "dealPostAdded": {
       "subject": "{creatorName} posted",
@@ -698,6 +709,36 @@
     "opsAlert": {
       "subject": "Monitoring alert: {alert}",
       "body": "Alert: {alert}\n{details}\nCheck the audit log in the admin console."
+    },
+    "contractIssued": {
+      "subject": "{brandName} sent you a contract",
+      "body": "Hi {name},\n{brandName} issued a contract for \"{campaignName}\". Read it and accept it to start the work.",
+      "action": "Read the contract"
+    },
+    "contractAccepted": {
+      "subject": "{otherPartyName} accepted the contract",
+      "body": "Hi {name},\n{otherPartyName} accepted the contract for \"{campaignName}\".",
+      "action": "View deal"
+    },
+    "workChangesRequested": {
+      "subject": "{brandName} asked for changes",
+      "body": "Hi {name},\n{brandName} asked for changes to your work for \"{campaignName}\". See what to change on the deal page.",
+      "action": "View deal"
+    },
+    "workApproved": {
+      "subject": "{brandName} approved your work",
+      "body": "Hi {name},\n{brandName} approved your work for \"{campaignName}\". The payment is now due as agreed.",
+      "action": "View deal"
+    },
+    "workAutoApproved": {
+      "subject": "Work approved: {campaignName}",
+      "body": "Hi {name},\nThe review period for \"{campaignName}\" ended without changes being asked for, so the work counts as approved and the payment is now due.",
+      "action": "View deal"
+    },
+    "dealDisputed": {
+      "subject": "{otherPartyName} raised a dispute",
+      "body": "Hi {name},\n{otherPartyName} disagrees about the work for \"{campaignName}\". Our team will look into it and contact you both.",
+      "action": "View deal"
     }
   },
   "platforms": {
@@ -1238,34 +1279,27 @@
     "cancelTitle": "Cancel this deal",
     "status": {
       "ACCEPTED": "Accepted",
-      "CONTENT_SUBMITTED": "Content submitted",
-      "POSTED": "Posted",
+      "CONTENT_SUBMITTED": "Work submitted",
+      "CHANGES_REQUESTED": "Changes requested",
+      "APPROVED": "Work approved",
       "PAYMENT_MARKED": "Payment marked",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled"
     },
     "terms": {
-      "title": "Amount and payment terms",
       "amount": "Agreed amount",
       "notAgreed": "Not agreed yet",
       "split": "Advance and balance",
       "splitValue": "{percent}% advance ({advance}), balance {balance}",
       "contentDeadline": "Content deadline",
       "paymentDue": "Payment due",
-      "dueAfterPosting": "7 days after posting, unless agreed otherwise",
-      "advancePercent": "Advance (%)",
-      "dueOn": "Payment due date",
-      "save": "Save terms",
-      "saved": "Terms saved. The creator can see them."
+      "dueAfterApproval": "7 days after the work is approved, unless agreed otherwise"
     },
     "actions": {
-      "contentNote": "Note for the brand (optional)",
-      "contentNoteHint": "Share drafts in the chat, then mark the content as submitted here.",
-      "submitContent": "Mark content as submitted",
       "postAdded": "Post added. Its stats will update every day.",
       "disclosure": "Reminder: label sponsored posts clearly, for example with #ad or #collab, as advertising rules require.",
       "postUrl": "Link to the published post",
-      "postUrlHint": "A YouTube video, or an Instagram post or reel, from your connected account.",
+      "postUrlHint": "For the campaign report: a YouTube video, or an Instagram post or reel, from your connected account.",
       "addPost": "Add post",
       "markPaidConfirm": "Mark this deal as paid? The creator will be asked to confirm.",
       "markPaidHint": "Pay the creator as agreed, then mark it here.",
@@ -1294,14 +1328,20 @@
       "events": {
         "CREATED": "Request accepted, deal started",
         "TERMS_UPDATED": "The brand updated the amount or payment terms",
-        "CONTENT_SUBMITTED": "The creator submitted the content",
+        "CONTENT_SUBMITTED": "The creator submitted work for review",
         "POST_ADDED": "The creator added a post link",
         "PAYMENT_MARKED": "The brand marked the deal as paid",
         "PAYMENT_CONFIRMED": "The creator confirmed the payment; deal completed",
         "PAYMENT_DISPUTED": "The creator reported the payment as not received",
         "CANCELLED": "Cancelled by {side, select, BRAND {the brand} CREATOR {the creator} other {someone}}",
         "DEADLINE_REMINDER": "Reminder sent: the content deadline has passed",
-        "PAYMENT_REMINDER": "Reminder sent: the payment is overdue"
+        "PAYMENT_REMINDER": "Reminder sent: the payment is overdue",
+        "CONTRACT_ISSUED": "The brand issued a contract",
+        "CONTRACT_ACCEPTED": "{side, select, BRAND {The brand} CREATOR {The creator} other {Someone}} accepted the contract",
+        "CHANGES_REQUESTED": "The brand asked for changes",
+        "WORK_APPROVED": "The brand approved the work",
+        "WORK_AUTO_APPROVED": "The review period ended; the work was approved automatically",
+        "DISPUTE_RAISED": "{side, select, BRAND {The brand} CREATOR {The creator} other {Someone}} raised a dispute"
       }
     },
     "summary": {
@@ -1317,7 +1357,7 @@
       "amount": "Agreed amount",
       "notAgreed": "Not agreed",
       "paymentTerms": "Payment terms",
-      "fullOnCompletion": "Full amount after posting",
+      "fullOnCompletion": "Full amount after the work is approved",
       "accepted": "Accepted on",
       "contentDeadline": "Content deadline",
       "paymentDue": "Payment due",
@@ -1328,7 +1368,137 @@
       "brief": "Brief",
       "posts": "Posts",
       "disclosure": "Sponsored posts must be clearly labelled (for example #ad or #collab).",
-      "disclaimer": "An informal record of what both sides agreed on this platform. It is not legal advice and does not replace a written contract."
+      "disclaimer": "An informal record of what both sides agreed on this platform. It is not legal advice and does not replace a written contract.",
+      "approved": "Work approved on"
+    },
+    "contract": {
+      "title": "Contract and payment terms",
+      "view": "View contract",
+      "readFirst": "Read the full contract",
+      "prepare": "Prepare the contract",
+      "revise": "Change the terms (issues a new version)",
+      "version": "version {version}",
+      "accept": "Accept contract",
+      "states": {
+        "NONE": "No contract yet",
+        "AWAITING_BRAND": "Waiting for the brand",
+        "AWAITING_CREATOR": "Waiting for the creator",
+        "SIGNED": "Accepted by both"
+      },
+      "explain": {
+        "BRAND": {
+          "NONE": "Set the amount and terms and issue the contract. The creator accepts it before starting the work.",
+          "AWAITING_BRAND": "Issue the contract to continue.",
+          "AWAITING_CREATOR": "You issued the contract. The creator needs to accept it before starting the work.",
+          "SIGNED": "Both sides accepted the contract. Changing the terms issues a new version for the creator to accept."
+        },
+        "CREATOR": {
+          "NONE": "The brand will send a contract with the amount and terms. Agree on them in the chat first.",
+          "AWAITING_BRAND": "The brand is preparing a new version of the contract.",
+          "AWAITING_CREATOR": "Read the contract and accept it to start the work. Questions? Ask in the chat before accepting.",
+          "SIGNED": "Both sides accepted the contract. You can submit your work."
+        }
+      },
+      "form": {
+        "amount": "Agreed amount (₹)",
+        "advancePercent": "Advance (%)",
+        "dueOn": "Payment due date",
+        "dueOnHint": "Optional. Otherwise 7 days after the work is approved.",
+        "source": "Contract",
+        "sources": {
+          "GENERATED": "Use the standard contract (built from these terms)",
+          "UPLOADED": "Upload our own contract (PDF)"
+        },
+        "file": "Your contract (PDF)",
+        "fileHint": "A PDF up to 10 MB. The key terms above are shown alongside it.",
+        "fileKeepHint": "A PDF up to 10 MB. Leave empty to keep the current file.",
+        "additionalTerms": "Additional terms (optional)",
+        "additionalTermsHint": "For example: number of revisions, exclusivity, or what to tag.",
+        "note": "Issuing counts as your acceptance. The creator must accept this version before starting.",
+        "issue": "Issue contract"
+      },
+      "documentTitle": "Collaboration agreement",
+      "documentIntro": "Version {version}, issued on {date}",
+      "backToDeal": "Back to the deal",
+      "keyTerms": "Key terms",
+      "brand": "Brand",
+      "creator": "Creator",
+      "campaign": "Campaign",
+      "deliverables": "Deliverables",
+      "deadline": "Content deadline",
+      "usageRights": "Usage rights",
+      "amount": "Amount",
+      "paymentTerms": "Payment terms",
+      "split": "{percent}% advance ({advance}), balance {balance} after approval",
+      "fullOnApproval": "The full amount after the work is approved",
+      "paymentDue": "Payment due",
+      "dueDays": "{days} days after the work is approved",
+      "reviewPeriod": "Review period",
+      "reviewDays": "{days} days; after that the work counts as approved",
+      "changeRounds": "Change requests",
+      "rounds": "{count, plural, =0 {None} one {Up to # round} other {Up to # rounds}}",
+      "brief": "Brief",
+      "ownContract": "The brand's contract",
+      "ownContractText": "The brand's own contract (PDF) applies, together with the key terms above. Where they differ, the key terms apply.",
+      "openPdf": "Open {name}",
+      "clausesTitle": "Terms",
+      "clauses": {
+        "scope": "The creator will make and publish the deliverables above by the content deadline, following the brief.",
+        "review": "The creator submits proof of the work (links or screenshots) on the platform. The brand reviews it within {reviewDays} days; if the brand does not answer in time, the work counts as approved.",
+        "changes": "The brand may ask for reasonable changes, saying what to change, up to {rounds, plural, =0 {no times} one {# time} other {# times}}. Changes must stay within the brief.",
+        "payment": "The brand pays the agreed amount directly to the creator as set out above. The platform does not handle or hold the money.",
+        "usage": "The brand may use the content only as the usage rights above allow. The creator keeps ownership of the content.",
+        "disclosure": "Sponsored posts are clearly labelled, for example with #ad or #collab, as advertising rules in India require.",
+        "cancellation": "Either side may cancel before payment, giving a reason. Work already approved should be paid for unless both sides agree otherwise.",
+        "disputes": "If the sides disagree about the work, either side can raise it on the platform; the team will look at the deal history and talk to both sides.",
+        "platform": "This agreement is between the brand and the creator only. The platform is not a party to it."
+      },
+      "additionalTitle": "Additional terms",
+      "acceptanceTitle": "Acceptance",
+      "acceptedOn": "Accepted by {side, select, BRAND {the brand} CREATOR {the creator} other {}} on {date}",
+      "notAccepted": "Not yet accepted by {side, select, BRAND {the brand} CREATOR {the creator} other {}}",
+      "fingerprint": "Fingerprint (SHA-256 of this version): {fingerprint}",
+      "legalNote": "Draft standard terms; they are being reviewed by a lawyer. This is not legal advice.",
+      "acceptForm": {
+        "agree": "I have read this contract and agree to it.",
+        "accept": "Accept contract"
+      }
+    },
+    "work": {
+      "title": "Proof of work",
+      "none": "Nothing submitted yet.",
+      "needsContract": "You can submit your work once both sides have accepted the contract.",
+      "disclosure": "Reminder: label sponsored posts clearly, for example with #ad or #collab, as advertising rules require.",
+      "links": "Links to the work",
+      "linksHint": "One link per line, up to {max}. For example the published post or a draft video.",
+      "files": "Screenshots or PDFs (optional)",
+      "filesHint": "Up to {max} files, 10 MB in all: JPEG, PNG, WebP or PDF.",
+      "note": "Note for the brand (optional)",
+      "submit": "Submit work for review",
+      "round": "Round {round}",
+      "review": {
+        "PENDING": "Waiting for review",
+        "APPROVED": "Approved",
+        "CHANGES_REQUESTED": "Changes requested",
+        "AUTO_APPROVED": "Approved automatically"
+      },
+      "brandSaid": "The brand said:",
+      "reviewBy": {
+        "BRAND": "Please review by {date}. After that, the work counts as approved.",
+        "CREATOR": "The brand has until {date} to review. After that, the work counts as approved."
+      },
+      "approve": "Approve work",
+      "approveHint": "The work matches the contract. Payment falls due.",
+      "approveConfirm": "Approve this work? The payment will fall due.",
+      "changesNote": "What should change?",
+      "roundsLeft": "{count, plural, =0 {No change requests left} one {# change request left} other {# change requests left}}",
+      "requestChanges": "Ask for changes",
+      "noRoundsLeft": "You have used all change requests in the contract. Approve the work, or raise a dispute if it does not match the contract.",
+      "disputeTitle": "Disagree about the work?",
+      "disputeNote": "What is the disagreement?",
+      "disputeHint": "Our team will look at the deal history and contact you both.",
+      "dispute": "Raise a dispute",
+      "disputeSent": "Sent to our team. We will contact you both."
     }
   },
   "campaigns": {
@@ -1459,8 +1629,7 @@
       "requestAccepted": "{creatorName} accepted your request for \"{campaignName}\".",
       "requestDeclined": "{creatorName} declined your request for \"{campaignName}\".",
       "newMessage": "New message from {senderName} about \"{campaignName}\".",
-      "dealTermsUpdated": "{brandName} updated the amount or payment terms for \"{campaignName}\".",
-      "dealContentSubmitted": "{creatorName} submitted the content for \"{campaignName}\".",
+      "dealContentSubmitted": "{creatorName} submitted work for \"{campaignName}\".",
       "dealPostAdded": "{creatorName} added a post link for \"{campaignName}\".",
       "dealCancelled": "{otherPartyName} cancelled the deal for \"{campaignName}\".",
       "paymentMarked": "{brandName} marked \"{campaignName}\" as paid. Please confirm.",
@@ -1470,7 +1639,13 @@
       "ratingRequested": "Rate {otherPartyName} for \"{campaignName}\".",
       "socialRefreshFailed": "Your {platform} account needs attention: we couldn't update its stats.",
       "trialEnding": "The free trial for {brandName} ends in 3 days.",
-      "trialEnded": "The free trial for {brandName} has ended."
+      "trialEnded": "The free trial for {brandName} has ended.",
+      "contractIssued": "{brandName} sent a contract for \"{campaignName}\".",
+      "contractAccepted": "{otherPartyName} accepted the contract for \"{campaignName}\".",
+      "workChangesRequested": "{brandName} asked for changes for \"{campaignName}\".",
+      "workApproved": "{brandName} approved your work for \"{campaignName}\".",
+      "workAutoApproved": "The work for \"{campaignName}\" was approved automatically.",
+      "dealDisputed": "{otherPartyName} raised a dispute about \"{campaignName}\"."
     }
   },
   "admin": {
@@ -1589,7 +1764,8 @@
         "BRAND": "Report about a brand",
         "CREATOR": "Report about a creator",
         "RATING": "Unfair rating",
-        "PAYMENT": "Payment not received"
+        "PAYMENT": "Payment not received",
+        "DEAL": "Dispute about work"
       },
       "empty": "Nothing here.",
       "filed": "Filed by {name} on {date}",

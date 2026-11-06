@@ -6,6 +6,7 @@ import { createChatRepository } from './chat-repository';
 import { createConsentRepository } from './consent-repository';
 import { createCreatorRepository } from './creator-repository';
 import { createDealRepository } from './deal-repository';
+import { createDealWorkRepository } from './deal-work-repository';
 import { createDiscoveryRepository } from './discovery-repository';
 import type { DbClient } from './db-client';
 import { createEmailOutboxRepository } from './email-outbox-repository';
@@ -50,6 +51,7 @@ export function createRepositories(db: DbClient) {
     chat: createChatRepository(db),
     reports: createReportRepository(db),
     deals: createDealRepository(db),
+    dealWork: createDealWorkRepository(db),
     ratings: createRatingRepository(db),
     plans: createPlanRepository(db),
     notifications: createNotificationRepository(db),

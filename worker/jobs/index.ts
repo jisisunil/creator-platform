@@ -1,5 +1,5 @@
 import type { JobDefinition } from '../job-definition';
-import { refreshDealPostsJob, sendDealRemindersJob } from './deals';
+import { autoApproveWorkJob, refreshDealPostsJob, sendDealRemindersJob } from './deals';
 import { dispatchEmailsJob } from './dispatch-emails';
 import { heartbeatJob } from './heartbeat';
 import { sendTrialRemindersJob } from './plans';
@@ -28,6 +28,7 @@ export const ALL_JOBS: readonly JobDefinition[] = [
   expireRequestsJob,
   sendDealRemindersJob,
   refreshDealPostsJob,
+  autoApproveWorkJob,
   sendTrialRemindersJob,
   finaliseDeletionsJob,
   handleInactiveAccountsJob,

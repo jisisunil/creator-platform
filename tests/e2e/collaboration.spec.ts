@@ -1,5 +1,6 @@
 import type { Browser, Page } from '@playwright/test';
 import { DEMO_PASSWORD, signedInNewBrand, signIn } from './support/accounts';
+import { expectAccessible } from './support/accessibility';
 import { expect, test, uniqueEmail } from './support/fixtures';
 
 /**
@@ -99,7 +100,7 @@ test.describe('collaboration', () => {
     await creator.context().close();
   });
 
-  test('FR-9 UC-R5 UC-R7 a deal goes from posting to payment to ratings and a summary', async ({
+  test('FR-9 ADR-012 UC-R5 UC-R7 a deal goes from contract to approved work to payment and ratings', async ({
     page,
     browser,
   }) => {
@@ -112,16 +113,67 @@ test.describe('collaboration', () => {
     await creator.getByRole('link', { name: 'Open deal' }).click();
     await expect(creator).toHaveURL(/\/en\/deals\/\w+$/);
     const dealPath = new URL(creator.url()).pathname;
+    await expect(creator.getByText(/The brand will send a contract/)).toBeVisible();
 
-    // FR-9.5: the disclosure reminder is shown where the post link is added.
-    await expect(creator.getByText(/label sponsored posts clearly/)).toBeVisible();
-    await creator
-      .getByLabel('Link to the published post')
-      .fill(`https://mock.social/${demo.channel}/e2e-${Date.now()}`);
+    // ADR-012: the brand issues the standard contract with the agreed terms.
+    await page.goto(dealPath);
+    await page.getByLabel('Agreed amount (₹)').fill('30000');
+    await page.getByLabel('Advance (%)').fill('30');
+    await page.getByLabel('Additional terms (optional)').fill('Tag @spiceco in both reels.');
+    await page.getByRole('button', { name: 'Issue contract' }).click();
+    // The form folds away once issued; the status shows the creator's turn.
+    await expect(page.getByText(/^Waiting for the creator/)).toBeVisible();
+
+    // The creator reads the contract and accepts that version.
+    await creator.reload();
+    await creator.getByRole('link', { name: 'Read the full contract' }).click();
+    await expect(creator.getByRole('heading', { name: 'Collaboration agreement' })).toBeVisible();
+    await expect(creator.getByText('Tag @spiceco in both reels.')).toBeVisible();
+    await creator.getByLabel('I have read this contract and agree to it.').check();
+    await creator.getByRole('button', { name: 'Accept contract' }).click();
+    await expect(creator.getByText(/^Accepted by the creator on/)).toBeVisible();
+    // NFR-9: the contract page, and the deal page with the proof-of-work form.
+    await expectAccessible(creator, [`${dealPath}/contract`, dealPath]);
+
+    // Proof of work with a screenshot; FR-9.5: the disclosure reminder is shown.
+    await creator.goto(dealPath);
+    await expect(creator.getByText(/label sponsored posts clearly/).first()).toBeVisible();
+    const postUrl = `https://mock.social/${demo.channel}/e2e-${Date.now()}`;
+    await creator.getByLabel('Links to the work').fill(postUrl);
+    await creator.getByLabel('Screenshots or PDFs (optional)').setInputFiles({
+      name: 'insights.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]),
+    });
+    await creator.getByRole('button', { name: 'Submit work for review' }).click();
+    await expect(creator.getByText('Waiting for review')).toBeVisible();
+
+    // The brand asks for a change once, then approves the second round.
+    // NFR-9: the deal page with the brand's review forms.
+    await expectAccessible(page, [dealPath]);
+    await expect(page.getByRole('link', { name: 'insights.png' })).toBeVisible();
+    await page.getByLabel('What should change?').fill('Please show the box in the first shot.');
+    await page.getByRole('button', { name: 'Ask for changes' }).click();
+    await expect(page.getByText('Changes requested', { exact: true }).first()).toBeVisible();
+
+    await creator.reload();
+    await expect(creator.getByText('Please show the box in the first shot.').first()).toBeVisible();
+    await creator.getByLabel('Links to the work').fill(postUrl);
+    await creator.getByRole('button', { name: 'Submit work for review' }).click();
+    await expect(creator.getByText('Waiting for review')).toBeVisible();
+
+    await page.reload();
+    page.once('dialog', (dialog) => void dialog.accept());
+    await page.getByRole('button', { name: 'Approve work' }).click();
+    await expect(page.getByText('Work approved', { exact: true })).toBeVisible();
+
+    // FR-9.3: the creator adds the live post for the campaign report.
+    await creator.reload();
+    await creator.getByLabel('Link to the published post').fill(postUrl);
     await creator.getByRole('button', { name: 'Add post' }).click();
     await expect(creator.getByText('Post added.', { exact: false })).toBeVisible();
 
-    await page.goto(dealPath);
+    await page.reload();
     page.once('dialog', (dialog) => void dialog.accept());
     await page.getByRole('button', { name: 'Mark as paid' }).click();
     await expect(page.getByText('Waiting for the creator to confirm')).toBeVisible();

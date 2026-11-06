@@ -17,9 +17,6 @@ export const CLIENT_MESSAGE_NAMESPACES = [
   'creator.accounts',
   'creator.analytics.flags',
   'creator.profile',
-  'deals.actions',
-  'deals.summary',
-  'deals.terms',
   'deliverables',
   'errors',
   'fieldErrors',
@@ -37,6 +34,15 @@ export const CLIENT_MESSAGE_NAMESPACES = [
   'settings.notifications',
   'settings.privacy',
   'team',
+] as const;
+
+/** Sent in addition on deal pages only (`deals/[id]/layout.tsx`): the deal forms' texts. */
+export const DEAL_PAGE_MESSAGE_NAMESPACES = [
+  'deals.actions',
+  'deals.contract.acceptForm',
+  'deals.contract.form',
+  'deals.summary',
+  'deals.work',
 ] as const;
 
 type Messages = Readonly<Record<string, unknown>>;

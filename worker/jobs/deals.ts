@@ -1,5 +1,5 @@
 import { JOB_NAMES } from '@/config/jobs';
-import { refreshDealPosts, sendDealReminders } from '@/services/deals';
+import { autoApproveDueWork, refreshDealPosts, sendDealReminders } from '@/services/deals';
 import type { JobDefinition } from '../job-definition';
 
 /** UC-R4 / UC-R5: daily deadline and overdue-payment reminders, in the morning in India. */
@@ -16,4 +16,11 @@ export const refreshDealPostsJob: JobDefinition = {
   schedule: '0 5 * * *',
   scheduleTimezone: 'Asia/Kolkata',
   handle: (_data, container) => refreshDealPosts(container),
+};
+
+/** ADR-012: hourly, work whose review period ended is approved automatically. */
+export const autoApproveWorkJob: JobDefinition = {
+  name: JOB_NAMES.autoApproveWork,
+  schedule: '15 * * * *',
+  handle: (_data, container) => autoApproveDueWork(container),
 };

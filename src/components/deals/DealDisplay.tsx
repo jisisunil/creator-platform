@@ -1,14 +1,16 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Card, CardTitle } from '@/components/ui/card';
-import { DEAL_STEPS, type DealStatus } from '@/domain/deals';
+import { DEAL_STEPS, type DealStatus, dealStepOf } from '@/domain/deals';
+import { fileUrlFor } from '@/lib/file-url';
 import { formatCount } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { DealEventRecord, DealPostRecord } from '@/services/deals';
+import type { DealEventRecord, DealPostRecord, SubmissionRecord } from '@/services/deals';
 
 const STATUS_STYLES: Readonly<Record<DealStatus, string>> = {
   ACCEPTED: 'border-blue-700/30 bg-blue-50 text-blue-900',
-  CONTENT_SUBMITTED: 'border-blue-700/30 bg-blue-50 text-blue-900',
-  POSTED: 'border-violet-700/30 bg-violet-50 text-violet-900',
+  CONTENT_SUBMITTED: 'border-violet-700/30 bg-violet-50 text-violet-900',
+  CHANGES_REQUESTED: 'border-amber-700/30 bg-amber-50 text-amber-900',
+  APPROVED: 'border-emerald-700/30 bg-emerald-50 text-emerald-900',
   PAYMENT_MARKED: 'border-amber-700/30 bg-amber-50 text-amber-900',
   COMPLETED: 'border-green-700/30 bg-green-50 text-green-900',
   CANCELLED: 'border-zinc-400 bg-zinc-50 text-zinc-800',
@@ -30,7 +32,7 @@ export async function DealStatusBadge({ status }: { status: DealStatus }) {
 export async function DealProgress({ status }: { status: DealStatus }) {
   const t = await getTranslations('deals.status');
   const tDeals = await getTranslations('deals');
-  const currentIndex = DEAL_STEPS.indexOf(status);
+  const currentIndex = DEAL_STEPS.indexOf(dealStepOf(status));
   return (
     <ol aria-label={tDeals('progressLabel')} className="grid gap-2 sm:grid-cols-5">
       {DEAL_STEPS.map((step, index) => {
@@ -127,5 +129,77 @@ export async function DealHistory({ events }: { events: readonly DealEventRecord
         ))}
       </ol>
     </Card>
+  );
+}
+
+/**
+ * ADR-012: every round of proof of work with the brand's answer. Files open through signed,
+ * expiring links; the page has already checked the viewer is on this deal (SR-9).
+ */
+export async function DealSubmissions({
+  submissions,
+}: {
+  submissions: readonly SubmissionRecord[];
+}) {
+  const t = await getTranslations('deals.work');
+  const format = await getFormatter();
+  if (submissions.length === 0) return <p className="text-muted-foreground text-sm">{t('none')}</p>;
+  return (
+    <ol className="grid gap-4">
+      {[...submissions].reverse().map((submission) => (
+        <li
+          key={submission.id}
+          className="grid gap-2 border-t pt-4 text-sm first:border-t-0 first:pt-0"
+        >
+          <p className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">{t('round', { round: submission.round })}</span>
+            <span className="text-muted-foreground">
+              {format.dateTime(submission.submittedAt, { dateStyle: 'medium', timeStyle: 'short' })}
+            </span>
+            <span className="rounded-full border px-2 py-0.5 text-xs">
+              {t(`review.${submission.review}`)}
+            </span>
+          </p>
+          {submission.note ? <p className="whitespace-pre-line">{submission.note}</p> : null}
+          {submission.links.length > 0 ? (
+            <ul className="grid gap-1">
+              {submission.links.map((link) => (
+                <li key={link}>
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="break-all underline"
+                  >
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {submission.files.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {submission.files.map((file) => (
+                <li key={file.id}>
+                  <a
+                    href={fileUrlFor(file.storageKey) ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-muted inline-block rounded-md px-2 py-1 text-xs underline"
+                  >
+                    {file.fileName}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {submission.reviewNote ? (
+            <p className="bg-muted rounded-md px-3 py-2">
+              <span className="font-medium">{t('brandSaid')}</span> {submission.reviewNote}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ol>
   );
 }

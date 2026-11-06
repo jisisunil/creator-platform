@@ -1,15 +1,26 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getCampaignReport, listCampaigns } from '@/services/campaigns';
 import {
+  acceptContract,
   addPostLink,
+  approveWork,
   cancelDeal,
   getDeal,
+  getDealContract,
+  issueContract,
   listDeals,
   markDealPaid,
-  updateDealTerms,
+  raiseDealDispute,
+  requestChanges,
+  submitWork,
 } from '@/services/deals';
 import { getRequest } from '@/services/requests';
-import { acceptedRequest, CREATOR_CHANNEL_ID } from '../integration/collaboration-fixtures';
+import {
+  acceptedRequest,
+  CREATOR_CHANNEL_ID,
+  openDeal,
+  signContract,
+} from '../integration/collaboration-fixtures';
 import { createBrandOwner, createSearchableCreator } from '../integration/discovery-fixtures';
 import { createTestDatabaseClient } from '../integration/test-database';
 import { createTestContext, resetDatabase, type TestContext } from '../integration/test-context';
@@ -42,13 +53,17 @@ describe('deals and campaigns across accounts (SR-5, SEC-2)', () => {
       ]),
       () => markDealPaid(ctx, { userId: otherBrand.id, dealId }),
       () =>
-        updateDealTerms(ctx, {
+        issueContract(ctx, {
           userId: otherBrand.id,
           dealId,
-          agreedAmountRupees: 1,
+          amountRupees: 1,
           advancePercent: null,
           paymentDueOn: null,
+          additionalTerms: '',
+          source: 'GENERATED',
+          file: null,
         }),
+      () => getDealContract(ctx, { userId: otherCreator.id, dealId }),
       () =>
         addPostLink(ctx, {
           userId: otherCreator.id,
@@ -71,6 +86,53 @@ describe('deals and campaigns across accounts (SR-5, SEC-2)', () => {
     ).toBe(attempts.length);
     expect((await listDeals(ctx, { userId: otherBrand.id, page: 1 })).items).toEqual([]);
     expect(await listCampaigns(ctx, otherBrand.id)).toEqual([]);
+  });
+
+  it('ADR-012 SEC-2 outsiders cannot read or act on a contract or the work under review', async () => {
+    const parties = await openDeal(ctx, db);
+    const { dealId } = parties;
+    const fingerprint = await signContract(ctx, parties);
+    await submitWork(ctx, {
+      userId: parties.creatorUser.id,
+      dealId,
+      note: '',
+      links: ['https://example.com/draft'],
+      files: [],
+    });
+    const otherBrand = await createBrandOwner(ctx, db, 'intruder@other.in');
+    await createSearchableCreator(ctx, db, { email: 'other-creator@example.in' });
+    const otherCreator = await db.user.findUniqueOrThrow({
+      where: { email: 'other-creator@example.in' },
+    });
+
+    const outsiderAttempts = [
+      () => getDealContract(ctx, { userId: otherBrand.id, dealId }),
+      () => acceptContract(ctx, { userId: otherCreator.id, dealId, fingerprint }),
+      () =>
+        submitWork(ctx, {
+          userId: otherCreator.id,
+          dealId,
+          note: '',
+          links: ['https://example.com/x'],
+          files: [],
+        }),
+      () => approveWork(ctx, { userId: otherBrand.id, dealId }),
+      () => requestChanges(ctx, { userId: otherBrand.id, dealId, note: 'Redo all of it' }),
+      () => raiseDealDispute(ctx, { userId: otherCreator.id, dealId, note: 'Not my deal' }),
+    ];
+    for (const attempt of outsiderAttempts) {
+      await expect(attempt()).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    }
+    // Each side can only do its own steps.
+    await expect(
+      approveWork(ctx, { userId: parties.creatorUser.id, dealId }),
+    ).rejects.toMatchObject({ code: 'NOT_ALLOWED' });
+
+    expect((await db.deal.findUniqueOrThrow({ where: { id: dealId } })).status).toBe(
+      'CONTENT_SUBMITTED',
+    );
+    expect(await db.dealSubmission.count()).toBe(1);
+    expect(await db.report.count()).toBe(0);
   });
 
   it('SR-5 creators cannot see campaign reports', async () => {

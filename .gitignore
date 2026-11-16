@@ -45,3 +45,5 @@ node_modules
 /infra/laptop/pilot.env
 /infra/laptop/tunnel.env
 /infra/laptop/backups/
+/infra/oracle/server.env
+/infra/oracle/backups/

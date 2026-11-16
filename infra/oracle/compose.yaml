@@ -1,0 +1,143 @@
+# The closed pilot on one Oracle Cloud "Always Free" server in India (ADR-014,
+# docs/runbooks/oracle-free.md): database, malware scanner, app, worker and Caddy, which
+# serves the app on your domain with an automatic Let's Encrypt certificate. Run it through
+# setup.sh / update.sh, which pass server.env (git-ignored) as --env-file.
+name: creator-server
+
+x-logging: &logging
+  driver: json-file
+  options:
+    # Keeps logs from filling the disk: at most 50 MB per container.
+    max-size: 10m
+    max-file: '5'
+
+x-app: &app
+  image: creator-platform:server
+  init: true
+  restart: unless-stopped
+  env_file:
+    - server.env
+  environment:
+    APP_ENV: pilot
+    APP_URL: https://${DOMAIN:?set DOMAIN in server.env}
+    # No Google/Meta apps yet: creators self-report YouTube and Instagram (Q-43).
+    SOCIAL_PROVIDER_MODE: 'off'
+    # Escrow waits for the Razorpay account (ADR-013, X-08).
+    PAYMENTS_MODE: 'off'
+    MALWARE_SCANNER: clamav
+    CLAMAV_HOST: clamav
+    FILE_STORAGE: local
+    FILE_STORAGE_DIR: /app/storage
+    # Caddy is the one proxy in front of the app.
+    TRUSTED_PROXY_HOPS: '1'
+    BREACHED_PASSWORD_CHECK: hibp
+    DATABASE_URL: postgresql://creator:${POSTGRES_PASSWORD:?set by setup.sh}@postgres:5432/creator_platform
+  read_only: true
+  tmpfs:
+    - /tmp
+  volumes:
+    - files:/app/storage
+  security_opt:
+    - no-new-privileges:true
+  logging: *logging
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in server.env}
+    volumes:
+      # The same site definition as the AWS servers.
+      - ../host/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    logging: *logging
+
+  web:
+    <<: *app
+    build:
+      context: ../..
+    # next start writes its cache under .next/cache, and SWC unpacks its native binary into
+    # ~/.cache, so that one mount allows exec.
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:mode=1777
+      - /home/app/.cache:exec,mode=1777
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    <<: *app
+    command: ['node_modules/.bin/tsx', 'worker/index.ts']
+
+  migrate:
+    <<: *app
+    profiles: [tools]
+    restart: 'no'
+    command: ['node_modules/.bin/prisma', 'migrate', 'deploy']
+
+  reference-data:
+    <<: *app
+    profiles: [tools]
+    restart: 'no'
+    command: ['node_modules/.bin/tsx', 'scripts/ops/load-reference-data.ts']
+
+  # Never published on the server's network: only the app containers reach it. The free
+  # server has 24 GB of memory, so the database gets a generous cache.
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg16
+    restart: unless-stopped
+    shm_size: 512mb
+    environment:
+      POSTGRES_USER: creator
+      POSTGRES_DB: creator_platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set by setup.sh}
+    volumes:
+      - db:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - max_connections=60
+      - -c
+      - log_min_duration_statement=1000
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready --username creator --dbname creator_platform']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  # SR-9: uploads are scanned before they are stored. The Debian image has an ARM build
+  # (Oracle's free servers are ARM); the Alpine one doesn't.
+  clamav:
+    image: clamav/clamav-debian:1.4.6
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  db:
+  files:
+  caddy-data:
+  caddy-config:

@@ -376,3 +376,10 @@ Escrow phase 2: built behind `PAYMENTS_MODE`; off until the company's Razorpay a
 | PR-1 / PRV-2 / PRV-4 | Done       | KYC passed through, not stored (last 4 digits only); export and deletion cover payout accounts                                                            | `integration/escrow.test.ts`                                                                         | Data inventory and processors updated |
 | SR-10                | Done       | `PAYMENTS_MODE` validated: fake refused outside development; razorpay needs all keys                                                                      | `unit/config/env.test.ts`                                                                            |                                       |
 | SR-8                 | Done       | CSP allows Razorpay Checkout only when payments run on Razorpay                                                                                           | `unit/lib/csp.test.ts`                                                                               |                                       |
+
+## Free hosting in India (ADR-014)
+
+| ID             | Status | Code                                                                                                                         | Tests                                                   | Notes                                        |
+| -------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------- |
+| PR-12 / NFR-13 | Done   | one Oracle Always Free ARM server in Mumbai or Hyderabad: `infra/oracle` (Compose, Caddy HTTPS, setup/update/backup scripts) | compose config validated, ShellCheck, ARM64 image build | Runbook `docs/runbooks/oracle-free.md`; Q-49 |
+| SR-15          | Done   | daily database and upload backups (14 kept) and optional upload to Object Storage                                            | `backup.sh`                                             | Restore steps in the runbook                 |

@@ -44,9 +44,16 @@ already open.)
 
 ## 4. Point your domain at the server
 
-At your domain registrar's DNS settings, add an **A record** for the address you will use
-(for example `@` for the bare domain, or `app` for app.yourdomain.in) with the server's public
-IP. It can take a few minutes to an hour to work everywhere.
+At your domain registrar's DNS settings for **collabmigo.in**, add two records:
+
+| Type  | Name / host           | Value                  |
+| ----- | --------------------- | ---------------------- |
+| A     | `@` (the bare domain) | the server's public IP |
+| CNAME | `www`                 | `collabmigo.in`        |
+
+Remove any existing A record for `@` or `www` (registrars often add a "parking" one). It can
+take a few minutes to an hour to work everywhere. The site lives at https://collabmigo.in;
+www.collabmigo.in redirects there.
 
 ## 5. Set up
 
@@ -72,7 +79,7 @@ The first run installs Docker, opens the server's own firewall for 80/443, creat
 nano infra/oracle/server.env
 ```
 
-- `DOMAIN`: the address from step 4, without `https://`.
+- `DOMAIN`: `collabmigo.in` (without `https://` or `www`).
 - Gmail: create an app password (myaccount.google.com → Security → 2-Step Verification →
   App passwords). In `SMTP_URL`, write the `@` of your address as `%40` and the 16-letter
   password without spaces.

@@ -54,8 +54,8 @@ services:
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in server.env}
     volumes:
-      # The same site definition as the AWS servers.
-      - ../host/Caddyfile:/etc/caddy/Caddyfile:ro
+      # As on the AWS servers, plus a www redirect.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

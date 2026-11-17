@@ -1,6 +1,6 @@
 # Closed pilot on one computer (docs/runbooks/laptop-pilot.md): database, malware scanner,
-# app, worker and a Cloudflare quick tunnel that gives the app a public https address with
-# no account. Run it through start.ps1, which fills in APP_URL from the tunnel. Settings and
+# app, worker and a Cloudflare tunnel that gives the app a public https address: a quick
+# tunnel with no account, or a named tunnel on your own domain (TUNNEL_TOKEN in pilot.env). Run it through start.ps1, which fills in APP_URL from the tunnel. Settings and
 # secrets live in pilot.env (git-ignored); the tunnel's address in tunnel.env.
 name: creator-pilot
 
@@ -100,6 +100,17 @@ services:
     image: cloudflare/cloudflared:2026.9.3
     restart: 'no'
     command: ['tunnel', '--no-autoupdate', '--url', 'http://web:3000']
+
+  # Your own domain through a named tunnel set up in your Cloudflare account; its address
+  # never changes, so it restarts with the computer like the rest. start.ps1 starts it
+  # (profile "domain") instead of the quick tunnel when pilot.env has TUNNEL_TOKEN.
+  domain-tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: [domain]
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
 
 volumes:
   db:

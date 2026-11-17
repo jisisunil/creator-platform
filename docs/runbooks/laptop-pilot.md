@@ -52,6 +52,36 @@ Run `start.ps1` again. The first build takes several minutes. At the end it prin
 The pilot is running at: https://some-random-words.trycloudflare.com
 ```
 
+## Your own domain (optional)
+
+Instead of a random `trycloudflare.com` address, serve the pilot on your domain (e.g.
+`collabmigo.in`) through a named Cloudflare tunnel. Free, but needs a Cloudflare account,
+and Cloudflare must run the domain's DNS. The address then never changes, and the site comes
+back by itself after a restart.
+
+1. **Cloudflare account:** sign up at dash.cloudflare.com (Free plan).
+2. **Add the domain:** dashboard → **Add a domain** → `collabmigo.in` → Free plan. Cloudflare
+   shows two nameservers (like `xxx.ns.cloudflare.com`). At your registrar, replace the
+   domain's nameservers with those two. Wait until Cloudflare says the domain is **Active**
+   (minutes to a few hours).
+3. **Create the tunnel:** dashboard → **Zero Trust** (choose the Free plan if asked) →
+   **Networks → Tunnels → Create a tunnel** → **Cloudflared** → name it `collabmigo-laptop`.
+   On the install page, copy the long token from any of the commands (the text after
+   `--token` or `install`); don't run the command.
+4. **Public hostname:** next page → domain `collabmigo.in`, subdomain empty, service type
+   `HTTP`, URL `web:3000` → save.
+5. **www (optional):** dashboard → collabmigo.in → **Rules → Redirect Rules → Templates →
+   "Redirect from WWW to root"**, and add a DNS record `CNAME www → collabmigo.in` (proxied).
+6. In `pilot.env`, set `PUBLIC_URL=https://collabmigo.in` and `TUNNEL_TOKEN=<the token>`.
+   The token is a secret: keep it only there.
+7. Run `start.ps1` again. It prints `The pilot is running at: https://collabmigo.in`.
+
+To go back to a quick tunnel, empty both settings and run `start.ps1`.
+
+When moving to the Oracle server later: in Cloudflare's DNS, delete the tunnel's record and
+add `A @ → server IP` with the proxy **off** (grey cloud, "DNS only") so Caddy can get its
+certificate; then stop the laptop pilot.
+
 ## 2. Your admin account
 
 ```powershell

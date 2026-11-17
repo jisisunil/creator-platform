@@ -2,6 +2,6 @@
 # with a new public address.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
-docker compose --env-file pilot.env stop
+docker compose --env-file pilot.env --profile domain stop
 if ($LASTEXITCODE -ne 0) { throw 'docker compose stop failed' }
 Write-Host 'Pilot stopped. Data is kept; run start.ps1 to start it again.'

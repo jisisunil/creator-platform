@@ -87,10 +87,11 @@ esac
 echo "Using subnet $subnet"
 
 # The SSH key to log in with: kept in Cloud Shell; download the private key when done.
+# RSA because Cloud Shell runs in FIPS mode, which refuses ed25519.
 key="$HOME/.ssh/collabmigo"
 if [ ! -f "$key" ]; then
   mkdir -p "$HOME/.ssh"
-  ssh-keygen -t ed25519 -N '' -C collabmigo-pilot -f "$key" > /dev/null
+  ssh-keygen -t rsa -b 4096 -N '' -C collabmigo-pilot -f "$key" > /dev/null
   echo "Created an SSH key pair: $key (private) and $key.pub."
 fi
 

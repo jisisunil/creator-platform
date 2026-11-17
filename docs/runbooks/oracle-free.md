@@ -31,14 +31,17 @@ Compute → Instances → **Create instance**:
 - **SSH keys:** "Generate a key pair for me" and download the private key. Keep it safe.
 - **Boot volume:** 100 GB.
 
-"Out of capacity" is common for free ARM servers in Mumbai: try the other availability
-domain, try again a few hours later, or (if your home region is Hyderabad) there.
+"Out of capacity" is common for free ARM servers. The easy way round is to let Cloud Shell
+(console, top right `>_`) keep trying: download and run `infra/oracle/launch-retry.sh` (its
+header has the two commands). It also creates the network if it's missing (VCN, internet
+gateway, public subnet, ports 22/80/443), so it can replace this whole step and step 3.
 
 Note the server's **public IP address** from the instance page.
 
 ## 3. Open ports 80 and 443 in Oracle's network
 
-Instance page → the subnet → its **Default Security List** → **Add Ingress Rules**, twice:
+Skip this if `launch-retry.sh` created the server. Otherwise: instance page → the subnet → its
+**Default Security List** → **Add Ingress Rules**, twice:
 source `0.0.0.0/0`, TCP, destination port `80`; then the same for `443`. (Port 22 for SSH is
 already open.)
 

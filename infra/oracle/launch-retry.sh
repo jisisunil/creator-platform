@@ -11,6 +11,8 @@ set -euo pipefail
 name='collabmigo-pilot'
 shape='VM.Standard.A1.Flex'
 wait_seconds=120
+# When Oracle says we're asking too often (HTTP 429), back off for longer.
+busy_wait_seconds=600
 compartment="${OCI_TENANCY:?run this in Oracle Cloud Shell}"
 
 # Don't create a second server if one already exists.
@@ -100,6 +102,8 @@ echo "Trying to create $name every $wait_seconds seconds. Press Ctrl+C to stop."
 attempt=0
 while true; do
   attempt=$((attempt + 1))
+  result='no capacity yet'
+  pause="$wait_seconds"
   for size in '{"ocpus":2,"memoryInGBs":12}' '{"ocpus":1,"memoryInGBs":6}'; do
     if output="$(oci compute instance launch \
       --compartment-id "$compartment" --availability-domain "$availability_domain" \
@@ -115,12 +119,17 @@ while true; do
       echo "Now download the private key: Cloud Shell menu (gear) > Download > .ssh/collabmigo"
       exit 0
     fi
+    if echo "$output" | grep -q 'TooManyRequests'; then
+      result='Oracle asked us to slow down'
+      pause="$busy_wait_seconds"
+      break
+    fi
     if ! echo "$output" | grep -qi 'capacity'; then
       echo "Oracle refused for another reason (not capacity):" >&2
       echo "$output" >&2
       exit 1
     fi
   done
-  echo "$(date '+%H:%M') attempt $attempt: no capacity yet; trying again in $wait_seconds s."
-  sleep "$wait_seconds"
+  echo "$(date '+%H:%M') attempt $attempt: $result; trying again in $pause s."
+  sleep "$pause"
 done

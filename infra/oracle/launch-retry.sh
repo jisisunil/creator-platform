@@ -25,15 +25,24 @@ availability_domain="$(oci iam availability-domain list --compartment-id "$compa
 image="$(oci compute image list --compartment-id "$compartment" \
   --operating-system 'Canonical Ubuntu' --operating-system-version '24.04' --shape "$shape" \
   --sort-by TIMECREATED --sort-order DESC --query 'data[0].id' --raw-output)"
-# A public subnet: one that gives servers public IP addresses.
-# shellcheck disable=SC2016 # the backticks are a JMESPath literal for the OCI CLI, not shell
-subnet="$(oci network subnet list --compartment-id "$compartment" \
-  --query 'data[?"prohibit-public-ip-on-vnic"==`false`].id | [0]' --raw-output)"
-if [ -z "$subnet" ] || [ "$subnet" = 'null' ]; then
-  echo 'No public subnet yet. In the console: Networking > Virtual cloud networks >'
-  echo '"Start VCN Wizard" > "Create VCN with Internet Connectivity" > Create. Then run this again.'
-  exit 1
+# A public subnet (one that gives servers public IP addresses): the subnet OCID given as the
+# first argument, else the first public subnet found.
+subnet="${1:-}"
+if [ -z "$subnet" ]; then
+  # shellcheck disable=SC2016 # the backticks are a JMESPath literal for the OCI CLI, not shell
+  subnet="$(oci network subnet list --compartment-id "$compartment" --all \
+    --query 'data[?"prohibit-public-ip-on-vnic"==`false`].id | [0]' --raw-output || true)"
 fi
+case "$subnet" in
+  ocid1.subnet.*) ;;
+  *)
+    echo 'No public subnet found. Subnets in this compartment:'
+    oci network subnet list --compartment-id "$compartment" --all --output table \
+      --query 'data[].{name:"display-name", public:"prohibit-public-ip-on-vnic", id:id}' || true
+    echo 'Run again with the public subnet'"'"'s OCID:  bash launch-retry.sh ocid1.subnet.oc1...'
+    exit 1
+    ;;
+esac
 
 # The SSH key to log in with: kept in Cloud Shell; download the private key when done.
 key="$HOME/.ssh/collabmigo"

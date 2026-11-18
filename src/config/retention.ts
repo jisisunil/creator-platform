@@ -8,6 +8,8 @@ export const AUDIT_LOG_RETENTION_MS = 365 * DAY_MS;
 export const EMAIL_OUTBOX_RETENTION_MS = 30 * DAY_MS;
 /** Rate-limit windows are useless after they close; keep a day for investigations. */
 export const RATE_LIMIT_RETENTION_MS = DAY_MS;
+/** Data inventory: pilot waitlist requests nobody acted on are deleted after 180 days. */
+export const ACCESS_REQUEST_RETENTION_MS = 180 * DAY_MS;
 /** PR-9: in-app notifications are deleted after 180 days, read or not. */
 export const NOTIFICATION_RETENTION_MS = 180 * DAY_MS;
 /** PRV-4 / PR-5: a deletion is finalised, and admin-handled requests are due, after 30 days. */

@@ -186,7 +186,7 @@
       "disposable": "Use a permanent email address, not a temporary inbox.",
       "unavailable": "This email address can't be used. Try another one.",
       "sameAsCurrent": "This is already your email address.",
-      "inviteOnly": "Sign-up is by invitation during the pilot. Ask the team to add your email address."
+      "inviteOnly": "Sign-up is by invitation during the pilot. Request early access first, and use the email address you were invited with."
     },
     "team": {
       "notABrandAccount": "This email belongs to an account that can't join a brand team.",
@@ -330,7 +330,20 @@
       "googleButton": "Continue with Google",
       "googleNote": "Tick the boxes above first; Google sign-up uses the same choices.",
       "haveAccount": "Already have an account?",
-      "signInLink": "Sign in"
+      "signInLink": "Sign in",
+      "pilotNotice": "Sign-up is by invitation during the pilot. Not invited yet? <link>Request early access</link>."
+    },
+    "earlyAccess": {
+      "title": "Request early access",
+      "intro": "We're running a small, invite-only pilot. Tell us who you are and we'll email you a sign-up link when there's a place for you.",
+      "city": "City (optional)",
+      "profileUrl": "Instagram, YouTube or website link (optional)",
+      "profileUrlHint": "Creators: your Instagram or YouTube profile. Brands: your website. Helps us invite you sooner.",
+      "privacyConsent": "I have read the <link>privacy notice</link> and agree that my details are used to consider and contact me about the pilot.",
+      "submit": "Request access",
+      "thanks": "Thanks! If there's a place in the pilot, we'll email you a sign-up link.",
+      "alreadyInvited": "Already invited?",
+      "signUpLink": "Sign up"
     },
     "checkEmail": {
       "title": "Check your inbox",
@@ -545,7 +558,7 @@
         },
         "what": {
           "title": "What we collect and why",
-          "body": "Account details (name, email, password hash) to run your account. Your 18+ confirmation and consent records, to prove valid consent. For creators: location, languages, categories, profile details, connected social account IDs and public statistics, to show your profile to brands. For brands: brand name, industry and website. Messages, requests, deals and ratings, to run collaborations. Security logs (IP address, device, sign-in times), to protect accounts."
+          "body": "Account details (name, email, password hash) to run your account. Your 18+ confirmation and consent records, to prove valid consent. For creators: location, languages, categories, profile details, connected social account IDs and public statistics, to show your profile to brands. For brands: brand name, industry and website. Messages, requests, deals and ratings, to run collaborations. Security logs (IP address, device, sign-in times), to protect accounts. If you ask for early access during the pilot: your name, email, role, city and profile link, to decide whether to invite you."
         },
         "notCollected": {
           "title": "What we don't collect",
@@ -557,7 +570,7 @@
         },
         "retention": {
           "title": "How long we keep it",
-          "body": "Until you delete your account. Unverified sign-ups are deleted after 7 days, inactive accounts after 3 years (with 30 days' warning), and security logs after one year."
+          "body": "Until you delete your account. Unverified sign-ups are deleted after 7 days, inactive accounts after 3 years (with 30 days' warning), and security logs after one year. Early-access requests are deleted when you sign up, when we decline them, or after 180 days."
         },
         "rights": {
           "title": "Your rights and choices",
@@ -590,6 +603,11 @@
     "accountAlreadyExists": {
       "subject": "You already have an account",
       "body": "Someone tried to sign up with this email, but it already has an account.\nIf that was you, sign in: {signInLink}\nForgot your password? Reset it: {resetLink}\nIf it wasn't you, you can ignore this email."
+    },
+    "accessApproved": {
+      "subject": "You're invited to the pilot",
+      "body": "Hi {name},\nThanks for asking to join. Your place in the pilot is ready: create your account with this email address using the link below.",
+      "action": "Create your account"
     },
     "passwordReset": {
       "subject": "Reset your password",
@@ -1721,6 +1739,7 @@
       "label": "Admin sections",
       "overview": "Overview",
       "users": "Users",
+      "accessRequests": "Access requests",
       "reports": "Reports",
       "flags": "Authenticity flags",
       "disputes": "Ownership disputes",
@@ -1808,6 +1827,19 @@
       "underageReason": "Evidence the user is under 18 (audited)",
       "deleteUnderage": "Under 18: delete now",
       "deletedNow": "Account deleted."
+    },
+    "accessRequests": {
+      "title": "Access requests",
+      "intro": "People asking to join the pilot. Approving lets them sign up with that email and sends them the link; declining deletes the request.",
+      "statuses": {
+        "PENDING": "Waiting",
+        "APPROVED": "Approved, not signed up yet"
+      },
+      "empty": "Nothing here.",
+      "requestedOn": "Asked on {date}",
+      "approvedOn": "Approved on {date}",
+      "approve": "Approve and email link",
+      "decline": "Decline"
     },
     "plans": {
       "plan": "Plan",

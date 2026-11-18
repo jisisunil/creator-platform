@@ -119,6 +119,8 @@ The URL lets anyone who has it upload (not read) files: keep it as secret as `se
 
 ## Every day
 
+- **Waitlist:** people can ask to join at `/early-access`; approve them in **Admin → Access
+  requests** (no restart needed).
 - **Invite someone:** add their email to `SIGNUP_ALLOWLIST` in `server.env`, then
   `bash infra/oracle/setup.sh`.
 - **Update to the latest code:** `bash infra/oracle/update.sh` (backs up, pulls, rebuilds,

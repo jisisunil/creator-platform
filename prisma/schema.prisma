@@ -1532,3 +1532,32 @@ model PayoutAccount {
   updatedAt        DateTime       @updatedAt
   creator          CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 }
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+}
+
+/// Pilot waitlist: someone asking to join while sign-up is invite-only. Deleted when the
+/// person creates their account, when an admin declines it, or after 180 days (data
+/// inventory), so account export and deletion never need it.
+model AccessRequest {
+  id         String              @id @default(cuid())
+  /// Normalised (lower case); one request per address.
+  email      String              @unique
+  name       String
+  /// CREATOR or BRAND (never ADMIN; checked by the input schema).
+  role       UserRole
+  city       String?
+  /// Instagram or YouTube link for creators, website for brands.
+  profileUrl String?
+  /// Language for the approval email.
+  locale     String
+  status     AccessRequestStatus @default(PENDING)
+  approvedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}

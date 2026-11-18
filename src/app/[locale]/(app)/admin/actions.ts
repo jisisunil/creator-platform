@@ -7,6 +7,7 @@ import { type ActionState, runAction } from '@/lib/action';
 import { requireActionSession } from '@/lib/auth/current-session';
 import { getRequestInfo } from '@/lib/request-info';
 import {
+  accessRequestTargetSchema,
   addCreditPackSchema,
   changePlanSchema,
   closeDataRequestSchema,
@@ -23,6 +24,7 @@ import {
   suspendUser,
   verifyUserEmail,
 } from '@/services/admin';
+import { approveAccessRequest, declineAccessRequest } from '@/services/access-requests';
 import { addCreditPack, changeBrandPlan, extendTrial } from '@/services/plans';
 import {
   closeDataRequest,
@@ -182,6 +184,42 @@ export async function closeDataRequestAction(
     const session = await adminOnly();
     const input = parseForm(closeDataRequestSchema, formData);
     await closeDataRequest(getContainer(), { adminUserId: session.user.id, request, ...input });
+    revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** Pilot waitlist: lets the person sign up and emails them the link. */
+export async function approveAccessRequestAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const request = await requestInfo();
+  return runAction(async () => {
+    const session = await adminOnly();
+    const { requestId } = parseForm(accessRequestTargetSchema, formData);
+    await approveAccessRequest(getContainer(), {
+      adminUserId: session.user.id,
+      requestId,
+      request,
+    });
+    revalidatePath(ADMIN_PATH, 'layout');
+  });
+}
+
+/** Pilot waitlist: deletes the request without inviting the person. */
+export async function declineAccessRequestAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const request = await requestInfo();
+  return runAction(async () => {
+    const session = await adminOnly();
+    const { requestId } = parseForm(accessRequestTargetSchema, formData);
+    await declineAccessRequest(getContainer(), {
+      adminUserId: session.user.id,
+      requestId,
+      request,
+    });
     revalidatePath(ADMIN_PATH, 'layout');
   });
 }

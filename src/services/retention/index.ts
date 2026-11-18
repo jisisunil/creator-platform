@@ -3,6 +3,7 @@ import type { Clock } from '@/adapters/clock';
 import type { Repositories } from '@/adapters/db/repositories';
 import { UNVERIFIED_ACCOUNT_RETENTION_MS } from '@/config/auth';
 import {
+  ACCESS_REQUEST_RETENTION_MS,
   AUDIT_LOG_RETENTION_MS,
   EMAIL_OUTBOX_RETENTION_MS,
   NOTIFICATION_RETENTION_MS,
@@ -25,7 +26,7 @@ export async function purgeUnverifiedAccounts(
 
 /**
  * Removes expired sessions, links, invites and counters, logs older than a year, and
- * in-app notifications older than 180 days (PR-9).
+ * in-app notifications and unused pilot waitlist requests older than 180 days (PR-9).
  */
 export async function purgeExpiredSecurityData(
   deps: RetentionDependencies,
@@ -42,6 +43,9 @@ export async function purgeExpiredSecurityData(
     auditEvents: await deps.repos.audit.deleteOlderThan(ago(AUDIT_LOG_RETENTION_MS)),
     notifications: await deps.repos.notifications.deleteCreatedBefore(
       ago(NOTIFICATION_RETENTION_MS),
+    ),
+    accessRequests: await deps.repos.accessRequests.deleteCreatedBefore(
+      ago(ACCESS_REQUEST_RETENTION_MS),
     ),
   };
 }

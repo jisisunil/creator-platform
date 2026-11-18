@@ -2,7 +2,7 @@ import type { Repositories } from '@/adapters/db/repositories';
 import type { UserRecord } from '@/adapters/db/user-repository';
 import { LAUNCH_COUNTRY_CODE } from '@/config/countries';
 import type { SelfServiceRole } from '@/domain/accounts';
-import { companyDomainOf, isInvitedToSignUp } from '@/domain/email-address';
+import { companyDomainOf, isInvitedToSignUp, normaliseEmail } from '@/domain/email-address';
 import { invalidState, validationFailed } from '@/domain/errors';
 import { startingPlanFor } from '../plans';
 
@@ -19,7 +19,10 @@ export interface NewAccountDetails {
   readonly brand?: { readonly name: string; readonly industry: string };
   /** For brand sign-ups from a team invite: join this brand as a member instead. */
   readonly joinBrandId?: string;
-  /** ServiceContext.signUpAllowlist: in a closed pilot only listed emails get accounts. */
+  /**
+   * ServiceContext.signUpAllowlist: in a closed pilot only listed emails, and those whose
+   * access request an admin approved, get accounts.
+   */
   readonly signUpAllowlist: readonly string[] | null;
 }
 
@@ -34,9 +37,11 @@ export async function createAccount(
   ipAddress: string | null,
 ): Promise<UserRecord> {
   // Every way of getting an account (password, Google, team invite) passes through here.
-  if (!isInvitedToSignUp(details.signUpAllowlist, details.email)) {
-    throw validationFailed({ email: 'email.inviteOnly' });
-  }
+  const email = normaliseEmail(details.email);
+  const isInvited =
+    isInvitedToSignUp(details.signUpAllowlist, email) ||
+    (await repos.accessRequests.isApproved(email));
+  if (!isInvited) throw validationFailed({ email: 'email.inviteOnly' });
   const country = await repos.reference.findCountry(LAUNCH_COUNTRY_CODE);
   if (!country?.isEnabled) throw invalidState();
 
@@ -50,6 +55,8 @@ export async function createAccount(
     countryCode: country.code,
     locale: details.locale,
   });
+  // The waitlist entry has served its purpose; nothing about it outlives the account's start.
+  await repos.accessRequests.deleteByEmail(email);
 
   await repos.consents.append(
     user.id,

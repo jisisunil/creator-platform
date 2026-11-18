@@ -100,3 +100,6 @@ export const resolveEscrowSchema = z.object({
   outcome: z.enum(['RELEASE', 'REFUND']),
   reason: reasonSchema,
 });
+
+/** Pilot waitlist: the request an admin approves or declines. */
+export const accessRequestTargetSchema = z.object({ requestId: id });

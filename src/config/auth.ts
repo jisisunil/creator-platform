@@ -41,6 +41,8 @@ export const RATE_LIMITS = {
   signInPerIp: { limit: 20, windowMs: 15 * MINUTE_MS },
   signInPerAccount: { limit: 10, windowMs: 15 * MINUTE_MS },
   signUpPerIp: { limit: 5, windowMs: HOUR_MS },
+  /** Pilot waitlist requests (early access) per IP. */
+  accessRequestPerIp: { limit: 5, windowMs: HOUR_MS },
   passwordResetPerIp: { limit: 5, windowMs: HOUR_MS },
   passwordResetPerAccount: { limit: 3, windowMs: HOUR_MS },
   verificationResendPerAccount: { limit: 3, windowMs: HOUR_MS },

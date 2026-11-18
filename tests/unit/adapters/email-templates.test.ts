@@ -8,6 +8,7 @@ const SAMPLE_VARIABLES: { [Name in keyof EmailTemplates]: EmailTemplates[Name] }
     signInLink: 'https://app.test/en/sign-in',
     resetLink: 'https://app.test/en/forgot-password',
   },
+  accessApproved: { name: 'Asha', link: 'https://app.test/en/sign-up?role=CREATOR' },
   passwordReset: { name: 'Asha', link: 'https://app.test/en/reset-password?token=abc' },
   passwordChanged: { name: 'Asha' },
   confirmEmailChange: { name: 'Asha', link: 'https://app.test/en/change-email/confirm?token=a' },

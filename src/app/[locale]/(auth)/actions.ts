@@ -19,6 +19,7 @@ import {
 } from '@/lib/auth/session-cookie';
 import { getRequestInfo } from '@/lib/request-info';
 import {
+  accessRequestSchema,
   emailOnlySchema,
   googleSignUpSchema,
   linkGoogleSchema,
@@ -40,6 +41,7 @@ import {
   verifyEmail,
   verifyTwoFactorCode,
 } from '@/services/accounts';
+import { requestAccess } from '@/services/access-requests';
 import { acceptCurrentPrivacyNotice } from '@/services/consent';
 
 const tokenSchema = resetPasswordSchema.pick({ token: true });
@@ -65,6 +67,29 @@ export async function signUpAction(_: ActionState, formData: FormData): Promise<
       await getRequestInfo(locale),
     );
     redirect(`/${locale}/check-email`);
+  });
+}
+
+/** Pilot waitlist: asks to join while sign-up is invite-only. */
+export async function requestAccessAction(
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const locale = await getLocale();
+  return runAction(async () => {
+    const input = parseForm(accessRequestSchema, formData);
+    await requestAccess(
+      getContainer(),
+      {
+        role: input.role,
+        name: input.name,
+        email: input.email,
+        city: input.city,
+        profileUrl: input.profileUrl,
+        captchaToken: input.captchaToken,
+      },
+      await getRequestInfo(locale),
+    );
   });
 }
 

@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 const SECTIONS = [
   ['overview', '/admin'],
   ['users', '/admin/users'],
+  ['accessRequests', '/admin/access-requests'],
   ['reports', '/admin/reports'],
   ['flags', '/admin/flags'],
   ['disputes', '/admin/disputes'],

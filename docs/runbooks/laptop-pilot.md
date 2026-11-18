@@ -97,6 +97,11 @@ sign in and set up an authenticator app (admins always need two-factor sign-in).
 Send each participant the address and ask them to sign up with the email you listed. To
 add someone later: add their email to `SIGNUP_ALLOWLIST` and run `start.ps1` again.
 
+People you don't know yet can ask to join at `/early-access` (linked from the sign-up
+page). Their requests appear in **Admin → Access requests**: **Approve** lets them sign up
+with that email and emails them the link (no restart needed); **Decline** deletes the
+request. Requests nobody acts on are deleted after 180 days.
+
 ## Every day
 
 - **Backups:** `powershell -ExecutionPolicy Bypass -File infra\laptop\backup.ps1` saves the

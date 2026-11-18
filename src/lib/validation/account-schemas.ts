@@ -45,6 +45,29 @@ const captchaToken = z
   .optional()
   .transform((value) => value || null);
 
+const MAX_CITY_LENGTH = 80;
+const MAX_URL_LENGTH = 300;
+
+/** Pilot waitlist: who is asking to join (only https links, so nothing odd is stored). */
+export const accessRequestSchema = z.object({
+  role: z.enum(SELF_SERVICE_ROLES, { message: 'validation.invalidChoice' }),
+  name: requiredText(MAX_NAME_LENGTH),
+  email,
+  city: z
+    .string()
+    .trim()
+    .max(MAX_CITY_LENGTH, 'validation.tooLong')
+    .transform((value) => value || null),
+  profileUrl: z
+    .string()
+    .trim()
+    .max(MAX_URL_LENGTH, 'validation.tooLong')
+    .refine((value) => value === '' || /^https:\/\/[^\s]+$/.test(value), 'profile.invalidUrl')
+    .transform((value) => value || null),
+  acceptsPrivacyNotice: requiredCheckbox('validation.mustAccept'),
+  captchaToken,
+});
+
 /** Fields every sign-up path shares: role, 18+, privacy notice, marketing, brand details. */
 const signUpChoices = z.object({
   role: z.enum(SELF_SERVICE_ROLES, { message: 'validation.invalidChoice' }),

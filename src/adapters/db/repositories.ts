@@ -1,3 +1,4 @@
+import { createAccessRequestRepository } from './access-request-repository';
 import { createAdminRepository } from './admin-repository';
 import { createAuditRepository } from './audit-repository';
 import { createAuthAccountRepository } from './auth-account-repository';
@@ -61,6 +62,7 @@ export function createRepositories(db: DbClient) {
     moderation: createModerationRepository(db),
     privacy: createPrivacyRepository(db),
     discovery: createDiscoveryRepository(db),
+    accessRequests: createAccessRequestRepository(db),
   };
 }
 

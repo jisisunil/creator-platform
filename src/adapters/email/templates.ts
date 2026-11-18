@@ -7,6 +7,7 @@ import hi from '@/i18n/hi.json';
 export interface EmailTemplates {
   verifyEmail: { name: string; link: string };
   accountAlreadyExists: { signInLink: string; resetLink: string };
+  accessApproved: { name: string; link: string };
   passwordReset: { name: string; link: string };
   passwordChanged: { name: string };
   confirmEmailChange: { name: string; link: string };
@@ -56,6 +57,7 @@ export interface RenderedEmail {
 // Button text for the templates that carry a link.
 const ACTION_KEYS = {
   verifyEmail: 'verifyEmail.action',
+  accessApproved: 'accessApproved.action',
   passwordReset: 'passwordReset.action',
   confirmEmailChange: 'confirmEmailChange.action',
   teamInvite: 'teamInvite.action',
